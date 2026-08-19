@@ -1,0 +1,34 @@
+.mmi-aps-readonly {
+	display: inline-block;
+	min-width: 120px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.mmi-aps-readonly--wide {
+	max-width: 520px;
+	font-weight: 400;
+	line-height: 1.4;
+}
+
+.mmi-aps-fetch-message {
+	font-weight: 500;
+}
+
+.mmi-aps-fetch-message--success {
+	color: #00a32a;
+}
+
+.mmi-aps-fetch-message--error {
+	color: #d63638;
+}
+
+.mmi-aps-panel-note {
+	padding: 0 12px 12px;
+	color: #646970;
+	font-style: italic;
+}
+
+#mmi-aps-fetch-spinner.is-active {
+	visibility: visible;
+}

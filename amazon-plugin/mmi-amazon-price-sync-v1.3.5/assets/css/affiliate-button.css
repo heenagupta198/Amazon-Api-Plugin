@@ -1,0 +1,46 @@
+.mmi-aps-affiliate-wrap--price {
+	margin-top: 12px;
+}
+
+.mmi-aps-affiliate-wrap--price .mmi-aps-affiliate-btn {
+	display: block;
+	width: 100%;
+	max-width: 100%;
+	text-align: center;
+}
+
+.mmi-aps-affiliate-wrap--loop {
+	margin: 10px 0 0;
+	text-align: center;
+}
+
+.mmi-aps-affiliate-btn {
+	display: inline-block !important;
+	background: #ff9900 !important;
+	border-color: #e88b00 !important;
+	color: #111 !important;
+	font-weight: 600 !important;
+	text-decoration: none !important;
+	padding: 12px 24px !important;
+	border-radius: 4px !important;
+	line-height: 1.4 !important;
+}
+
+.mmi-aps-affiliate-btn:hover,
+.mmi-aps-affiliate-btn:focus {
+	background: #e88b00 !important;
+	border-color: #cc7a00 !important;
+	color: #000 !important;
+}
+
+.mmi-aps-affiliate-wrap--loop .mmi-aps-affiliate-btn {
+	padding: 8px 14px !important;
+	font-size: 13px !important;
+}
+
+.mmi-aps-affiliate-note {
+	margin: 8px 0 0 !important;
+	font-size: 12px;
+	line-height: 1.4;
+	color: #666;
+}
