@@ -19,8 +19,9 @@ class MMI_APS_Affiliate {
 			return;
 		}
 
-		add_filter( 'woocommerce_get_price_html', array( __CLASS__, 'append_button_to_price_html' ), 50, 2 );
+		add_filter( 'woocommerce_get_price_html', array( __CLASS__, 'append_button_to_price_html' ), 70, 2 );
 		add_action( 'woocommerce_single_product_summary', array( __CLASS__, 'render_single_product_button' ), 11 );
+		add_action( 'rh_woo_single_product_price', array( __CLASS__, 'render_single_product_button' ), 20 );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_styles' ) );
 		add_action( 'wp_footer', array( __CLASS__, 'maybe_inject_footer_button' ), 99 );
 		add_shortcode( 'mmi_amazon_buy_button', array( __CLASS__, 'render_shortcode' ) );
@@ -36,7 +37,11 @@ class MMI_APS_Affiliate {
 	 * @param string     $html    Price HTML.
 	 * @param WC_Product $product Product object.
 	 */
-	public static function append_button_to_price_html( string $html, $product ): string {
+	public static function append_button_to_price_html( $html, $product ): string {
+		if ( ! is_string( $html ) ) {
+			$html = '';
+		}
+
 		if ( is_admin() || is_cart() || is_checkout() ) {
 			return $html;
 		}
@@ -122,10 +127,6 @@ class MMI_APS_Affiliate {
 			return;
 		}
 
-		if ( self::has_rendered_button() ) {
-			return;
-		}
-
 		$post_id = get_queried_object_id();
 		if ( ! $post_id ) {
 			return;
@@ -138,13 +139,18 @@ class MMI_APS_Affiliate {
 
 		self::enqueue_styles_force();
 
-		$text   = MMI_APS_Settings::get_affiliate_button_text();
-		$note   = MMI_APS_Settings::show_affiliate_disclosure()
+		$product_id = $post_id;
+		$text       = MMI_APS_Settings::get_affiliate_button_text();
+		if ( MMI_APS_Product_Meta::is_unavailable( $product_id ) ) {
+			$text = __( 'Check on Amazon', 'mmi-amazon-price-sync' );
+		}
+		$text = apply_filters( 'mmi_aps_affiliate_button_text', $text, $product_id, 'inject' );
+
+		$note = MMI_APS_Settings::show_affiliate_disclosure()
 			? esc_html__( 'As an Amazon Associate we earn from qualifying purchases.', 'mmi-amazon-price-sync' )
 			: '';
 		$selectors = array(
 			'.woo-price-area',
-			'#woo-button-area',
 			'.re_wooinner_cta_wrapper',
 			'.rh_price_wrapper',
 			'.wpsm_price_wrapper',
@@ -157,44 +163,63 @@ class MMI_APS_Affiliate {
 		?>
 		<script>
 		(function () {
-			if (document.querySelector('.mmi-aps-affiliate-btn')) {
-				return;
-			}
-			var selectors = <?php echo wp_json_encode( $selectors ); ?>;
-			var target = null;
-			for (var i = 0; i < selectors.length; i++) {
-				var el = document.querySelector(selectors[i]);
-				if (el) {
-					target = el.closest('.woo-price-area, #woo-button-area, .re_wooinner_cta_wrapper, .rh_price_wrapper, .wpsm_price_wrapper, .mobile_price, .price, .summary, .rh-container, .woocommerce-product-details__short-description') || el.parentElement;
-					if (target) break;
+			function injectAffiliateButton() {
+				if (document.querySelector('.mmi-aps-affiliate-btn')) {
+					return;
+				}
+
+				var selectors = <?php echo wp_json_encode( $selectors ); ?>;
+				var priceArea = document.querySelector('.woo-price-area');
+				var target = priceArea || null;
+
+				if (!target) {
+					for (var i = 0; i < selectors.length; i++) {
+						var el = document.querySelector(selectors[i]);
+						if (el) {
+							target = el.closest('.woo-price-area, .re_wooinner_cta_wrapper, .rh_price_wrapper, .wpsm_price_wrapper, .mobile_price, .price, .summary, .rh-container, .woocommerce-product-details__short-description') || el.parentElement;
+							if (target) {
+								break;
+							}
+						}
+					}
+				}
+
+				if (!target) {
+					return;
+				}
+
+				var wrap = document.createElement('div');
+				wrap.className = 'mmi-aps-affiliate-wrap mmi-aps-affiliate-wrap--inject';
+				var link = document.createElement('a');
+				link.href = <?php echo wp_json_encode( $url ); ?>;
+				link.className = 'mmi-aps-affiliate-btn button alt';
+				link.target = '_blank';
+				link.rel = 'nofollow sponsored noopener';
+				link.textContent = <?php echo wp_json_encode( $text ); ?>;
+				wrap.appendChild(link);
+				<?php if ( $note ) : ?>
+				var note = document.createElement('p');
+				note.className = 'mmi-aps-affiliate-note';
+				note.textContent = <?php echo wp_json_encode( $note ); ?>;
+				wrap.appendChild(note);
+				<?php endif; ?>
+
+				if (priceArea) {
+					priceArea.insertAdjacentElement('afterend', wrap);
+				} else {
+					target.insertAdjacentElement('afterend', wrap);
 				}
 			}
-			if (!target) {
-				return;
+
+			injectAffiliateButton();
+			if (document.readyState === 'loading') {
+				document.addEventListener('DOMContentLoaded', injectAffiliateButton);
 			}
-			var wrap = document.createElement('div');
-			wrap.className = 'mmi-aps-affiliate-wrap mmi-aps-affiliate-wrap--inject';
-			var link = document.createElement('a');
-			link.href = <?php echo wp_json_encode( $url ); ?>;
-			link.className = 'mmi-aps-affiliate-btn button';
-			link.target = '_blank';
-			link.rel = 'nofollow sponsored noopener';
-			link.textContent = <?php echo wp_json_encode( $text ); ?>;
-			wrap.appendChild(link);
-			<?php if ( $note ) : ?>
-			var note = document.createElement('p');
-			note.className = 'mmi-aps-affiliate-note';
-			note.textContent = <?php echo wp_json_encode( $note ); ?>;
-			wrap.appendChild(note);
-			<?php endif; ?>
-			target.insertAdjacentElement('afterend', wrap);
+			window.setTimeout(injectAffiliateButton, 500);
+			window.setTimeout(injectAffiliateButton, 1500);
 		})();
 		</script>
 		<?php
-	}
-
-	private static function has_rendered_button(): bool {
-		return ! empty( self::$rendered_products );
 	}
 
 	/**
