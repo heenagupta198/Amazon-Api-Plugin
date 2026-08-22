@@ -22,7 +22,6 @@ class MMI_APS_Frontend {
 		add_filter( 'woocommerce_variation_prices_regular_price', array( __CLASS__, 'filter_variation_regular_price' ), 20, 3 );
 		add_filter( 'woocommerce_variation_prices_sale_price', array( __CLASS__, 'filter_variation_sale_price' ), 20, 3 );
 
-		add_filter( 'get_post_metadata', array( __CLASS__, 'filter_rehub_offer_meta' ), 20, 4 );
 		add_filter( 'body_class', array( __CLASS__, 'add_body_class' ) );
 
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_styles' ) );
@@ -91,7 +90,7 @@ class MMI_APS_Frontend {
 	 * @param bool            $on_sale Whether product is on sale.
 	 * @param WC_Product|null $product Product object.
 	 */
-	public static function filter_is_on_sale( bool $on_sale, $product ): bool {
+	public static function filter_is_on_sale( $on_sale, $product ): bool {
 		$amazon_price = self::get_amazon_price_for_product( $product );
 
 		if ( null !== $amazon_price && self::should_show_buying_price_only( $product ) ) {
@@ -103,7 +102,7 @@ class MMI_APS_Frontend {
 			return true;
 		}
 
-		return $on_sale;
+		return (bool) $on_sale;
 	}
 
 	/**
@@ -111,8 +110,13 @@ class MMI_APS_Frontend {
 	 *
 	 * @param string     $html    Price HTML.
 	 * @param WC_Product $product Product object.
+	 * @return string
 	 */
-	public static function filter_price_html( string $html, $product ): string {
+	public static function filter_price_html( $html, $product ) {
+		if ( ! is_string( $html ) ) {
+			$html = '';
+		}
+
 		if ( ! $product instanceof WC_Product || ! self::should_show_buying_price_only( $product ) ) {
 			return $html;
 		}
@@ -131,8 +135,13 @@ class MMI_APS_Frontend {
 	 * @param string          $html    Badge HTML.
 	 * @param WP_Post         $post    Post object.
 	 * @param WC_Product|null $product Product object.
+	 * @return string
 	 */
-	public static function filter_sale_flash( string $html, $post, $product ): string {
+	public static function filter_sale_flash( $html, $post, $product ) {
+		if ( ! is_string( $html ) ) {
+			$html = '';
+		}
+
 		if ( ! $product instanceof WC_Product || ! self::should_show_buying_price_only( $product ) ) {
 			return $html;
 		}
@@ -142,37 +151,6 @@ class MMI_APS_Frontend {
 		}
 
 		return $html;
-	}
-
-	/**
-	 * ReHub reads offer meta directly — hide old price / discount on storefront.
-	 *
-	 * @param mixed  $value     Metadata value.
-	 * @param int    $object_id Post ID.
-	 * @param string $meta_key  Meta key.
-	 * @param bool   $single    Single value flag.
-	 * @return mixed
-	 */
-	public static function filter_rehub_offer_meta( $value, $object_id, $meta_key, $single ) {
-		if ( null !== $value || is_admin() ) {
-			return $value;
-		}
-
-		if ( ! self::is_amazon_product( (int) $object_id ) || ! self::is_storefront_context() ) {
-			return $value;
-		}
-
-		$hidden_keys = array(
-			'rehub_offer_product_price_old',
-			'rehub_offer_discount',
-			'_rehub_offer_discount',
-		);
-
-		if ( ! in_array( $meta_key, $hidden_keys, true ) ) {
-			return $value;
-		}
-
-		return $single ? '' : array( '' );
 	}
 
 	/**
@@ -246,6 +224,19 @@ class MMI_APS_Frontend {
 					document.querySelectorAll(selector).forEach(function (el) {
 						el.style.setProperty('display', 'none', 'important');
 					});
+				});
+
+				document.querySelectorAll('.woo-price-area').forEach(function (area) {
+					var prices = area.querySelectorAll('.price_count, .woocommerce-Price-amount, .amount');
+					if (prices.length > 1) {
+						for (var i = 1; i < prices.length; i++) {
+							var node = prices[i];
+							var wrapper = node.closest('span, div, p');
+							if (wrapper && wrapper !== prices[0].closest('span, div, p')) {
+								wrapper.style.setProperty('display', 'none', 'important');
+							}
+						}
+					}
 				});
 
 				document.querySelectorAll('.woo-price-area ins').forEach(function (el) {
@@ -337,6 +328,10 @@ class MMI_APS_Frontend {
 	}
 
 	private static function is_amazon_product( int $product_id ): bool {
+		if ( $product_id <= 0 ) {
+			return false;
+		}
+
 		if ( isset( self::$amazon_product_cache[ $product_id ] ) ) {
 			return self::$amazon_product_cache[ $product_id ];
 		}
