@@ -32,3 +32,13 @@
 #mmi-aps-fetch-spinner.is-active {
 	visibility: visible;
 }
+
+.mmi-aps-display-status--available {
+	color: #00a32a;
+	font-weight: 600;
+}
+
+.mmi-aps-display-status--unavailable {
+	color: #d63638;
+	font-weight: 600;
+}

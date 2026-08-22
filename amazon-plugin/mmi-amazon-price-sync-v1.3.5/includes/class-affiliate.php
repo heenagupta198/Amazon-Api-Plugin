@@ -235,6 +235,9 @@ class MMI_APS_Affiliate {
 		}
 
 		$text = MMI_APS_Settings::get_affiliate_button_text();
+		if ( MMI_APS_Product_Meta::is_unavailable( $product_id ) ) {
+			$text = __( 'Check on Amazon', 'mmi-amazon-price-sync' );
+		}
 		$text = apply_filters( 'mmi_aps_affiliate_button_text', $text, $product_id, $context );
 
 		$html  = '<div class="mmi-aps-affiliate-wrap mmi-aps-affiliate-wrap--' . esc_attr( $context ) . '">';

@@ -14,6 +14,13 @@
 		$scope.find('.mmi-aps-display-title').text(data.title || '—');
 		$scope.find('.mmi-aps-display-delivery').text(data.delivery || '—');
 		$scope.find('.mmi-aps-display-last-updated').text(data.last_updated || '—');
+
+		if (data.availability_label) {
+			$scope.find('.mmi-aps-display-status')
+				.removeClass('mmi-aps-display-status--available mmi-aps-display-status--unavailable')
+				.addClass('mmi-aps-display-status--' + (data.availability || 'available'))
+				.text(data.availability_label);
+		}
 	}
 
 	function syncAsinInputs(asin) {

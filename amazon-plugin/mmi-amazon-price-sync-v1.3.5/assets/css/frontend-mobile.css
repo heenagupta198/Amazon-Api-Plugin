@@ -42,8 +42,15 @@ body.mmi-aps-buy-price-only.single-product .overlay_post_formats.sale_format,
 body.mmi-aps-buy-price-only.single-product .title_badges .rh-label,
 body.mmi-aps-buy-price-only.single-product .rh-container .rh-label-type-round,
 body.mmi-aps-buy-price-only.single-product .rh-container .rh-label-type-square,
-body.mmi-aps-buy-price-only.single-product .woocommerce-product-gallery .grid_onsale,
-body.mmi-aps-buy-price-only.single-product .images .grid_onsale,
-body.mmi-aps-buy-price-only.single-product .rh_post_image .grid_onsale {
+body.mmi-aps-unavailable-product.single-product .grid_onsale,
+body.mmi-aps-unavailable-product.single-product .images .grid_onsale,
+body.mmi-aps-unavailable-product.single-product .rh_post_image .grid_onsale {
 	display: none !important;
+}
+
+.mmi-aps-unavailable {
+	display: inline-block;
+	color: #b32d2e;
+	font-weight: 600;
+	font-size: 1.1em;
 }

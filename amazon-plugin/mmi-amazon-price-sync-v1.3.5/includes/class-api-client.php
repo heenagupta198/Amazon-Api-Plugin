@@ -97,7 +97,15 @@ class MMI_APS_API_Client {
 		}
 
 		$parsed = self::parse_response( $json );
+
 		if ( null === $parsed['price'] ) {
+			if ( ! $parsed['available'] && ( '' !== $parsed['title'] || '' !== $parsed['asin'] ) ) {
+				return array(
+					'success' => true,
+					'data'    => $parsed,
+				);
+			}
+
 			return array(
 				'success' => false,
 				'message' => __( 'Could not find product price in API response.', 'mmi-amazon-price-sync' ),
@@ -114,7 +122,7 @@ class MMI_APS_API_Client {
 	 * Parse API response into normalized product data.
 	 *
 	 * @param array<string,mixed> $json Raw API response.
-	 * @return array{asin:string,title:string,price:?float,original_price:?float,currency:string,delivery:string}
+	 * @return array{asin:string,title:string,price:?float,original_price:?float,currency:string,delivery:string,available:bool,availability_text:string}
 	 */
 	private static function parse_response( array $json ): array {
 		$data = $json;
@@ -137,14 +145,83 @@ class MMI_APS_API_Client {
 			$original_price = null;
 		}
 
-		return array(
-			'asin'           => $asin,
-			'title'          => $title,
-			'price'          => $price,
-			'original_price' => $original_price,
-			'currency'       => $currency,
-			'delivery'       => $delivery,
+		$availability_text = (string) self::find_value(
+			$data,
+			array( 'product_availability', 'availability', 'availability_status', 'stock_status' ),
+			''
 		);
+
+		$available = self::is_product_available( $price, $price_raw, $availability_text, $title, $data );
+
+		return array(
+			'asin'               => $asin,
+			'title'              => $title,
+			'price'              => $price,
+			'original_price'     => $original_price,
+			'currency'           => $currency,
+			'delivery'           => $delivery,
+			'available'          => $available,
+			'availability_text'  => $availability_text,
+		);
+	}
+
+	/**
+	 * Detect if Amazon product has a buyable price.
+	 *
+	 * @param mixed               $price             Parsed price.
+	 * @param mixed               $price_raw         Raw price value from API.
+	 * @param string              $availability_text Availability text from API.
+	 * @param string              $title             Product title.
+	 * @param array<string,mixed> $data              Product data.
+	 */
+	private static function is_product_available( $price, $price_raw, string $availability_text, string $title, array $data ): bool {
+		if ( null !== $price && $price > 0 ) {
+			return true;
+		}
+
+		if ( self::looks_unavailable_text( $price_raw ) || self::looks_unavailable_text( $availability_text ) ) {
+			return false;
+		}
+
+		$availability_flag = self::find_value(
+			$data,
+			array( 'is_available', 'in_stock', 'product_in_stock', 'buybox_available' )
+		);
+
+		if ( null !== $availability_flag ) {
+			if ( is_bool( $availability_flag ) ) {
+				return $availability_flag;
+			}
+
+			$flag = strtolower( trim( (string) $availability_flag ) );
+			if ( in_array( $flag, array( '0', 'false', 'no', 'unavailable', 'outofstock', 'out_of_stock' ), true ) ) {
+				return false;
+			}
+			if ( in_array( $flag, array( '1', 'true', 'yes', 'available', 'instock', 'in_stock' ), true ) ) {
+				return true;
+			}
+		}
+
+		if ( '' !== $title || '' !== (string) self::find_value( $data, array( 'asin', 'product_asin' ), '' ) ) {
+			return false;
+		}
+
+		return false;
+	}
+
+	/**
+	 * @param mixed $value Raw text value.
+	 */
+	private static function looks_unavailable_text( $value ): bool {
+		if ( ! is_string( $value ) || '' === trim( $value ) ) {
+			return false;
+		}
+
+		$text = strtolower( $value );
+
+		return false !== strpos( $text, 'unavailable' )
+			|| false !== strpos( $text, 'out of stock' )
+			|| false !== strpos( $text, 'currently not available' );
 	}
 
 	/**

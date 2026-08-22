@@ -16,6 +16,7 @@ class MMI_APS_Frontend {
 		add_filter( 'woocommerce_product_get_sale_price', array( __CLASS__, 'filter_sale_price' ), 20, 2 );
 		add_filter( 'woocommerce_product_is_on_sale', array( __CLASS__, 'filter_is_on_sale' ), 20, 2 );
 		add_filter( 'woocommerce_get_price_html', array( __CLASS__, 'filter_price_html' ), 60, 2 );
+		add_filter( 'woocommerce_get_price_html', array( __CLASS__, 'filter_unavailable_price_html' ), 55, 2 );
 		add_filter( 'woocommerce_sale_flash', array( __CLASS__, 'filter_sale_flash' ), 20, 3 );
 
 		add_filter( 'woocommerce_variation_prices_price', array( __CLASS__, 'filter_variation_price' ), 20, 3 );
@@ -117,7 +118,11 @@ class MMI_APS_Frontend {
 			$html = '';
 		}
 
-		if ( ! $product instanceof WC_Product || ! self::should_show_buying_price_only( $product ) ) {
+		if ( ! $product instanceof WC_Product || MMI_APS_Product_Meta::is_unavailable( $product->get_id() ) ) {
+			return $html;
+		}
+
+		if ( ! self::should_show_buying_price_only( $product ) ) {
 			return $html;
 		}
 
@@ -127,6 +132,30 @@ class MMI_APS_Frontend {
 		}
 
 		return wc_price( $amazon_price );
+	}
+
+	/**
+	 * Show unavailable message when Amazon has no buyable price.
+	 *
+	 * @param string     $html    Price HTML.
+	 * @param WC_Product $product Product object.
+	 * @return string
+	 */
+	public static function filter_unavailable_price_html( $html, $product ) {
+		if ( ! is_string( $html ) ) {
+			$html = '';
+		}
+
+		if ( ! $product instanceof WC_Product || ! self::is_storefront_context() ) {
+			return $html;
+		}
+
+		$product_id = $product->get_id();
+		if ( '' === MMI_APS_Product_Meta::get_asin( $product_id ) || ! MMI_APS_Product_Meta::is_unavailable( $product_id ) ) {
+			return $html;
+		}
+
+		return '<span class="mmi-aps-unavailable">' . esc_html__( 'Currently Unavailable', 'mmi-amazon-price-sync' ) . '</span>';
 	}
 
 	/**
@@ -158,8 +187,17 @@ class MMI_APS_Frontend {
 	 * @return array<int,string>
 	 */
 	public static function add_body_class( array $classes ): array {
-		if ( is_product() && self::is_amazon_product( get_queried_object_id() ) ) {
+		if ( ! is_product() ) {
+			return $classes;
+		}
+
+		$product_id = get_queried_object_id();
+		if ( self::is_amazon_product( $product_id ) ) {
 			$classes[] = 'mmi-aps-buy-price-only';
+		}
+
+		if ( MMI_APS_Product_Meta::is_unavailable( $product_id ) && '' !== MMI_APS_Product_Meta::get_asin( $product_id ) ) {
+			$classes[] = 'mmi-aps-unavailable-product';
 		}
 
 		return $classes;
@@ -187,13 +225,27 @@ class MMI_APS_Frontend {
 		}
 
 		$product_id = get_queried_object_id();
-		if ( ! $product_id || ! self::is_amazon_product( $product_id ) ) {
+		if ( ! $product_id ) {
 			return;
 		}
+
+		$is_unavailable = MMI_APS_Product_Meta::is_unavailable( $product_id ) && '' !== MMI_APS_Product_Meta::get_asin( $product_id );
+		if ( ! $is_unavailable && ! self::is_amazon_product( $product_id ) ) {
+			return;
+		}
+
 		?>
 		<script>
 		(function () {
+			var unavailableText = <?php echo wp_json_encode( __( 'Currently Unavailable', 'mmi-amazon-price-sync' ) ); ?>;
+
 			function hideOfferExtras() {
+				<?php if ( $is_unavailable ) : ?>
+				document.querySelectorAll('.woo-price-area, .re_wooinner_cta_wrapper .rh_price_wrapper, .wpsm_price_wrapper, .mobile_price').forEach(function (area) {
+					area.innerHTML = '<span class="mmi-aps-unavailable">' + unavailableText + '</span>';
+				});
+				<?php endif; ?>
+
 				var selectors = [
 					'.woo-price-area del',
 					'.re_wooinner_cta_wrapper del',
@@ -330,6 +382,10 @@ class MMI_APS_Frontend {
 	private static function is_amazon_product( int $product_id ): bool {
 		if ( $product_id <= 0 ) {
 			return false;
+		}
+
+		if ( MMI_APS_Product_Meta::is_unavailable( $product_id ) && '' !== MMI_APS_Product_Meta::get_asin( $product_id ) ) {
+			return true;
 		}
 
 		if ( isset( self::$amazon_product_cache[ $product_id ] ) ) {
