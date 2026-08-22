@@ -1,41 +1,49 @@
 /**
- * Mobile storefront: show only Amazon buying price (hide MRP, discount badge, empty woo button).
- * Desktop layout unchanged. Backend/meta prices are unaffected.
+ * Amazon ASIN products: show only buying price on storefront.
+ * Backend/admin and stored meta are unaffected.
  */
-@media (max-width: 767px) {
-	body.single-product .woo-price-area del,
-	body.single-product .re_wooinner_cta_wrapper del,
-	body.single-product .rh_price_wrapper del,
-	body.single-product .wpsm_price_wrapper del,
-	body.single-product .mobile_price del,
-	body.single-product .price del {
-		display: none !important;
-	}
+body.mmi-aps-buy-price-only.single-product .woo-price-area del,
+body.mmi-aps-buy-price-only.single-product .re_wooinner_cta_wrapper del,
+body.mmi-aps-buy-price-only.single-product .rh_price_wrapper del,
+body.mmi-aps-buy-price-only.single-product .wpsm_price_wrapper del,
+body.mmi-aps-buy-price-only.single-product .mobile_price del,
+body.mmi-aps-buy-price-only.single-product .price del,
+body.mmi-aps-buy-price-only.single-product .woo-price-area .rehub_offer_product_price_old,
+body.mmi-aps-buy-price-only.single-product .woo-price-area .price_old,
+body.mmi-aps-buy-price-only.single-product .woo-price-area .old_price,
+body.mmi-aps-buy-price-only.single-product .woo-price-area .greycolor,
+body.mmi-aps-buy-price-only.single-product .woo-price-area .retail-price,
+body.mmi-aps-buy-price-only.single-product .woo-price-area .was-price {
+	display: none !important;
+}
 
-	body.single-product #woo-button-area,
-	body.single-product .woo-button-area {
-		display: none !important;
-		margin: 0 !important;
-		padding: 0 !important;
-		min-height: 0 !important;
-		height: 0 !important;
-		overflow: hidden !important;
-	}
+body.mmi-aps-buy-price-only.single-product .woo-price-area ins {
+	text-decoration: none !important;
+}
 
-	body.single-product .onsale,
-	body.single-product .grid_onsale,
-	body.single-product .rh-label-string,
-	body.single-product .rh-label-type-round,
-	body.single-product .rh-label-type-square,
-	body.single-product .percentage_count,
-	body.single-product .sale_bar,
-	body.single-product .overlay_post_formats.sale_format {
-		display: none !important;
-	}
+body.mmi-aps-buy-price-only.single-product #woo-button-area,
+body.mmi-aps-buy-price-only.single-product .woo-button-area {
+	display: none !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	min-height: 0 !important;
+	height: 0 !important;
+	overflow: hidden !important;
+}
 
-	body.single-product .title_badges .rh-label,
-	body.single-product .rh-container .rh-label-type-round,
-	body.single-product .rh-container .rh-label-type-square {
-		display: none !important;
-	}
+body.mmi-aps-buy-price-only.single-product .onsale,
+body.mmi-aps-buy-price-only.single-product .grid_onsale,
+body.mmi-aps-buy-price-only.single-product .rh-label-string,
+body.mmi-aps-buy-price-only.single-product .rh-label-type-round,
+body.mmi-aps-buy-price-only.single-product .rh-label-type-square,
+body.mmi-aps-buy-price-only.single-product .percentage_count,
+body.mmi-aps-buy-price-only.single-product .sale_bar,
+body.mmi-aps-buy-price-only.single-product .overlay_post_formats.sale_format,
+body.mmi-aps-buy-price-only.single-product .title_badges .rh-label,
+body.mmi-aps-buy-price-only.single-product .rh-container .rh-label-type-round,
+body.mmi-aps-buy-price-only.single-product .rh-container .rh-label-type-square,
+body.mmi-aps-buy-price-only.single-product .woocommerce-product-gallery .grid_onsale,
+body.mmi-aps-buy-price-only.single-product .images .grid_onsale,
+body.mmi-aps-buy-price-only.single-product .rh_post_image .grid_onsale {
+	display: none !important;
 }
