@@ -1,3 +1,14 @@
+.home .mmi-aps-affiliate-wrap,
+.blog .mmi-aps-affiliate-wrap,
+.archive .mmi-aps-affiliate-wrap,
+.search .mmi-aps-affiliate-wrap,
+.woocommerce-shop .mmi-aps-affiliate-wrap,
+.woocommerce .products .mmi-aps-affiliate-wrap,
+.rh-post-carousel .mmi-aps-affiliate-wrap,
+.wpsm_recent_posts_list .mmi-aps-affiliate-wrap {
+	display: none !important;
+}
+
 .mmi-aps-affiliate-wrap--inject {
 	margin: 12px 0 16px;
 }

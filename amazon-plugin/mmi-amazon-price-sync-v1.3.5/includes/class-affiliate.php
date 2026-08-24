@@ -32,6 +32,25 @@ class MMI_APS_Affiliate {
 	}
 
 	/**
+	 * Show affiliate button only on single product / device detail pages.
+	 */
+	private static function is_product_detail_page(): bool {
+		if ( is_admin() || is_cart() || is_checkout() ) {
+			return false;
+		}
+
+		if ( function_exists( 'is_product' ) && is_product() ) {
+			return true;
+		}
+
+		if ( is_singular( array( 'devices', 'product' ) ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
 	 * Append Go to Store button after WooCommerce price HTML (works with ReHub + most themes).
 	 *
 	 * @param string     $html    Price HTML.
@@ -42,7 +61,7 @@ class MMI_APS_Affiliate {
 			$html = '';
 		}
 
-		if ( is_admin() || is_cart() || is_checkout() ) {
+		if ( is_admin() || is_cart() || is_checkout() || ! self::is_product_detail_page() ) {
 			return $html;
 		}
 
@@ -80,6 +99,10 @@ class MMI_APS_Affiliate {
 	}
 
 	public static function render_loop_button(): void {
+		if ( ! self::is_product_detail_page() ) {
+			return;
+		}
+
 		global $product;
 
 		if ( ! $product instanceof WC_Product ) {
@@ -93,7 +116,7 @@ class MMI_APS_Affiliate {
 	 * Standard WooCommerce single product hook — works when theme skips price HTML filters.
 	 */
 	public static function render_single_product_button(): void {
-		if ( is_admin() || is_cart() || is_checkout() ) {
+		if ( is_admin() || is_cart() || is_checkout() || ! self::is_product_detail_page() ) {
 			return;
 		}
 
@@ -123,7 +146,7 @@ class MMI_APS_Affiliate {
 	 * Fallback for ReHub /devices/ and custom templates that skip WooCommerce price hooks.
 	 */
 	public static function maybe_inject_footer_button(): void {
-		if ( is_admin() || ! is_singular() ) {
+		if ( is_admin() || ! self::is_product_detail_page() ) {
 			return;
 		}
 
