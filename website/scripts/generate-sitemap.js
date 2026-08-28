@@ -67,7 +67,7 @@ ${urls.map(({ path, priority, changefreq }) => `  <url>
     <priority>${priority}</priority>
 ${path === '/' ? images.map((img) => `    <image:image>
       <image:loc>${img}</image:loc>
-      <image:title>Yogesh Web Solutions - Web Design Company</image:title>
+      <image:title>Yogesh Web Developer - yogeshwebdeveloper.com</image:title>
     </image:image>`).join('\n') : ''}
   </url>`).join('\n')}
 </urlset>

@@ -4,6 +4,15 @@ import PageBanner from '../components/PageBanner'
 import SEO from '../components/SEO'
 import { CheckIcon, SendIcon } from '../components/Icons'
 import { UPWORK_URL, inquiryTypes, COMPANY } from '../data/siteData'
+import { submitContactForm } from '../lib/contactForm'
+import {
+  validateEmail,
+  validatePhone,
+  validateName,
+  validateMessage,
+  sanitizeInput,
+  normalizePhone,
+} from '../utils/validation'
 
 const contactInfo = [
   { icon: '📞', label: 'Phone', value: COMPANY.phone, href: COMPANY.phoneHref },
@@ -13,32 +22,88 @@ const contactInfo = [
   { icon: '💼', label: 'Upwork', value: 'View on Upwork', href: UPWORK_URL, external: true },
 ]
 
-export default function Contact() {
-  const [form, setForm] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    inquiryType: '',
-    message: '',
-  })
-  const [submitted, setSubmitted] = useState(false)
+const emptyForm = { name: '', email: '', phone: '', inquiryType: '', message: '', website: '' }
 
-  const handleSubmit = (e) => {
+export default function Contact() {
+  const [form, setForm] = useState(emptyForm)
+  const [errors, setErrors] = useState({})
+  const [submitted, setSubmitted] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [submitError, setSubmitError] = useState('')
+
+  const validateForm = () => {
+    const next = {
+      name: validateName(form.name),
+      email: validateEmail(form.email),
+      phone: validatePhone(form.phone, true),
+      message: validateMessage(form.message),
+      inquiryType: form.inquiryType ? '' : 'Please select a service.',
+    }
+    setErrors(next)
+    return !Object.values(next).some(Boolean)
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    setSubmitted(true)
-    setForm({ name: '', email: '', phone: '', inquiryType: '', message: '' })
-    setTimeout(() => setSubmitted(false), 5000)
+    setSubmitError('')
+    if (!validateForm()) return
+
+    setLoading(true)
+    try {
+      const payload = {
+        name: sanitizeInput(form.name, 80),
+        email: sanitizeInput(form.email, 120),
+        phone: normalizePhone(form.phone),
+        inquiryType: sanitizeInput(form.inquiryType, 100),
+        message: sanitizeInput(form.message, 2000),
+        website: form.website,
+      }
+      const result = await submitContactForm(payload)
+      setSubmitted(true)
+      setSuccessMessage(result.message)
+      setForm(emptyForm)
+      setErrors({})
+      setTimeout(() => {
+        setSubmitted(false)
+        setSuccessMessage('')
+      }, 12000)
+    } catch (err) {
+      setSubmitError(err.message || 'Something went wrong. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
+    const { name, value } = e.target
+    setForm({ ...form, [name]: value })
+    if (errors[name]) setErrors({ ...errors, [name]: '' })
+    if (submitError) setSubmitError('')
   }
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target
+    let error = ''
+    if (name === 'name') error = validateName(value)
+    if (name === 'email') error = validateEmail(value)
+    if (name === 'phone') error = validatePhone(value, true)
+    if (name === 'message') error = validateMessage(value)
+    setErrors({ ...errors, [name]: error })
+  }
+
+  const inputClass = (field) =>
+    `w-full border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-1 transition-colors ${
+      errors[field]
+        ? 'border-red-400 focus:border-red-500 focus:ring-red-200'
+        : 'border-gray-200 focus:border-brand focus:ring-brand/30'
+    }`
 
   return (
     <>
       <SEO
         title="Contact Us"
-        description={`Contact ${COMPANY.name} for web design and development services in Delhi NCR. Get a free consultation and project quote today.`}
+        description={`Contact Yogesh Web Developer (yogeshwebdeveloper.com) for web design and development services in Delhi NCR. Call ${COMPANY.phone} or email ${COMPANY.email}`}
         path="/contact"
       />
 
@@ -76,21 +141,21 @@ export default function Contact() {
                     </div>
                   </Link>
                 ) : (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  target={item.external ? '_blank' : undefined}
-                  rel={item.external ? 'noopener noreferrer' : undefined}
-                  className="flex items-center gap-4 bg-gray-50 hover:bg-brand/5 border border-gray-100 hover:border-brand/20 rounded-xl p-4 transition-all group"
-                >
-                  <span className="text-2xl">{item.icon}</span>
-                  <div>
-                    <p className="text-xs text-gray-500 font-medium">{item.label}</p>
-                    <p className="text-sm font-semibold text-gray-900 group-hover:text-brand transition-colors">
-                      {item.value}
-                    </p>
-                  </div>
-                </a>
+                  <a
+                    key={item.label}
+                    href={item.href}
+                    target={item.external ? '_blank' : undefined}
+                    rel={item.external ? 'noopener noreferrer' : undefined}
+                    className="flex items-center gap-4 bg-gray-50 hover:bg-brand/5 border border-gray-100 hover:border-brand/20 rounded-xl p-4 transition-all group"
+                  >
+                    <span className="text-2xl">{item.icon}</span>
+                    <div>
+                      <p className="text-xs text-gray-500 font-medium">{item.label}</p>
+                      <p className="text-sm font-semibold text-gray-900 group-hover:text-brand transition-colors">
+                        {item.value}
+                      </p>
+                    </div>
+                  </a>
                 )
               ))}
 
@@ -108,92 +173,141 @@ export default function Contact() {
             </div>
 
             <div className="lg:col-span-3">
-              <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8">
+              <form
+                onSubmit={handleSubmit}
+                noValidate
+                className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8"
+              >
                 <h3 className="font-bold text-gray-900 text-lg mb-6">Send Us a Message</h3>
 
                 {submitted && (
-                  <div className="bg-green-50 border border-green-200 text-green-800 rounded-lg p-4 mb-6 text-sm">
-                    Thank you! Your message has been sent. We'll get back to you within 24 hours.
+                  <div className="bg-green-50 border border-green-200 text-green-800 rounded-lg p-4 mb-6 text-sm leading-relaxed" role="status">
+                    <p className="font-semibold mb-1">✅ Thank You!</p>
+                    <p>{successMessage}</p>
                   </div>
                 )}
 
+                {submitError && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 mb-6 text-sm" role="alert">
+                    {submitError}
+                  </div>
+                )}
+
+                {/* Honeypot - hidden from users, bots fill this */}
+                <div className="absolute -left-[9999px] opacity-0 h-0 w-0 overflow-hidden" aria-hidden="true">
+                  <label htmlFor="website">Website</label>
+                  <input
+                    type="text"
+                    id="website"
+                    name="website"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={form.website}
+                    onChange={handleChange}
+                  />
+                </div>
+
                 <div className="grid sm:grid-cols-2 gap-4 mb-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Your Name *</label>
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1.5">Your Name *</label>
                     <input
                       type="text"
+                      id="name"
                       name="name"
                       required
+                      maxLength={80}
                       value={form.name}
                       onChange={handleChange}
-                      className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors"
-                      placeholder="John Doe"
+                      onBlur={handleBlur}
+                      className={inputClass('name')}
+                      placeholder="Your full name"
+                      autoComplete="name"
                     />
+                    {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Email Address *</label>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">Email Address *</label>
                     <input
                       type="email"
+                      id="email"
                       name="email"
                       required
+                      maxLength={120}
                       value={form.email}
                       onChange={handleChange}
-                      className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors"
-                      placeholder="john@example.com"
+                      onBlur={handleBlur}
+                      className={inputClass('email')}
+                      placeholder="you@example.com"
+                      autoComplete="email"
                     />
+                    {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
                   </div>
                 </div>
 
                 <div className="grid sm:grid-cols-2 gap-4 mb-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Phone Number</label>
+                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1.5">Phone Number *</label>
                     <input
                       type="tel"
+                      id="phone"
                       name="phone"
+                      required
+                      maxLength={15}
                       value={form.phone}
                       onChange={handleChange}
-                      className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors"
-                      placeholder="+91 98765 43210"
+                      onBlur={handleBlur}
+                      className={inputClass('phone')}
+                      placeholder="+91 83779 56442"
+                      autoComplete="tel"
                     />
+                    {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label htmlFor="inquiryType" className="block text-sm font-medium text-gray-700 mb-1.5">
                       What are you looking for? *
                     </label>
                     <select
+                      id="inquiryType"
                       name="inquiryType"
                       required
                       value={form.inquiryType}
                       onChange={handleChange}
-                      className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors bg-white text-gray-900"
+                      className={`${inputClass('inquiryType')} bg-white text-gray-900`}
                     >
                       <option value="" disabled>Select a service</option>
                       {inquiryTypes.map((type) => (
                         <option key={type} value={type}>{type}</option>
                       ))}
                     </select>
+                    {errors.inquiryType && <p className="text-red-500 text-xs mt-1">{errors.inquiryType}</p>}
                   </div>
                 </div>
 
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Your Message *</label>
+                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1.5">Your Message *</label>
                   <textarea
+                    id="message"
                     name="message"
                     required
                     rows={5}
+                    maxLength={2000}
                     value={form.message}
                     onChange={handleChange}
-                    className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/30 transition-colors resize-none"
+                    onBlur={handleBlur}
+                    className={`${inputClass('message')} resize-none`}
                     placeholder="Tell us about your project requirements..."
                   />
+                  {errors.message && <p className="text-red-500 text-xs mt-1">{errors.message}</p>}
+                  <p className="text-gray-400 text-xs mt-1 text-right">{form.message.length}/2000</p>
                 </div>
 
                 <button
                   type="submit"
-                  className="btn-primary w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-brand hover:bg-brand-dark text-white font-semibold px-8 py-3.5 rounded-md"
+                  disabled={loading}
+                  className="btn-primary w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-brand hover:bg-brand-dark disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold px-8 py-3.5 rounded-md"
                 >
-                  Send Message
-                  <SendIcon className="w-4 h-4" />
+                  {loading ? 'Sending...' : 'Send Message'}
+                  {!loading && <SendIcon className="w-4 h-4" />}
                 </button>
               </form>
             </div>

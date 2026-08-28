@@ -1,14 +1,21 @@
-# Yogesh Web Solutions - Website
+# Yogesh Web Developer - yogeshwebdeveloper.com
 
-Professional React.js website for [yogeshwebdeveloper.com](https://yogeshwebdeveloper.com)
+Professional React.js website for **yogeshwebdeveloper.com**
 
 ## Features
 
-- Pure React + Vite (no WordPress dependency)
+- Pure React + Vite (no WordPress)
+- Brand: **Yogesh Web Developer** (yogeshwebdeveloper.com)
 - Full SEO: meta tags, Open Graph, Schema.org, sitemap.xml, robots.txt
-- 30 location-based SEO landing pages (e.g. Web Design & Development Services in Saket)
-- Fully responsive design with Tailwind CSS
-- Company branding (not freelance)
+- 30 location SEO pages
+- Secure contact form with email notifications
+- Fully responsive
+
+## Contact Details
+
+- **Phone:** +91 83779 56442
+- **Email:** contact@yogeshwebdeveloper.com
+- **Owner notifications:** ygupta13@gmail.com
 
 ## Setup
 
@@ -18,17 +25,29 @@ npm install
 npm run dev
 ```
 
-## Build
+## Build & Deploy
 
 ```bash
 npm run build
 ```
 
-Build automatically generates `public/sitemap.xml` with all pages and images for Google indexing.
+Upload everything inside `dist/` folder to your hosting (cPanel / Apache).
 
-## Pages
+**Important:** The contact form uses `api/contact.php` — make sure PHP mail is enabled on your hosting and `contact@yogeshwebdeveloper.com` is set as sender in cPanel.
 
-- Home, About, Services, Work, Testimonials, Blog, Contact
-- Privacy Policy, Terms & Conditions, Sitemap
-- 30 location SEO pages
-- 6 blog post pages
+### Contact Form Features
+
+- Sends query to **ygupta13@gmail.com**
+- Auto-reply confirmation email to customer
+- Email & phone validation
+- Honeypot anti-spam
+- Rate limiting (1 submission per minute per IP)
+- XSS / injection protection
+
+### Social Media Links
+
+Update links in `src/data/company.js` → `SOCIAL_LINKS` array (currently set to `#` placeholders).
+
+## Google Indexing
+
+Submit sitemap: `https://yogeshwebdeveloper.com/sitemap.xml` in Google Search Console.

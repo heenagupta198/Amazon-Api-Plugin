@@ -4,18 +4,10 @@ import {
   footerServices,
   footerServiceAreas,
   footerUsefulLinks,
-  UPWORK_URL,
   COMPANY,
 } from '../data/siteData'
+import { SOCIAL_LINKS } from '../data/company'
 import { CheckIcon, SocialIcon } from './Icons'
-
-const socialLinks = [
-  { name: 'upwork', href: UPWORK_URL },
-  { name: 'linkedin', href: '#' },
-  { name: 'twitter', href: '#' },
-  { name: 'instagram', href: '#' },
-  { name: 'whatsapp', href: COMPANY.whatsapp },
-]
 
 export default function Footer() {
   return (
@@ -23,21 +15,23 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-10">
           <div className="sm:col-span-2 lg:col-span-1">
-            <h3 className="font-bold text-lg mb-4">{COMPANY.name}</h3>
+            <h3 className="font-bold text-lg mb-1">{COMPANY.name}</h3>
+            <p className="text-brand-light text-xs mb-4">{COMPANY.domain}</p>
             <p className="text-white/75 text-sm leading-relaxed mb-5">
               {COMPANY.name} is a professional web design and development company with {COMPANY.experience} years
               of experience building websites, WordPress solutions, Laravel apps and modern React applications
               for businesses across India and worldwide.
             </p>
-            <div className="flex gap-2">
-              {socialLinks.map((social) => (
+            <div className="flex flex-wrap gap-2">
+              {SOCIAL_LINKS.map((social) => (
                 <a
                   key={social.name}
                   href={social.href}
                   target={social.href.startsWith('http') ? '_blank' : undefined}
                   rel={social.href.startsWith('http') ? 'noopener noreferrer' : undefined}
                   className="w-9 h-9 rounded-full bg-white/10 hover:bg-brand-light hover:text-brand-dark flex items-center justify-center transition-colors"
-                  aria-label={social.name}
+                  aria-label={social.label}
+                  title={social.label}
                 >
                   <SocialIcon name={social.name} />
                 </a>
@@ -97,16 +91,6 @@ export default function Footer() {
                   {COMPANY.email}
                 </a>
               </li>
-              <li>
-                <a
-                  href={UPWORK_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-brand-light transition-colors"
-                >
-                  View on Upwork
-                </a>
-              </li>
               <li>{COMPANY.address}</li>
             </ul>
 
@@ -144,7 +128,7 @@ export default function Footer() {
 
       <div className="border-t border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-white/60">
-          <p>© {new Date().getFullYear()} {COMPANY.name}. All Rights Reserved.</p>
+          <p>© {new Date().getFullYear()} {COMPANY.name} ({COMPANY.domain}). All Rights Reserved.</p>
           <div className="flex gap-4">
             <Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
             <span>|</span>

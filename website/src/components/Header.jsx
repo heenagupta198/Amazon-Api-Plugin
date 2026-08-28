@@ -20,7 +20,7 @@ export default function Header() {
             <div className="text-brand font-bold text-lg sm:text-xl leading-tight">
               {COMPANY.name}
             </div>
-            <div className="text-gray-500 text-xs sm:text-sm">{COMPANY.tagline}</div>
+            <div className="text-gray-500 text-xs sm:text-sm">{COMPANY.domain}</div>
           </Link>
 
           <nav className="hidden lg:flex items-center gap-6 xl:gap-8">

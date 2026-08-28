@@ -13,7 +13,7 @@ export const experience = [
   {
     year: '2010 - 2015',
     title: 'Web Development Services',
-    company: 'Yogesh Web Solutions',
+    company: 'Yogesh Web Developer',
     description: 'Founded our company building custom websites, WordPress themes and PHP applications for local businesses across Delhi NCR.',
   },
   {
@@ -31,7 +31,7 @@ export const experience = [
   {
     year: '2023 - Present',
     title: 'Web Design & Development Company',
-    company: 'Yogesh Web Solutions',
+    company: 'Yogesh Web Developer',
     description: 'Leading web design and development company specializing in React, WordPress, Laravel, AI chatbots and high-performance business websites.',
   },
 ]

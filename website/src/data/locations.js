@@ -10,18 +10,18 @@ export function locationSlug(location) {
 function buildLocationContent(location) {
   const slug = locationSlug(location)
   const title = `Web Design & Development Services in ${location}`
-  const description = `Looking for a trusted web design and development company in ${location}? Yogesh Web Solutions delivers responsive websites, e-commerce stores, WordPress, React and Laravel applications with SEO optimization.`
+  const description = `Looking for a trusted web design and development company in ${location}? Yogesh Web Developer (yogeshwebdeveloper.com) delivers responsive websites, e-commerce stores, WordPress, React and Laravel applications with SEO optimization.`
   const nearby = cities.filter((c) => c !== location).slice(0, 5)
 
   return {
     slug,
     location,
     title,
-    metaTitle: `${title} | Yogesh Web Solutions`,
+    metaTitle: `${title} | Yogesh Web Developer`,
     description,
-    keywords: `web design ${location.toLowerCase()}, web development ${location.toLowerCase()}, website company ${location.toLowerCase()}, seo services ${location.toLowerCase()}, wordpress developer ${location.toLowerCase()}`,
+    keywords: `yogesh web developer ${location.toLowerCase()}, yogeshwebdeveloper, web design ${location.toLowerCase()}, web development ${location.toLowerCase()}, website company ${location.toLowerCase()}, seo services ${location.toLowerCase()}`,
     heroImage: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&h=600&fit=crop',
-    intro: `Yogesh Web Solutions is a professional web design and development company serving businesses in ${location} and across Delhi NCR. With 14+ years of experience, we help startups, SMEs and enterprises build high-performance websites that rank on Google and convert visitors into customers.`,
+    intro: `Yogesh Web Developer (yogeshwebdeveloper.com) is a professional web design and development company serving businesses in ${location} and across Delhi NCR. With 14+ years of experience, we help startups, SMEs and enterprises build high-performance websites that rank on Google and convert visitors into customers.`,
     sections: [
       {
         heading: `Why Choose Us for Web Development in ${location}?`,
@@ -47,7 +47,7 @@ function buildLocationContent(location) {
       },
       {
         heading: `Serving ${location} & Nearby Areas`,
-        content: `We work with clients across ${location} and surrounding neighbourhoods in Delhi NCR. Whether you run a local shop, coaching institute, real estate agency or tech startup, Yogesh Web Solutions delivers websites that grow your business online.`,
+        content: `We work with clients across ${location} and surrounding neighbourhoods in Delhi NCR. Whether you run a local shop, coaching institute, real estate agency or tech startup, Yogesh Web Developer delivers websites that grow your business online.`,
         bullets: nearby.map((area) => `Also serving ${area}`),
       },
     ],
