@@ -2,7 +2,7 @@
 /**
  * Plugin Name: MMI Mobile Price List
  * Description: Shortcode listings of WooCommerce mobiles by price band, category, and brand (91mobiles-style buckets).
- * Version:     1.0.0
+ * Version:     1.1.0
  * Author:      Yogesh
  * Text Domain: mmi-mobile-list
  * Requires at least: 6.0
@@ -12,20 +12,26 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'MMI_ML_VERSION', '1.0.0' );
+define( 'MMI_ML_VERSION', '1.1.0' );
 define( 'MMI_ML_FILE', __FILE__ );
 define( 'MMI_ML_PATH', plugin_dir_path( __FILE__ ) );
 define( 'MMI_ML_URL', plugin_dir_url( __FILE__ ) );
 
+require_once MMI_ML_PATH . 'includes/class-mmi-cache.php';
 require_once MMI_ML_PATH . 'includes/class-mmi-specs.php';
+require_once MMI_ML_PATH . 'includes/class-mmi-card.php';
 require_once MMI_ML_PATH . 'includes/class-mmi-query.php';
 require_once MMI_ML_PATH . 'includes/class-mmi-shortcode.php';
+require_once MMI_ML_PATH . 'includes/class-mmi-admin.php';
 
 /**
  * Bootstrap after WooCommerce loads.
  */
 function mmi_ml_init() {
 	MMI_ML_Shortcode::register();
+	if ( is_admin() ) {
+		MMI_ML_Admin::register();
+	}
 }
 add_action( 'woocommerce_loaded', 'mmi_ml_init' );
 

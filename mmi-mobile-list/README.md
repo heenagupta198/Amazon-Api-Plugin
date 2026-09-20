@@ -26,8 +26,20 @@ If you only pass `min_price="10000"` (no max), the plugin assumes `max_price="15
 
 `brand` uses `product_brand`, `pa_brand`, or other common brand taxonomies if present.
 
-## Performance
+## Layout (91mobiles-style)
 
-- Uses `wc_get_products()` (price lookup table, sale-aware).
-- 15-minute transient cache; cleared on product save.
-- CSS loaded once per page (not inlined in every render).
+- Title + release date above the card
+- Image left, specs right, **⋮** menu with **All Details** → product page
+- **View All Specs** → same product URL (use `details_anchor="specifications"` if your product template has that ID)
+
+## Performance (low CPU / MariaDB)
+
+- **Full HTML cache** per shortcode + page (default **6 hours**) — repeat visitors do **not** re-run product queries
+- Product listing data cached separately in transients + object cache group
+- Cache clears on product save (debounced 60s during bulk updates)
+- **Settings → MMI Mobile List** — change TTL or purge cache manually
+- Uses `wc_get_products()` (price lookup table) only on cache miss
+
+## Download
+
+Zip the `mmi-mobile-list` folder or use `mmi-mobile-list.zip` in the repository root.

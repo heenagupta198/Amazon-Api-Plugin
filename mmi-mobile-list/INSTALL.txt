@@ -1,0 +1,18 @@
+MMI Mobile Price List — Install (GoDaddy VPS / any WordPress)
+
+1. Download mmi-mobile-list.zip from this repository.
+2. WordPress Admin → Plugins → Add New → Upload Plugin → choose the zip → Install → Activate.
+3. Remove old Code Snippets / theme PHP that registered the same [mmi_mobile_list] shortcode (avoid duplicates).
+4. Settings → MMI Mobile List → leave cache at 6 hours (21600) for low CPU; click "Clear listing cache" after bulk price imports.
+
+Shortcode examples:
+  [mmi_mobile_list max_price="10000"]
+  [mmi_mobile_list min_price="10000" max_price="15000"]
+  [mmi_mobile_list bucket="under-15000" brand="vivo"]
+
+Optional: link to specs tab on product page (if your theme uses #specifications):
+  [mmi_mobile_list max_price="15000" details_anchor="specifications"]
+
+CPU tips:
+- Use a page cache plugin (LiteSpeed / WP Rocket) on top of this plugin's cache.
+- Disable the old snippet that ran WP_Query on every page load.

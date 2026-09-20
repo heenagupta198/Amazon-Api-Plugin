@@ -25,6 +25,14 @@ final class MMI_ML_Shortcode {
 			array(),
 			MMI_ML_VERSION
 		);
+
+		wp_register_script(
+			'mmi-mobile-list',
+			MMI_ML_URL . 'assets/js/frontend.js',
+			array(),
+			MMI_ML_VERSION,
+			true
+		);
 	}
 
 	/**
@@ -39,16 +47,18 @@ final class MMI_ML_Shortcode {
 		}
 
 		wp_enqueue_style( 'mmi-mobile-list' );
+		wp_enqueue_script( 'mmi-mobile-list' );
 
 		$atts = shortcode_atts(
 			array(
-				'min_price' => '',
-				'max_price' => '',
-				'bucket'    => '',
-				'category'  => '',
-				'brand'     => '',
-				'exact'     => '',
-				'per_page'  => '20',
+				'min_price'      => '',
+				'max_price'      => '',
+				'bucket'         => '',
+				'category'       => '',
+				'brand'          => '',
+				'exact'          => '',
+				'per_page'       => '20',
+				'details_anchor' => '',
 			),
 			$atts,
 			'mmi_mobile_list'
@@ -56,6 +66,7 @@ final class MMI_ML_Shortcode {
 
 		$category = sanitize_title( $atts['category'] );
 		$brand    = sanitize_title( $atts['brand'] );
+		$anchor   = sanitize_title( $atts['details_anchor'] );
 
 		$price_min = null;
 		$price_max = null;
@@ -78,103 +89,54 @@ final class MMI_ML_Shortcode {
 
 		$page = isset( $_GET['mmi_page'] ) ? max( 1, intval( wp_unslash( $_GET['mmi_page'] ) ) ) : 1; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
-		$result = MMI_ML_Query::get_products(
+		$html_cache_key = MMI_ML_Cache::list_key(
 			array(
-				'price_min' => $price_min,
-				'price_max' => $price_max,
-				'category'  => $category,
-				'brand'     => $brand,
-				'per_page'  => $atts['per_page'],
-				'page'      => $page,
+				'html'           => 1,
+				'v'              => MMI_ML_VERSION,
+				'price_min'      => $price_min,
+				'price_max'      => $price_max,
+				'category'       => $category,
+				'brand'          => $brand,
+				'per_page'       => $atts['per_page'],
+				'page'           => $page,
+				'details_anchor' => $anchor,
+			)
+		);
+
+		$cached_html = get_transient( $html_cache_key );
+		if ( is_string( $cached_html ) && '' !== $cached_html ) {
+			return $cached_html;
+		}
+
+		$result = MMI_ML_Query::get_listing(
+			array(
+				'price_min'      => $price_min,
+				'price_max'      => $price_max,
+				'category'       => $category,
+				'brand'          => $brand,
+				'per_page'       => $atts['per_page'],
+				'page'           => $page,
+				'details_anchor' => $anchor,
 			)
 		);
 
 		ob_start();
 
-		if ( empty( $result['products'] ) ) {
+		if ( empty( $result['cards'] ) ) {
 			echo '<div class="mmi-no-products">';
 			esc_html_e( 'No mobile phones found in this price range.', 'mmi-mobile-list' );
 			echo '</div>';
-			return ob_get_clean();
+			$html = ob_get_clean();
+			set_transient( $html_cache_key, $html, MMI_ML_Cache::ttl() );
+			return $html;
 		}
 
 		echo '<div class="mmi-mobile-list">';
 
-		foreach ( $result['products'] as $product ) {
-			if ( ! is_a( $product, 'WC_Product' ) ) {
-				continue;
-			}
-
-			$list_price = $product->get_price();
-			if ( '' === $list_price ) {
-				continue;
-			}
-
-			$list_price_f = (float) $list_price;
-
-			// Safety net: bucket boundaries (wc_get_products should already filter).
-			if ( null !== $price_min && $list_price_f < (float) $price_min ) {
-				continue;
-			}
-			if ( null !== $price_max && $list_price_f > (float) $price_max ) {
-				continue;
-			}
-
-			$product_id = $product->get_id();
-			$permalink  = get_permalink( $product_id );
-			$title      = $product->get_name();
-			$fields     = MMI_ML_Specs::card_fields( $product );
-
-			$image = get_the_post_thumbnail(
-				$product_id,
-				'medium',
-				array(
-					'class'   => 'mmi-product-image',
-					'loading' => 'lazy',
-				)
-			);
-
-			$display_price = wc_price(
-				$list_price,
-				array( 'decimals' => 0 )
-			);
-
-			echo '<div class="mmi-mobile-card">';
-
-			echo '<div class="mmi-product-image-wrap">';
-			echo '<a href="' . esc_url( $permalink ) . '">';
-			if ( $image ) {
-				echo $image; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			} else {
-				echo '<div class="mmi-no-image">' . esc_html__( 'No Image', 'mmi-mobile-list' ) . '</div>';
-			}
-			echo '</a>';
-			echo '</div>';
-
-			echo '<div class="mmi-product-info">';
-			echo '<h3 class="mmi-product-title"><a href="' . esc_url( $permalink ) . '">';
-			echo esc_html( $title );
-			echo '</a></h3>';
-			echo '<div class="mmi-product-specs">';
-			echo MMI_ML_Specs::render_row( 'fas fa-mobile-alt', $fields['display'] );
-			echo MMI_ML_Specs::render_row( 'fas fa-microchip', $fields['processor'] );
-			echo MMI_ML_Specs::render_row( 'fas fa-memory', $fields['ram_storage'] );
-			echo MMI_ML_Specs::render_row( 'fas fa-camera', $fields['rear_camera'] );
-			echo MMI_ML_Specs::render_row( 'fas fa-camera-retro', $fields['front_camera'] );
-			echo MMI_ML_Specs::render_row( 'fas fa-battery-full', $fields['battery'] );
-			echo '</div>';
-			echo '</div>';
-
-			echo '<div class="mmi-product-action">';
-			echo '<div class="mmi-product-price">';
-			echo wp_kses_post( $display_price );
-			echo '</div>';
-			echo '<a class="mmi-view-details" href="' . esc_url( $permalink ) . '">';
-			esc_html_e( 'View Details', 'mmi-mobile-list' );
-			echo '</a>';
-			echo '</div>';
-
-			echo '</div>';
+		$index = 0;
+		foreach ( $result['cards'] as $card ) {
+			echo MMI_ML_Card::render( $card, $index ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			++$index;
 		}
 
 		echo '</div>';
@@ -197,6 +159,9 @@ final class MMI_ML_Shortcode {
 			echo '</div>';
 		}
 
-		return ob_get_clean();
+		$html = ob_get_clean();
+		set_transient( $html_cache_key, $html, MMI_ML_Cache::ttl() );
+
+		return $html;
 	}
 }

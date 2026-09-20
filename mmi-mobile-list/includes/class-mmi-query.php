@@ -14,23 +14,16 @@ final class MMI_ML_Query {
 	 */
 	public static function preset_buckets() {
 		return array(
-			'under-10000'  => array( 'min' => 1, 'max' => 9999 ),
-			'under-15000'  => array( 'min' => 10000, 'max' => 14999 ),
-			'under-20000'  => array( 'min' => 15000, 'max' => 19999 ),
-			'under-25000'  => array( 'min' => 20000, 'max' => 24999 ),
-			'under-30000'  => array( 'min' => 25000, 'max' => 29999 ),
+			'under-10000' => array( 'min' => 1, 'max' => 9999 ),
+			'under-15000' => array( 'min' => 10000, 'max' => 14999 ),
+			'under-20000' => array( 'min' => 15000, 'max' => 19999 ),
+			'under-25000' => array( 'min' => 20000, 'max' => 24999 ),
+			'under-30000' => array( 'min' => 25000, 'max' => 29999 ),
 		);
 	}
 
 	/**
 	 * Convert shortcode min/max (bucket ceilings) to inclusive WooCommerce prices.
-	 *
-	 * Rules (91mobiles-style pages):
-	 * - max only 10000  → ₹1 – ₹9,999
-	 * - min 10000, max 15000 → ₹10,000 – ₹14,999
-	 * - Ceilings like 11000 for "vivo under 11k" → max inclusive 10,999
-	 *
-	 * Pass exact="yes" to use min/max literally (inclusive both ends).
 	 *
 	 * @param string $min_raw   Shortcode min_price.
 	 * @param string $max_raw   Shortcode max_price.
@@ -43,7 +36,6 @@ final class MMI_ML_Query {
 		$min_in = '' !== $min_raw ? floatval( $min_raw ) : null;
 		$max_in = '' !== $max_raw ? floatval( $max_raw ) : null;
 
-		// If editor forgot max on a tier page, infer the next bucket ceiling.
 		if ( null !== $min_in && null === $max_in ) {
 			$next_ceiling = array(
 				10000 => 15000,
@@ -77,7 +69,6 @@ final class MMI_ML_Query {
 			);
 		}
 
-		// Bucket ceiling: "15000" means up to 14999 when paired with a min or alone as "under 15k" page band.
 		$max_out = self::ceiling_to_inclusive_max( $max_in );
 
 		if ( null === $min_in ) {
@@ -94,8 +85,6 @@ final class MMI_ML_Query {
 	}
 
 	/**
-	 * Resolve preset bucket slug.
-	 *
 	 * @param string $bucket Bucket key.
 	 * @return array{min: float, max: float}|null
 	 */
@@ -107,8 +96,6 @@ final class MMI_ML_Query {
 	}
 
 	/**
-	 * Turn a marketing ceiling (10000, 15000, 11000) into inclusive max price.
-	 *
 	 * @param float $ceiling Ceiling from shortcode.
 	 * @return float
 	 */
@@ -117,7 +104,6 @@ final class MMI_ML_Query {
 			return $ceiling - 1;
 		}
 
-		// e.g. 11000 → 10999
 		if ( $ceiling >= 1000 && floor( $ceiling ) === $ceiling ) {
 			return $ceiling - 1;
 		}
@@ -126,8 +112,6 @@ final class MMI_ML_Query {
 	}
 
 	/**
-	 * Brand taxonomy clause for WC product query.
-	 *
 	 * @param string $brand Brand slug.
 	 * @return array<string, mixed>|null
 	 */
@@ -149,8 +133,6 @@ final class MMI_ML_Query {
 	}
 
 	/**
-	 * Detect brand taxonomy (common plugins + Woo attribute).
-	 *
 	 * @return string|null
 	 */
 	public static function brand_taxonomy() {
@@ -170,22 +152,41 @@ final class MMI_ML_Query {
 	}
 
 	/**
-	 * Query products with caching; uses wc_get_products (price lookup table).
+	 * Fetch listing payload (cached). Runs wc_get_products only on cache miss.
 	 *
-	 * @param array<string, mixed> $args Query args from shortcode.
-	 * @return array{products: WC_Product[], total: int, pages: int}
+	 * @param array<string, mixed> $args Query args.
+	 * @return array{cards: array<int, array<string, mixed>>, pages: int}
 	 */
-	public static function get_products( $args ) {
+	public static function get_listing( $args ) {
 		$per_page = max( 1, min( 50, (int) $args['per_page'] ) );
 		$page     = max( 1, (int) $args['page'] );
+		$anchor   = isset( $args['details_anchor'] ) ? (string) $args['details_anchor'] : '';
+
+		$cache_payload = array(
+			'v'             => MMI_ML_VERSION,
+			'price_min'     => $args['price_min'],
+			'price_max'     => $args['price_max'],
+			'category'      => $args['category'],
+			'brand'         => $args['brand'],
+			'per_page'      => $per_page,
+			'page'          => $page,
+			'details_anchor'=> $anchor,
+		);
+
+		$cache_key = MMI_ML_Cache::list_key( $cache_payload );
+		$cached    = MMI_ML_Cache::get_list( $cache_key );
+
+		if ( false !== $cached && isset( $cached['cards'], $cached['pages'] ) ) {
+			return $cached;
+		}
 
 		$query_args = array(
-			'status'  => 'publish',
-			'limit'   => $per_page,
-			'page'    => $page,
-			'orderby' => 'price',
-			'order'   => 'ASC',
-			'return'  => 'objects',
+			'status'   => 'publish',
+			'limit'    => $per_page,
+			'page'     => $page,
+			'orderby'  => 'price',
+			'order'    => 'ASC',
+			'return'   => 'objects',
 			'paginate' => true,
 		);
 
@@ -205,55 +206,62 @@ final class MMI_ML_Query {
 			$query_args['tax_query'] = array( $brand_tax_query ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
 		}
 
-		$cache_key = 'mmi_ml_' . md5( wp_json_encode( $query_args ) );
-		$cached    = get_transient( $cache_key );
-
-		if ( false !== $cached && is_array( $cached ) ) {
-			return $cached;
-		}
-
 		$result = wc_get_products( $query_args );
 
 		$products = isset( $result->products ) ? $result->products : array();
-		$total    = isset( $result->total ) ? (int) $result->total : count( $products );
 		$pages    = isset( $result->max_num_pages ) ? (int) $result->max_num_pages : 1;
 
+		$cards      = array();
+		$price_min  = $args['price_min'];
+		$price_max  = $args['price_max'];
+
+		foreach ( $products as $product ) {
+			$list_price = $product->get_price();
+			if ( '' === $list_price ) {
+				continue;
+			}
+
+			$list_price_f = (float) $list_price;
+
+			if ( null !== $price_min && $list_price_f < (float) $price_min ) {
+				continue;
+			}
+			if ( null !== $price_max && $list_price_f > (float) $price_max ) {
+				continue;
+			}
+
+			$card = MMI_ML_Card::data_from_product( $product, $anchor );
+			if ( $card ) {
+				$cards[] = $card;
+			}
+		}
+
 		$out = array(
-			'products' => $products,
-			'total'    => $total,
-			'pages'    => $pages,
+			'cards' => $cards,
+			'pages' => max( 1, $pages ),
 		);
 
-		set_transient( $cache_key, $out, 15 * MINUTE_IN_SECONDS );
+		MMI_ML_Cache::set_list( $cache_key, $out );
 
 		return $out;
-	}
-
-	/**
-	 * Clear list transients when products change.
-	 */
-	public static function flush_cache() {
-		global $wpdb;
-
-		$wpdb->query(
-			$wpdb->prepare(
-				"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
-				'_transient_mmi_ml_%',
-				'_transient_timeout_mmi_ml_%'
-			)
-		);
 	}
 }
 
 add_action(
 	'woocommerce_update_product',
 	function () {
-		MMI_ML_Query::flush_cache();
+		MMI_ML_Cache::schedule_flush();
 	}
 );
 add_action(
 	'woocommerce_new_product',
 	function () {
-		MMI_ML_Query::flush_cache();
+		MMI_ML_Cache::schedule_flush();
+	}
+);
+add_action(
+	'woocommerce_trash_product',
+	function () {
+		MMI_ML_Cache::schedule_flush();
 	}
 );
