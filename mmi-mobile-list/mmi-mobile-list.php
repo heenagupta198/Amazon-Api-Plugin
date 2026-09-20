@@ -2,7 +2,7 @@
 /**
  * Plugin Name: MMI Mobile Price List
  * Description: Shortcode listings of WooCommerce mobiles by price band, category, and brand (91mobiles-style buckets).
- * Version:     1.2.0
+ * Version:     1.2.1
  * Author:      Yogesh
  * Text Domain: mmi-mobile-list
  * Requires at least: 6.0
@@ -12,7 +12,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'MMI_ML_VERSION', '1.2.0' );
+define( 'MMI_ML_VERSION', '1.2.1' );
 define( 'MMI_ML_FILE', __FILE__ );
 define( 'MMI_ML_PATH', plugin_dir_path( __FILE__ ) );
 define( 'MMI_ML_URL', plugin_dir_url( __FILE__ ) );

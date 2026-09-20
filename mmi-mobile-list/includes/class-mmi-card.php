@@ -48,7 +48,13 @@ final class MMI_ML_Card {
 		$specs_url  = self::details_url( $permalink, $anchor ? $anchor : 'specifications' );
 
 		$thumb_id = $product->get_image_id();
-		$thumb    = $thumb_id ? wp_get_attachment_image_url( $thumb_id, 'woocommerce_thumbnail' ) : '';
+		$thumb    = '';
+		if ( $thumb_id ) {
+			$thumb = wp_get_attachment_image_url( $thumb_id, 'medium' );
+			if ( ! $thumb ) {
+				$thumb = wp_get_attachment_image_url( $thumb_id, 'woocommerce_thumbnail' );
+			}
+		}
 
 		$fields = MMI_ML_Specs::card_fields( $product );
 
@@ -129,7 +135,23 @@ final class MMI_ML_Card {
 
 			<div class="mmi-card-body">
 				<div class="mmi-image-column">
-					<div class="mmi-image-toolbar">
+					<a class="mmi-product-image-link" href="<?php echo esc_url( $card['permalink'] ); ?>">
+						<?php if ( ! empty( $card['thumb_url'] ) ) : ?>
+							<img
+								class="mmi-product-image"
+								src="<?php echo esc_url( $card['thumb_url'] ); ?>"
+								alt="<?php echo esc_attr( $card['thumb_alt'] ); ?>"
+								loading="lazy"
+								decoding="async"
+							/>
+						<?php else : ?>
+							<div class="mmi-no-image"><?php esc_html_e( 'No Image', 'mmi-mobile-list' ); ?></div>
+						<?php endif; ?>
+					</a>
+				</div>
+
+				<div class="mmi-specs-panel">
+					<div class="mmi-specs-toolbar">
 						<button
 							type="button"
 							class="mmi-kebab-btn"
@@ -150,35 +172,19 @@ final class MMI_ML_Card {
 							</a>
 						</div>
 					</div>
-					<a class="mmi-product-image-link" href="<?php echo esc_url( $card['permalink'] ); ?>">
-						<?php if ( ! empty( $card['thumb_url'] ) ) : ?>
-							<img
-								class="mmi-product-image"
-								src="<?php echo esc_url( $card['thumb_url'] ); ?>"
-								alt="<?php echo esc_attr( $card['thumb_alt'] ); ?>"
-								loading="lazy"
-								decoding="async"
-								width="120"
-								height="150"
-							/>
-						<?php else : ?>
-							<div class="mmi-no-image"><?php esc_html_e( 'No Image', 'mmi-mobile-list' ); ?></div>
-						<?php endif; ?>
-					</a>
-				</div>
 
-				<div class="mmi-product-info">
 					<div class="mmi-product-specs">
 						<?php
-						echo MMI_ML_Specs::render_row( 'fas fa-microchip', $card['fields']['processor'] );
-						echo MMI_ML_Specs::render_row( 'fas fa-memory', $card['fields']['ram_storage'] );
-						echo MMI_ML_Specs::render_row( 'fas fa-camera', $card['fields']['rear_camera'] );
-						echo MMI_ML_Specs::render_row( 'fas fa-camera-retro', $card['fields']['front_camera'] );
-						echo MMI_ML_Specs::render_row( 'fas fa-battery-full', $card['fields']['battery'] );
-						echo MMI_ML_Specs::render_row( 'fas fa-mobile-alt', $card['fields']['display'] );
+						echo MMI_ML_Specs::render_row( 'chip', $card['fields']['processor'] );
+						echo MMI_ML_Specs::render_row( 'memory', $card['fields']['ram_storage'] );
+						echo MMI_ML_Specs::render_row( 'camera', $card['fields']['rear_camera'] );
+						echo MMI_ML_Specs::render_row( 'selfie', $card['fields']['front_camera'] );
+						echo MMI_ML_Specs::render_row( 'battery', $card['fields']['battery'] );
+						echo MMI_ML_Specs::render_row( 'display', $card['fields']['display'] );
 						?>
 					</div>
-					<div class="mmi-specs-actions">
+
+					<div class="mmi-specs-footer">
 						<a class="mmi-view-all-specs" href="<?php echo esc_url( $card['specs_url'] ); ?>">
 							<?php esc_html_e( 'View All Specs', 'mmi-mobile-list' ); ?>
 						</a>

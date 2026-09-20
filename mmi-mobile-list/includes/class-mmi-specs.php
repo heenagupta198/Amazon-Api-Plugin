@@ -87,20 +87,39 @@ final class MMI_ML_Specs {
 	}
 
 	/**
-	 * Render one spec row.
+	 * Inline SVG icons (no Font Awesome dependency).
 	 *
-	 * @param string $icon  Font Awesome class.
-	 * @param string $value Spec text.
+	 * @param string $name Icon key.
 	 * @return string
 	 */
-	public static function render_row( $icon, $value ) {
+	public static function icon_svg( $name ) {
+		$icons = array(
+			'chip'    => '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3" stroke="currentColor" stroke-width="1.6"/></svg>',
+			'memory'  => '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="4" y="7" width="16" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 7V5M12 7V5M16 7V5M8 17v2M12 17v2M16 17v2" stroke="currentColor" stroke-width="1.6"/></svg>',
+			'camera'  => '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 8h4l2-2h4l2 2h4v10H4V8z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="13" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',
+			'selfie'  => '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="14" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',
+			'battery' => '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="3" y="8" width="16" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M21 11v2" stroke="currentColor" stroke-width="1.6"/><path d="M7 12h6" stroke="currentColor" stroke-width="1.6"/></svg>',
+			'display' => '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="5" y="4" width="14" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 20h4" stroke="currentColor" stroke-width="1.6"/></svg>',
+		);
+
+		return isset( $icons[ $name ] ) ? $icons[ $name ] : $icons['chip'];
+	}
+
+	/**
+	 * Render one spec row.
+	 *
+	 * @param string $icon_key Icon key for SVG.
+	 * @param string $value    Spec text.
+	 * @return string
+	 */
+	public static function render_row( $icon_key, $value ) {
 		if ( '' === $value ) {
 			return '';
 		}
 
 		return sprintf(
-			'<div class="mmi-product-spec"><span class="mmi-spec-icon"><i class="%s" aria-hidden="true"></i></span><span class="mmi-spec-text">%s</span></div>',
-			esc_attr( $icon ),
+			'<div class="mmi-product-spec"><span class="mmi-spec-icon">%s</span><span class="mmi-spec-text">%s</span></div>',
+			self::icon_svg( $icon_key ),
 			esc_html( $value )
 		);
 	}
