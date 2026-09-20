@@ -8,31 +8,47 @@ defined( 'ABSPATH' ) || exit;
 final class MMI_ML_Card {
 
 	/**
-	 * Build cacheable card data from a product (one WC load per product per cache miss).
+	 * Regular price used for affiliate/external listings.
 	 *
 	 * @param WC_Product $product Product.
-	 * @param string     $anchor  Optional hash on details URL.
+	 * @return string
+	 */
+	public static function listing_regular_price( $product ) {
+		$regular = $product->get_regular_price();
+		if ( '' === $regular || null === $regular ) {
+			return '';
+		}
+		return (string) $regular;
+	}
+
+	/**
+	 * @param WC_Product $product  Product.
+	 * @param string     $anchor   Details hash.
+	 * @param bool       $upcoming Upcoming list (no price).
 	 * @return array<string, mixed>|null
 	 */
-	public static function data_from_product( $product, $anchor = '' ) {
+	public static function data_from_product( $product, $anchor = '', $upcoming = false ) {
 		if ( ! is_a( $product, 'WC_Product' ) ) {
 			return null;
 		}
 
-		$price = $product->get_price();
-		if ( '' === $price ) {
+		$regular = self::listing_regular_price( $product );
+
+		if ( ! $upcoming && '' === $regular ) {
+			return null;
+		}
+
+		if ( $upcoming && '' !== $regular && (float) $regular > 0 ) {
 			return null;
 		}
 
 		$product_id = $product->get_id();
 		$permalink  = get_permalink( $product_id );
 		$details    = self::details_url( $permalink, $anchor );
+		$specs_url  = self::details_url( $permalink, $anchor ? $anchor : 'specifications' );
 
 		$thumb_id = $product->get_image_id();
-		$thumb    = '';
-		if ( $thumb_id ) {
-			$thumb = wp_get_attachment_image_url( $thumb_id, 'medium' );
-		}
+		$thumb    = $thumb_id ? wp_get_attachment_image_url( $thumb_id, 'woocommerce_thumbnail' ) : '';
 
 		$fields = MMI_ML_Specs::card_fields( $product );
 
@@ -42,13 +58,20 @@ final class MMI_ML_Card {
 			$release = $date->date_i18n( 'j M, Y' );
 		}
 
+		$price_html = '';
+		if ( '' !== $regular ) {
+			$price_html = wc_price( $regular, array( 'decimals' => 0 ) );
+		}
+
 		return array(
 			'id'           => $product_id,
 			'title'        => $product->get_name(),
 			'permalink'    => $permalink,
 			'details_url'  => $details,
-			'price'        => (float) $price,
-			'price_html'   => wc_price( $price, array( 'decimals' => 0 ) ),
+			'specs_url'    => $specs_url,
+			'price'        => '' !== $regular ? (float) $regular : 0,
+			'price_html'   => $price_html,
+			'upcoming'     => $upcoming,
 			'thumb_url'    => $thumb ? $thumb : '',
 			'thumb_alt'    => $product->get_name(),
 			'release_date' => $release,
@@ -73,10 +96,8 @@ final class MMI_ML_Card {
 	}
 
 	/**
-	 * Render one card from prebuilt data (no DB).
-	 *
-	 * @param array<string, mixed> $card Card data.
-	 * @param int                  $index Menu index for unique IDs.
+	 * @param array<string, mixed> $card  Card data.
+	 * @param int                  $index Index.
 	 * @return string
 	 */
 	public static function render( $card, $index = 0 ) {
@@ -86,49 +107,29 @@ final class MMI_ML_Card {
 		?>
 		<article class="mmi-mobile-card" data-product-id="<?php echo esc_attr( (string) $card['id'] ); ?>">
 			<header class="mmi-card-header">
-				<div class="mmi-card-heading">
-					<h3 class="mmi-product-title">
-						<a href="<?php echo esc_url( $card['permalink'] ); ?>">
-							<?php echo esc_html( $card['title'] ); ?>
-						</a>
-					</h3>
-					<?php if ( ! empty( $card['release_date'] ) ) : ?>
-						<p class="mmi-release-date">
-							<?php
-							echo esc_html(
-								sprintf(
-									/* translators: %s: formatted date */
-									__( 'Release Date: %s', 'mmi-mobile-list' ),
-									$card['release_date']
-								)
-							);
-							?>
-						</p>
-					<?php endif; ?>
-				</div>
+				<h3 class="mmi-product-title">
+					<a href="<?php echo esc_url( $card['permalink'] ); ?>">
+						<?php echo esc_html( $card['title'] ); ?>
+					</a>
+				</h3>
+				<?php if ( ! empty( $card['release_date'] ) ) : ?>
+					<p class="mmi-release-date">
+						<?php
+						echo esc_html(
+							sprintf(
+								/* translators: %s: date */
+								__( 'Release Date: %s', 'mmi-mobile-list' ),
+								$card['release_date']
+							)
+						);
+						?>
+					</p>
+				<?php endif; ?>
 			</header>
 
 			<div class="mmi-card-body">
-				<div class="mmi-product-image-wrap">
-					<a href="<?php echo esc_url( $card['permalink'] ); ?>">
-						<?php if ( ! empty( $card['thumb_url'] ) ) : ?>
-							<img
-								class="mmi-product-image"
-								src="<?php echo esc_url( $card['thumb_url'] ); ?>"
-								alt="<?php echo esc_attr( $card['thumb_alt'] ); ?>"
-								loading="lazy"
-								decoding="async"
-								width="190"
-								height="210"
-							/>
-						<?php else : ?>
-							<div class="mmi-no-image"><?php esc_html_e( 'No Image', 'mmi-mobile-list' ); ?></div>
-						<?php endif; ?>
-					</a>
-				</div>
-
-				<div class="mmi-product-info">
-					<div class="mmi-info-toolbar">
+				<div class="mmi-image-column">
+					<div class="mmi-image-toolbar">
 						<button
 							type="button"
 							class="mmi-kebab-btn"
@@ -144,9 +145,29 @@ final class MMI_ML_Card {
 							<a href="<?php echo esc_url( $card['details_url'] ); ?>">
 								<?php esc_html_e( 'All Details', 'mmi-mobile-list' ); ?>
 							</a>
+							<a href="<?php echo esc_url( $card['specs_url'] ); ?>">
+								<?php esc_html_e( 'Specifications', 'mmi-mobile-list' ); ?>
+							</a>
 						</div>
 					</div>
+					<a class="mmi-product-image-link" href="<?php echo esc_url( $card['permalink'] ); ?>">
+						<?php if ( ! empty( $card['thumb_url'] ) ) : ?>
+							<img
+								class="mmi-product-image"
+								src="<?php echo esc_url( $card['thumb_url'] ); ?>"
+								alt="<?php echo esc_attr( $card['thumb_alt'] ); ?>"
+								loading="lazy"
+								decoding="async"
+								width="120"
+								height="150"
+							/>
+						<?php else : ?>
+							<div class="mmi-no-image"><?php esc_html_e( 'No Image', 'mmi-mobile-list' ); ?></div>
+						<?php endif; ?>
+					</a>
+				</div>
 
+				<div class="mmi-product-info">
 					<div class="mmi-product-specs">
 						<?php
 						echo MMI_ML_Specs::render_row( 'fas fa-microchip', $card['fields']['processor'] );
@@ -157,23 +178,23 @@ final class MMI_ML_Card {
 						echo MMI_ML_Specs::render_row( 'fas fa-mobile-alt', $card['fields']['display'] );
 						?>
 					</div>
-
-					<p class="mmi-view-all-specs-wrap">
-						<a class="mmi-view-all-specs" href="<?php echo esc_url( $card['details_url'] ); ?>">
+					<div class="mmi-specs-actions">
+						<a class="mmi-view-all-specs" href="<?php echo esc_url( $card['specs_url'] ); ?>">
 							<?php esc_html_e( 'View All Specs', 'mmi-mobile-list' ); ?>
 						</a>
-					</p>
+					</div>
 				</div>
 			</div>
 
-			<footer class="mmi-card-footer">
-				<div class="mmi-product-price">
+			<?php if ( ! empty( $card['upcoming'] ) ) : ?>
+				<div class="mmi-card-price-bar mmi-price-upcoming">
+					<?php esc_html_e( 'Upcoming', 'mmi-mobile-list' ); ?>
+				</div>
+			<?php elseif ( ! empty( $card['price_html'] ) ) : ?>
+				<div class="mmi-card-price-bar">
 					<?php echo wp_kses_post( $card['price_html'] ); ?>
 				</div>
-				<a class="mmi-view-details" href="<?php echo esc_url( $card['details_url'] ); ?>">
-					<?php esc_html_e( 'View Details', 'mmi-mobile-list' ); ?>
-				</a>
-			</footer>
+			<?php endif; ?>
 		</article>
 		<?php
 		return (string) ob_get_clean();

@@ -40,6 +40,20 @@ If you only pass `min_price="10000"` (no max), the plugin assumes `max_price="15
 - **Settings → MMI Mobile List** — change TTL or purge cache manually
 - Uses `wc_get_products()` (price lookup table) only on cache miss
 
+## Backend settings
+
+**Settings → MMI Mobile List**
+
+- **Products per page** — default **10** (91mobiles-style lists)
+- Cache duration + manual purge
+
+## Upcoming mobiles (no regular price)
+
+```
+[mmi_mobile_list list="upcoming"]
+[mmi_mobile_list bucket="upcoming" category="upcoming-mobiles"]
+```
+
 ## Download
 
-Zip the `mmi-mobile-list` folder or use `mmi-mobile-list.zip` in the repository root.
+Use `mmi-mobile-list.zip` in the repository root.

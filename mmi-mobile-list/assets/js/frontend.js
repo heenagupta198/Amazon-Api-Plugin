@@ -29,7 +29,7 @@
 			return;
 		}
 
-		if (!event.target.closest('.mmi-info-toolbar')) {
+		if (!event.target.closest('.mmi-image-toolbar')) {
 			closeAllMenus();
 		}
 	});
