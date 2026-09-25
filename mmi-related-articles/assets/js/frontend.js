@@ -10,17 +10,26 @@
 			return;
 		}
 
+		var index = 0;
+		var gap = 24;
+
 		function cardsPerView() {
 			if (window.matchMedia('(max-width: 767px)').matches) {
 				return 1;
 			}
-			if (window.matchMedia('(max-width: 1024px)').matches) {
+			if (window.matchMedia('(max-width: 1018px)').matches) {
 				return 2;
 			}
 			return 3;
 		}
 
-		var index = 0;
+		function cardStepWidth() {
+			var card = track.querySelector('.mmi-ra-module');
+			if (!card) {
+				return 0;
+			}
+			return card.getBoundingClientRect().width + gap;
+		}
 
 		function maxIndex() {
 			var cards = track.children.length;
@@ -29,13 +38,11 @@
 		}
 
 		function update() {
-			var card = track.querySelector('.mmi-ra-card');
-			if (!card) {
-				return;
+			index = Math.min(index, maxIndex());
+			var step = cardStepWidth();
+			if (step > 0) {
+				track.style.transform = 'translateX(' + -index * step + 'px)';
 			}
-			var gap = 16;
-			var cardWidth = card.getBoundingClientRect().width + gap;
-			track.style.transform = 'translateX(' + -index * cardWidth + 'px)';
 			if (prev) {
 				prev.disabled = index <= 0;
 			}
@@ -80,11 +87,7 @@
 			{ passive: true }
 		);
 
-		window.addEventListener('resize', function () {
-			index = Math.min(index, maxIndex());
-			update();
-		});
-
+		window.addEventListener('resize', update);
 		update();
 	});
 })();

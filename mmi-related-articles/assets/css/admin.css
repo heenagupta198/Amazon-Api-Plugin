@@ -8,6 +8,13 @@
 	font-weight: 600;
 }
 
+.mmi-ra-hint {
+	margin: 0 0 6px;
+	font-size: 11px;
+	color: #646970;
+	line-height: 1.35;
+}
+
 .mmi-ra-search {
 	width: 100%;
 	box-sizing: border-box;

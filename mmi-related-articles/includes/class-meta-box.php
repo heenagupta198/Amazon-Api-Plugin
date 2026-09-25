@@ -45,6 +45,7 @@ class MMI_RA_Meta_Box {
 		?>
 		<div class="mmi-ra-metabox" data-post-id="<?php echo esc_attr( (string) $post->ID ); ?>">
 			<p class="mmi-ra-label"><?php esc_html_e( 'Search Articles', 'mmi-related-articles' ); ?></p>
+			<p class="mmi-ra-hint"><?php esc_html_e( 'Matches article title only (e.g. OPPO will not show Vivo from post body).', 'mmi-related-articles' ); ?></p>
 			<div class="mmi-ra-search-wrap">
 				<input type="search" id="mmi-ra-search" class="mmi-ra-search" placeholder="<?php esc_attr_e( 'Search by title…', 'mmi-related-articles' ); ?>" autocomplete="off" />
 			</div>

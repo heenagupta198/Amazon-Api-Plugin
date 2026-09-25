@@ -3,7 +3,7 @@ Contributors: mymobile
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 
 Manual related-article picker with AJAX search, date priority (7/15 days), and frontend carousel for Newspaper (TagDiv) themes.
@@ -24,4 +24,5 @@ If Newspaper also shows its own "Related Articles" block, disable that module in
 == Performance ==
 
 - Admin search uses AJAX with max 20 results and `no_found_rows`.
+- Search matches **post title only** (not post content), so brand searches stay accurate.
 - Frontend loads only saved post IDs (no full-site search on page view).
