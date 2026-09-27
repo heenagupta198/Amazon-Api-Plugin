@@ -2,7 +2,7 @@
 /**
  * Plugin Name: MMI AMP Performance (Core Web Vitals)
  * Description: Improves LCP and image delivery on legacy AMP URLs only. Does not modify non-AMP front-end output.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: MMI
  * Requires at least: 5.8
  * Requires PHP: 7.4
@@ -13,7 +13,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'MMI_AMP_PERF_VERSION', '1.0.0' );
+define( 'MMI_AMP_PERF_VERSION', '1.0.1' );
 define( 'MMI_AMP_PERF_PATH', plugin_dir_path( __FILE__ ) );
 
 require_once MMI_AMP_PERF_PATH . 'includes/class-amp-context.php';
@@ -49,6 +49,12 @@ function mmi_amp_perf_maybe_boot(): void {
  * Register AMP-only optimizations.
  */
 function mmi_amp_perf_boot(): void {
+	static $booted = false;
+	if ( $booted ) {
+		return;
+	}
+	$booted = true;
+
 	MMI_AMP_LCP_Preload::register();
 	MMI_AMP_Featured_Image::register();
 	MMI_AMP_Cache_Headers::register();

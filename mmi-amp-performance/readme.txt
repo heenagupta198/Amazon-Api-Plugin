@@ -3,7 +3,7 @@ Contributors: mmi
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 
 Improves LCP on legacy /amp/ URLs without changing non-AMP pages.
@@ -35,6 +35,10 @@ Does **not** enqueue scripts, change theme templates, or alter non-AMP HTML.
 * Keep canonical URLs as your fast non-AMP mobile pages (already good)
 
 == Changelog ==
+
+= 1.0.1 =
+* AMP for WP: use amp_post_template_head only; prevent double hook registration
+* LCP preload prefers large/medium_large (not full 1200px when smaller exists)
 
 = 1.0.0 =
 * Initial release

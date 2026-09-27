@@ -16,8 +16,8 @@ final class MMI_AMP_LCP_Preload {
 	 * Hook AMP and generic head (AMP for WP).
 	 */
 	public static function register(): void {
+		// AMP for WP documents this hook for extra head output.
 		add_action( 'amp_post_template_head', array( __CLASS__, 'output_preload' ), 1 );
-		add_action( 'wp_head', array( __CLASS__, 'output_preload' ), 1 );
 		add_filter( 'amp_post_template_data', array( __CLASS__, 'add_optimizer_hero' ), 10, 2 );
 	}
 
@@ -55,8 +55,11 @@ final class MMI_AMP_LCP_Preload {
 			return;
 		}
 
-		$size = apply_filters( 'mmi_amp_perf_lcp_image_size', 'medium_large' );
+		$size = apply_filters( 'mmi_amp_perf_lcp_image_size', 'large' );
 		$src  = wp_get_attachment_image_url( $attachment_id, $size );
+		if ( ! $src ) {
+			$src = wp_get_attachment_image_url( $attachment_id, 'medium_large' );
+		}
 		if ( ! $src ) {
 			return;
 		}
