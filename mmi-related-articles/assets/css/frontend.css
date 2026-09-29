@@ -1,4 +1,4 @@
-/* Scoped overrides so Newspaper h3/title styles do not blow up layout */
+/* Scoped overrides — Newspaper .entry-title / h3 rules must not affect this block */
 .mmi-ra-block-wrap {
 	margin: 40px 0 30px;
 	clear: both;
@@ -22,7 +22,6 @@
 	display: inline-block;
 	background: #222;
 	color: #fff;
-	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
 	font-size: 14px !important;
 	font-weight: 700 !important;
 	line-height: 1.2 !important;
@@ -70,7 +69,7 @@
 .mmi-ra-module-thumb {
 	position: relative;
 	overflow: hidden;
-	margin-bottom: 12px;
+	margin-bottom: 10px;
 	background: #f0f0f0;
 	aspect-ratio: 16 / 10;
 }
@@ -112,39 +111,50 @@
 	color: #fff !important;
 }
 
-.mmi-ra-block-wrap .mmi-ra-entry-title {
-	margin: 0 0 8px !important;
-	padding: 0 !important;
-	font-size: 17px !important;
-	font-weight: 700 !important;
-	line-height: 1.35 !important;
-	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+/* Post title — match Newspaper module title (regular weight, not hero heading) */
+.mmi-ra-block-wrap .mmi-ra-module .mmi-ra-entry-title,
+.mmi-ra-block-wrap .mmi-ra-module .mmi-ra-entry-title a {
+	font-family: Verdana, Geneva, sans-serif !important;
+	font-size: 15px !important;
+	font-weight: 400 !important;
+	line-height: 22px !important;
+	letter-spacing: 0 !important;
+	text-transform: none !important;
 }
 
-.mmi-ra-block-wrap .mmi-ra-entry-title a {
-	color: #111 !important;
-	text-decoration: none !important;
-	display: -webkit-box;
-	-webkit-line-clamp: 3;
+.mmi-ra-block-wrap .mmi-ra-module .mmi-ra-entry-title {
+	margin: 0 0 6px !important;
+	padding: 0 !important;
+	border: none !important;
+	background: transparent !important;
+}
+
+.mmi-ra-block-wrap .mmi-ra-module .mmi-ra-entry-title a {
+	display: -webkit-box !important;
+	-webkit-line-clamp: 2;
 	-webkit-box-orient: vertical;
 	overflow: hidden;
+	color: #111 !important;
+	text-decoration: none !important;
+	transition: color 0.2s ease;
 }
 
-.mmi-ra-block-wrap .mmi-ra-entry-title a:hover {
+.mmi-ra-block-wrap .mmi-ra-module .mmi-ra-entry-title a:hover {
 	color: #4db2ec !important;
 }
 
 .mmi-ra-meta {
 	margin: 0;
+	padding: 0;
 }
 
 .mmi-ra-date {
 	display: block;
-	font-size: 12px !important;
-	line-height: 1.3 !important;
-	color: #767676 !important;
+	font-family: Verdana, Geneva, sans-serif !important;
+	font-size: 11px !important;
+	line-height: 16px !important;
+	color: #888 !important;
 	font-weight: 400 !important;
-	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
 }
 
 .mmi-ra-nav {

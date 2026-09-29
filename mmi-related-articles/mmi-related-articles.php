@@ -3,7 +3,7 @@
  * Plugin Name: MMI Related Articles
  * Plugin URI:  https://mymobile.in
  * Description: AJAX related-article picker with date priority (7/15 days), drag-and-drop order, and automatic frontend carousel for Newspaper/TagDiv themes.
- * Version:     1.0.1
+ * Version:     1.0.2
  * Author:      My Mobile
  * Text Domain: mmi-related-articles
  * Requires at least: 6.0

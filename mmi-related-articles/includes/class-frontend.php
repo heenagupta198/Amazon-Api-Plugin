@@ -153,9 +153,9 @@ class MMI_RA_Frontend {
 										<a href="<?php echo esc_url( get_category_link( get_the_category( $related->ID )[0]->term_id ) ); ?>" class="mmi-ra-cat-label"><?php echo esc_html( $cat_name ); ?></a>
 									<?php endif; ?>
 								</div>
-								<h3 class="entry-title mmi-ra-entry-title">
+								<div class="mmi-ra-entry-title">
 									<a href="<?php echo esc_url( get_permalink( $related ) ); ?>"><?php echo esc_html( get_the_title( $related ) ); ?></a>
-								</h3>
+								</div>
 								<div class="mmi-ra-meta">
 									<time class="mmi-ra-date" datetime="<?php echo esc_attr( get_the_date( 'c', $related ) ); ?>"><?php echo esc_html( $date ); ?></time>
 								</div>
