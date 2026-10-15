@@ -1,13 +1,40 @@
+#mmi_csl_linked_products .mmi-csl-tabs {
+	display: flex;
+	gap: 4px;
+	margin: 0 0 10px;
+}
+
+#mmi_csl_linked_products .mmi-csl-tab {
+	flex: 1;
+	border: 1px solid #c3c4c7;
+	background: #f6f7f7;
+	padding: 4px 6px;
+	font-size: 12px;
+	cursor: pointer;
+	border-radius: 3px;
+}
+
+#mmi_csl_linked_products .mmi-csl-tab.is-active {
+	background: #2271b1;
+	border-color: #2271b1;
+	color: #fff;
+}
+
+#mmi_csl_linked_products .mmi-csl-panel {
+	margin-bottom: 4px;
+}
+
 #mmi_csl_linked_products .mmi-csl-select {
 	max-width: 100%;
 }
 
 #mmi_csl_linked_products .select2-container {
 	width: 100% !important;
+	z-index: 100;
 }
 
 #mmi_csl_linked_products .select2-selection--multiple {
-	min-height: 36px;
+	min-height: 42px;
 	border-color: #8c8f94;
 }
 
@@ -16,9 +43,15 @@
 	line-height: 1.3;
 	max-width: 100%;
 	white-space: normal;
+	cursor: move;
 }
 
 #mmi_csl_linked_products .mmi-csl-hint {
 	margin-top: 8px;
 	margin-bottom: 0;
+}
+
+#mmi_csl_linked_products #mmi-csl-bulk-ids {
+	font-family: monospace;
+	font-size: 12px;
 }

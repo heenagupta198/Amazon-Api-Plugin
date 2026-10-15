@@ -3,7 +3,7 @@ Contributors: mymobileindia
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.2.0
 License: GPLv2 or later
 
 Link news articles on the main site to device products and show a Latest News carousel on WooCommerce product pages (multisite /devices/).
@@ -20,3 +20,5 @@ Link news articles on the main site to device products and show a Latest News ca
 
 * Product IDs are from the Devices subsite WooCommerce catalog (`post_type` product).
 * Blog IDs auto-detect: main site = news, path `/devices/` = products. Override with network options `mmi_csl_devices_blog_id` and `mmi_csl_news_blog_id` if needed.
+* v1.2.0: Select2 multi-select, fast title SQL search (works with short tokens like X8), rate limiting + query cache, reverse index on products for Latest News on `/devices/`.
+* After upgrading to 1.2.0, open each linked article and click **Update** once to refresh the device index (or only new/edited posts sync automatically).

@@ -13,6 +13,7 @@ class MMI_CSL_Admin {
 		add_action( 'before_delete_post', array( __CLASS__, 'before_delete_post' ), 10, 2 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 		add_action( 'wp_ajax_mmi_csl_search_products', array( __CLASS__, 'ajax_search_products' ) );
+		add_action( 'wp_ajax_mmi_csl_resolve_products', array( __CLASS__, 'ajax_resolve_products' ) );
 	}
 
 	public static function register_meta_box(): void {
@@ -39,15 +40,29 @@ class MMI_CSL_Admin {
 		$selected_ids = MMI_CSL_Sites::get_linked_product_ids( (int) $post->ID );
 		$selected     = self::hydrate_products( $selected_ids );
 		?>
-		<p class="description">
-			<?php esc_html_e( 'Type to search devices (name or ID). Select multiple products — news appears on each product page under Latest News.', 'mmi-content-slider' ); ?>
-		</p>
-		<select id="mmi-csl-product-select" name="mmi_csl_product_ids[]" class="mmi-csl-select" multiple="multiple" style="width:100%;">
-			<?php foreach ( $selected as $item ) : ?>
-				<option value="<?php echo esc_attr( (string) $item['id'] ); ?>" selected="selected"><?php echo esc_html( $item['label'] ); ?></option>
-			<?php endforeach; ?>
-		</select>
-		<p class="mmi-csl-hint description"><?php esc_html_e( 'Tip: search “OPPO Find X8” or paste product ID (e.g. 21421).', 'mmi-content-slider' ); ?></p>
+		<div class="mmi-csl-tabs" role="tablist">
+			<button type="button" class="mmi-csl-tab is-active" data-tab="search" role="tab"><?php esc_html_e( 'Search', 'mmi-content-slider' ); ?></button>
+			<button type="button" class="mmi-csl-tab" data-tab="advanced" role="tab"><?php esc_html_e( 'Advanced', 'mmi-content-slider' ); ?></button>
+		</div>
+		<div class="mmi-csl-panel is-active" data-panel="search">
+			<p class="description">
+				<?php esc_html_e( 'Search by full model name, brand (OPPO, Samsung…), or product ID. Drag selected chips to reorder.', 'mmi-content-slider' ); ?>
+			</p>
+			<select id="mmi-csl-product-select" name="mmi_csl_product_ids[]" class="mmi-csl-select" multiple="multiple" style="width:100%;">
+				<?php foreach ( $selected as $item ) : ?>
+					<option value="<?php echo esc_attr( (string) $item['id'] ); ?>" selected="selected"><?php echo esc_html( $item['label'] ); ?></option>
+				<?php endforeach; ?>
+			</select>
+			<p class="mmi-csl-hint description"><?php esc_html_e( 'Example: OPPO Find X9 Ultra or ID 11789', 'mmi-content-slider' ); ?></p>
+		</div>
+		<div class="mmi-csl-panel" data-panel="advanced" hidden>
+			<p class="description"><?php esc_html_e( 'Paste product IDs (comma, space, or new line). Click Add to merge with your selection.', 'mmi-content-slider' ); ?></p>
+			<textarea id="mmi-csl-bulk-ids" class="widefat" rows="3" placeholder="11789, 21421&#10;59385"></textarea>
+			<p>
+				<button type="button" class="button" id="mmi-csl-bulk-add"><?php esc_html_e( 'Add IDs', 'mmi-content-slider' ); ?></button>
+				<button type="button" class="button-link" id="mmi-csl-clear-all"><?php esc_html_e( 'Clear all', 'mmi-content-slider' ); ?></button>
+			</p>
+		</div>
 		<?php
 	}
 
@@ -174,10 +189,12 @@ class MMI_CSL_Admin {
 			true
 		);
 
+		wp_enqueue_script( 'jquery-ui-sortable' );
+
 		wp_enqueue_script(
 			'mmi-csl-admin',
 			MMI_CSL_URL . 'assets/js/admin.js',
-			array( 'jquery', 'mmi-csl-select2' ),
+			array( 'jquery', 'mmi-csl-select2', 'jquery-ui-sortable' ),
 			MMI_CSL_VERSION,
 			true
 		);
@@ -194,6 +211,8 @@ class MMI_CSL_Admin {
 					'noResults'     => __( 'No products found', 'mmi-content-slider' ),
 					'inputTooShort' => __( 'Type at least 2 characters or a product ID', 'mmi-content-slider' ),
 					'error'         => __( 'Search failed. Try again.', 'mmi-content-slider' ),
+					'dragHint'      => __( 'Drag tags to set display order on device pages', 'mmi-content-slider' ),
+					'added'         => __( 'Products added', 'mmi-content-slider' ),
 				),
 			)
 		);
@@ -210,8 +229,7 @@ class MMI_CSL_Admin {
 			wp_send_json_error( array( 'message' => __( 'Too many searches. Please wait a moment.', 'mmi-content-slider' ) ), 429 );
 		}
 
-		$term = isset( $_GET['term'] ) ? sanitize_text_field( wp_unslash( $_GET['term'] ) ) : '';
-		$term = trim( $term );
+		$term = self::get_request_term();
 
 		if ( strlen( $term ) < 1 ) {
 			wp_send_json_success( array( 'items' => array() ) );
@@ -232,5 +250,48 @@ class MMI_CSL_Admin {
 		}
 
 		wp_send_json_success( array( 'items' => $items ) );
+	}
+
+	public static function ajax_resolve_products(): void {
+		check_ajax_referer( 'mmi_csl_search', 'nonce' );
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Forbidden', 'mmi-content-slider' ) ), 403 );
+		}
+
+		$raw = isset( $_POST['ids'] ) ? sanitize_text_field( wp_unslash( $_POST['ids'] ) ) : '';
+		preg_match_all( '/\d+/', $raw, $matches );
+		$ids = isset( $matches[0] ) ? array_map( 'intval', $matches[0] ) : array();
+
+		if ( empty( $ids ) ) {
+			wp_send_json_success( array( 'items' => array() ) );
+		}
+
+		$devices_blog = MMI_CSL_Sites::get_devices_blog_id();
+		$switched     = false;
+
+		if ( is_multisite() && get_current_blog_id() !== $devices_blog ) {
+			switch_to_blog( $devices_blog );
+			$switched = true;
+		}
+
+		$items = MMI_CSL_Product_Search::resolve_ids( $ids );
+
+		if ( $switched ) {
+			restore_current_blog();
+		}
+
+		wp_send_json_success( array( 'items' => $items ) );
+	}
+
+	private static function get_request_term(): string {
+		$source = array();
+		if ( isset( $_POST['term'] ) ) {
+			$source = wp_unslash( $_POST['term'] );
+		} elseif ( isset( $_GET['term'] ) ) {
+			$source = wp_unslash( $_GET['term'] );
+		}
+
+		return trim( sanitize_text_field( (string) $source ) );
 	}
 }
