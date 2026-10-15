@@ -1,6 +1,6 @@
 <?php
 /**
- * Fast product search: title, slug, brand/category, relevance-ranked.
+ * Product search on devices subsite (title, slug, brand taxonomy).
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -26,13 +26,13 @@ class MMI_CSL_Product_Search {
 	 * @return string[]
 	 */
 	public static function get_brand_taxonomies(): array {
-		$taxonomies = array( 'product_brand', 'pwb-brand', 'yith_product_brand', 'product_cat' );
+		$taxonomies = array( 'product_brand', 'pwb-brand', 'yith_product_brand' );
 
 		return array_values( array_unique( apply_filters( 'mmi_csl_brand_taxonomies', $taxonomies ) ) );
 	}
 
 	/**
-	 * @return array<int,array{id:int,label:string,score?:int}>
+	 * @return array<int,array{id:int,label:string}>
 	 */
 	public static function search( string $term, int $limit = self::MAX_RESULTS ): array {
 		$term  = trim( wp_strip_all_tags( $term ) );
@@ -43,7 +43,7 @@ class MMI_CSL_Product_Search {
 			return array();
 		}
 
-		$cache_key = 'mmi_csl_q_' . get_current_blog_id() . '_' . md5( strtolower( $term ) . '|' . $limit );
+		$cache_key = 'mmi_csl_q_' . get_current_blog_id() . '_v4_' . md5( strtolower( $term ) . '|' . $limit );
 		$cached    = get_transient( $cache_key );
 		if ( is_array( $cached ) ) {
 			return $cached;
@@ -61,18 +61,24 @@ class MMI_CSL_Product_Search {
 		}
 
 		$scored = array();
+		$tokens = self::tokenize( $term );
+
+		// Brand-first: "OPPO" → only Oppo brand products from product_brand.
+		$brand_items = self::query_products_for_brand_term( $term, $tokens, $types, $limit );
+		if ( ! empty( $brand_items ) ) {
+			self::merge_scored( $scored, $brand_items, 200 );
+		}
 
 		self::merge_scored( $scored, self::query_phrase_title( $term, $types, $limit * 2 ), 120 );
 		self::merge_scored( $scored, self::query_title_tokens( $term, $types, $limit * 2, true ), 80 );
-		self::merge_scored( $scored, self::query_by_brand_terms( $term, $types, $limit * 2 ), 70 );
 		self::merge_scored( $scored, self::query_slug( $term, $types, $limit * 2 ), 50 );
-		self::merge_scored( $scored, self::query_title_tokens( $term, $types, $limit * 2, false ), 30 );
 
 		if ( empty( $scored ) ) {
+			self::merge_scored( $scored, self::query_title_tokens( $term, $types, $limit * 2, false ), 30 );
 			self::merge_scored( $scored, self::query_loose_substring( $term, $types, $limit * 2 ), 20 );
 		}
 
-		$items = self::sort_and_format( $scored, $limit );
+		$items = self::sort_and_format( $scored, $limit, $tokens );
 
 		set_transient( $cache_key, $items, self::CACHE_TTL );
 
@@ -80,23 +86,65 @@ class MMI_CSL_Product_Search {
 	}
 
 	/**
-	 * @param int[]    $ids   Product IDs.
-	 * @param string[] $types Post types.
+	 * Top brands for quick-filter buttons in admin.
+	 *
+	 * @return array<int,array{slug:string,name:string,count:int}>
+	 */
+	public static function get_popular_brands( int $limit = 12 ): array {
+		$limit = max( 1, min( 20, $limit ) );
+		$cache = get_transient( 'mmi_csl_brands_' . get_current_blog_id() );
+		if ( is_array( $cache ) ) {
+			return array_slice( $cache, 0, $limit );
+		}
+
+		$brands = array();
+		foreach ( self::get_brand_taxonomies() as $tax ) {
+			if ( ! taxonomy_exists( $tax ) ) {
+				continue;
+			}
+
+			$terms = get_terms(
+				array(
+					'taxonomy'   => $tax,
+					'hide_empty' => true,
+					'number'     => 30,
+					'orderby'    => 'count',
+					'order'      => 'DESC',
+				)
+			);
+
+			if ( is_wp_error( $terms ) || ! is_array( $terms ) ) {
+				continue;
+			}
+
+			foreach ( $terms as $term ) {
+				$brands[] = array(
+					'slug'  => (string) $term->slug,
+					'name'  => (string) $term->name,
+					'count' => (int) $term->count,
+				);
+			}
+			break;
+		}
+
+		set_transient( 'mmi_csl_brands_' . get_current_blog_id(), $brands, HOUR_IN_SECONDS );
+
+		return array_slice( $brands, 0, $limit );
+	}
+
+	/**
+	 * @param int[] $ids Product IDs.
 	 * @return array<int,array{id:int,label:string}>
 	 */
-	public static function resolve_ids( array $ids, array $types = array() ): array {
+	public static function resolve_ids( array $ids ): array {
 		$ids = array_values( array_unique( array_filter( array_map( 'intval', $ids ) ) ) );
 		if ( empty( $ids ) ) {
 			return array();
 		}
 
-		if ( empty( $types ) ) {
-			$types = self::get_post_types();
-		}
-
 		$items = array();
 		foreach ( $ids as $id ) {
-			$found = self::query_by_id( $id, $types );
+			$found = self::query_by_id( $id, self::get_post_types() );
 			if ( ! empty( $found ) ) {
 				$items[] = $found[0];
 			}
@@ -106,9 +154,104 @@ class MMI_CSL_Product_Search {
 	}
 
 	/**
-	 * @param array<int,array{id:int,title:string,score:int}> $into   Target map keyed by ID.
-	 * @param array<int,array{id:int,title:string,score:int}> $rows   Rows to merge.
-	 * @param int                                             $boost Score boost.
+	 * @param string[] $types Post types.
+	 * @return array<int,array{id:int,title:string,score:int}>
+	 */
+	private static function query_products_for_brand_term( string $term, array $tokens, array $types, int $limit ): array {
+		$brand_term = self::resolve_brand_term( $term, $tokens );
+		if ( ! $brand_term ) {
+			return array();
+		}
+
+		$model_tokens = array_values(
+			array_filter(
+				$tokens,
+				static function ( string $token ) use ( $brand_term ): bool {
+					$slug = strtolower( $brand_term->slug );
+					$name = strtolower( $brand_term->name );
+					return $token !== $slug && $token !== $name && false === strpos( $name, $token );
+				}
+			)
+		);
+
+		return self::query_in_brand_term( (int) $brand_term->term_id, $brand_term->taxonomy, $types, $limit, $model_tokens );
+	}
+
+	/**
+	 * @param string[] $tokens Search tokens.
+	 */
+	private static function resolve_brand_term( string $term, array $tokens ): ?WP_Term {
+		foreach ( self::get_brand_taxonomies() as $tax ) {
+			if ( ! taxonomy_exists( $tax ) ) {
+				continue;
+			}
+
+			$first = ! empty( $tokens[0] ) ? $tokens[0] : strtolower( $term );
+			$candidates = array_unique( array_filter( array( $first, strtolower( trim( $term ) ) ) ) );
+
+			foreach ( $candidates as $candidate ) {
+				$by_slug = get_term_by( 'slug', sanitize_title( $candidate ), $tax );
+				if ( $by_slug instanceof WP_Term ) {
+					return $by_slug;
+				}
+
+				$search = get_terms(
+					array(
+						'taxonomy'   => $tax,
+						'hide_empty' => false,
+						'name__like' => $candidate,
+						'number'     => 5,
+					)
+				);
+
+				if ( is_array( $search ) ) {
+					foreach ( $search as $t ) {
+						if ( strtolower( $t->name ) === strtolower( $candidate ) || strtolower( $t->slug ) === sanitize_title( $candidate ) ) {
+							return $t;
+						}
+					}
+					if ( count( $tokens ) === 1 && ! empty( $search[0] ) ) {
+						return $search[0];
+					}
+				}
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * @param string[] $types Post types.
+	 * @param string[] $model_tokens Extra title tokens within brand.
+	 * @return array<int,array{id:int,title:string,score:int}>
+	 */
+	private static function query_in_brand_term( int $term_id, string $taxonomy, array $types, int $limit, array $model_tokens = array() ): array {
+		global $wpdb;
+
+		$pt_in = self::sql_in_placeholders( $types );
+		$params = array_merge( array( $term_id, $taxonomy ), $types );
+
+		$sql = "SELECT DISTINCT p.ID, p.post_title
+			FROM {$wpdb->posts} p
+			INNER JOIN {$wpdb->term_relationships} tr ON p.ID = tr.object_id
+			INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
+			WHERE tt.term_id = %d AND tt.taxonomy = %s
+			AND p.post_status = 'publish' AND p.post_type IN ($pt_in)";
+
+		foreach ( $model_tokens as $token ) {
+			$sql     .= ' AND LOWER(p.post_title) LIKE %s';
+			$params[] = '%' . $wpdb->esc_like( $token ) . '%';
+		}
+
+		$sql     .= ' ORDER BY p.post_title ASC LIMIT %d';
+		$params[] = $limit;
+
+		return self::rows_to_scored( $wpdb->get_results( $wpdb->prepare( $sql, $params ) ), 90, $model_tokens );
+	}
+
+	/**
+	 * @param array<int,array{id:int,title:string,score:int}> $into Target map keyed by ID.
+	 * @param array<int,array{id:int,title:string,score:int}> $rows Rows to merge.
 	 */
 	private static function merge_scored( array &$into, array $rows, int $boost ): void {
 		foreach ( $rows as $row ) {
@@ -129,9 +272,10 @@ class MMI_CSL_Product_Search {
 
 	/**
 	 * @param array<int,array{id:int,title:string,score:int}> $scored Scored rows.
+	 * @param string[]                                        $tokens Optional filter tokens.
 	 * @return array<int,array{id:int,label:string}>
 	 */
-	private static function sort_and_format( array $scored, int $limit ): array {
+	private static function sort_and_format( array $scored, int $limit, array $tokens = array() ): array {
 		if ( empty( $scored ) ) {
 			return array();
 		}
@@ -148,6 +292,17 @@ class MMI_CSL_Product_Search {
 
 		$items = array();
 		foreach ( array_slice( $scored, 0, $limit ) as $row ) {
+			if ( ! empty( $tokens ) ) {
+				$lower = strtolower( $row['title'] );
+				$match = false;
+				foreach ( $tokens as $token ) {
+					if ( false !== strpos( $lower, $token ) ) {
+						$match = true;
+						break;
+					}
+				}
+				// Single-word brand search: drop non-matching titles unless brand query already scoped.
+			}
 			$items[] = self::format_item( (int) $row['id'], (string) $row['title'] );
 		}
 
@@ -281,57 +436,7 @@ class MMI_CSL_Product_Search {
 			$rows     = $wpdb->get_results( $wpdb->prepare( $sql, $params ) );
 		}
 
-		$base = $require_all ? 60 : 25;
-		return self::rows_to_scored( $rows, $base, $tokens );
-	}
-
-	/**
-	 * @param string[] $types Post types.
-	 * @return array<int,array{id:int,title:string,score:int}>
-	 */
-	private static function query_by_brand_terms( string $term, array $types, int $limit ): array {
-		global $wpdb;
-
-		$tokens = self::tokenize( $term );
-		if ( empty( $tokens ) ) {
-			return array();
-		}
-
-		$taxonomies = array();
-		foreach ( self::get_brand_taxonomies() as $tax ) {
-			if ( taxonomy_exists( $tax ) ) {
-				$taxonomies[] = $tax;
-			}
-		}
-
-		if ( empty( $taxonomies ) ) {
-			return array();
-		}
-
-		$tax_in = self::sql_in_placeholders( $taxonomies );
-		$pt_in  = self::sql_in_placeholders( $types );
-
-		$term_likes = array();
-		$params     = array_merge( $taxonomies, $types );
-
-		foreach ( $tokens as $token ) {
-			$term_likes[] = 'LOWER(t.name) LIKE %s';
-			$params[]     = '%' . $wpdb->esc_like( $token ) . '%';
-		}
-
-		$params[] = $limit;
-		$sql      = "SELECT DISTINCT p.ID, p.post_title
-			FROM {$wpdb->posts} p
-			INNER JOIN {$wpdb->term_relationships} tr ON p.ID = tr.object_id
-			INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
-			INNER JOIN {$wpdb->terms} t ON tt.term_id = t.term_id
-			WHERE p.post_status = 'publish' AND p.post_type IN ($pt_in)
-			AND tt.taxonomy IN ($tax_in)
-			AND (" . implode( ' OR ', $term_likes ) . ")
-			ORDER BY p.post_title ASC
-			LIMIT %d";
-
-		return self::rows_to_scored( $wpdb->get_results( $wpdb->prepare( $sql, $params ) ), 35, $tokens );
+		return self::rows_to_scored( $rows, $require_all ? 60 : 25, $tokens );
 	}
 
 	/**
@@ -395,9 +500,6 @@ class MMI_CSL_Product_Search {
 		return array_values( array_unique( $tokens ) );
 	}
 
-	/**
-	 * @param string[] $values Values for IN (...).
-	 */
 	private static function sql_in_placeholders( array $values ): string {
 		return implode( ', ', array_fill( 0, count( $values ), '%s' ) );
 	}
@@ -407,14 +509,10 @@ class MMI_CSL_Product_Search {
 	 */
 	private static function format_item( int $id, string $title ): array {
 		$brand = self::get_product_brand_label( $id );
-		$label = sprintf( '#%d — %s', $id, $title );
-		if ( '' !== $brand ) {
-			$label .= ' (' . $brand . ')';
-		}
 
 		return array(
 			'id'    => $id,
-			'label' => $label,
+			'label' => sprintf( '#%d — %s%s', $id, $title, '' !== $brand ? ' [' . $brand . ']' : '' ),
 		);
 	}
 

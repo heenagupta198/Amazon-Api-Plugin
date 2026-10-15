@@ -205,6 +205,11 @@ class MMI_CSL_Sites {
 		}
 
 		$home = (string) home_url( '/' );
-		return false !== strpos( $home, '/devices' );
+		if ( false !== strpos( $home, '/devices' ) ) {
+			return true;
+		}
+
+		$siteurl = (string) get_option( 'siteurl', '' );
+		return false !== strpos( $siteurl, '/devices' );
 	}
 }

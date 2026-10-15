@@ -46,14 +46,23 @@ class MMI_CSL_Admin {
 		</div>
 		<div class="mmi-csl-panel is-active" data-panel="search">
 			<p class="description">
-				<?php esc_html_e( 'Search by full model name, brand (OPPO, Samsung…), or product ID. Drag selected chips to reorder.', 'mmi-content-slider' ); ?>
+				<?php esc_html_e( 'Data source: mymobileindia.com/devices/ (WooCommerce products). Pick the exact phone model — news shows only on those product pages.', 'mmi-content-slider' ); ?>
 			</p>
-			<select id="mmi-csl-product-select" name="mmi_csl_product_ids[]" class="mmi-csl-select" multiple="multiple" style="width:100%;">
+			<div class="mmi-csl-brand-row" id="mmi-csl-brand-row" aria-label="<?php esc_attr_e( 'Quick brand filter', 'mmi-content-slider' ); ?>"></div>
+			<label for="mmi-csl-product-search" class="mmi-csl-label"><?php esc_html_e( 'Add product', 'mmi-content-slider' ); ?></label>
+			<select id="mmi-csl-product-search" class="mmi-csl-search" style="width:100%;"></select>
+			<p class="mmi-csl-label mmi-csl-selected-heading"><?php esc_html_e( 'Linked to this article (drag to reorder)', 'mmi-content-slider' ); ?></p>
+			<ul id="mmi-csl-selected-list" class="mmi-csl-selected-list">
 				<?php foreach ( $selected as $item ) : ?>
-					<option value="<?php echo esc_attr( (string) $item['id'] ); ?>" selected="selected"><?php echo esc_html( $item['label'] ); ?></option>
+					<li data-id="<?php echo esc_attr( (string) $item['id'] ); ?>">
+						<span class="mmi-csl-grip" aria-hidden="true">⋮⋮</span>
+						<span class="mmi-csl-selected-label"><?php echo esc_html( $item['label'] ); ?></span>
+						<button type="button" class="button-link mmi-csl-remove" aria-label="<?php esc_attr_e( 'Remove', 'mmi-content-slider' ); ?>">&times;</button>
+						<input type="hidden" name="mmi_csl_product_ids[]" value="<?php echo esc_attr( (string) $item['id'] ); ?>" />
+					</li>
 				<?php endforeach; ?>
-			</select>
-			<p class="mmi-csl-hint description"><?php esc_html_e( 'Example: OPPO Find X9 Ultra or ID 11789', 'mmi-content-slider' ); ?></p>
+			</ul>
+			<p class="mmi-csl-hint description"><?php esc_html_e( 'Type OPPO then pick model, or use a brand button. OPPO A76 is not on devices — use a listed model.', 'mmi-content-slider' ); ?></p>
 		</div>
 		<div class="mmi-csl-panel" data-panel="advanced" hidden>
 			<p class="description"><?php esc_html_e( 'Paste product IDs (comma, space, or new line). Click Add to merge with your selection.', 'mmi-content-slider' ); ?></p>
@@ -199,20 +208,33 @@ class MMI_CSL_Admin {
 			true
 		);
 
+		$brands = array();
+		$devices_blog = MMI_CSL_Sites::get_devices_blog_id();
+		$switched     = false;
+		if ( is_multisite() && get_current_blog_id() !== $devices_blog ) {
+			switch_to_blog( $devices_blog );
+			$switched = true;
+		}
+		$brands = MMI_CSL_Product_Search::get_popular_brands( 14 );
+		if ( $switched ) {
+			restore_current_blog();
+		}
+
 		wp_localize_script(
 			'mmi-csl-admin',
 			'MmiCslAdmin',
 			array(
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( 'mmi_csl_search' ),
+				'brands'  => $brands,
 				'i18n'    => array(
-					'placeholder'   => __( 'Search devices by name or ID…', 'mmi-content-slider' ),
-					'searching'     => __( 'Searching…', 'mmi-content-slider' ),
-					'noResults'     => __( 'No products found', 'mmi-content-slider' ),
-					'inputTooShort' => __( 'Type at least 2 characters or a product ID', 'mmi-content-slider' ),
+					'placeholder'   => __( 'Search devices site: model or ID…', 'mmi-content-slider' ),
+					'searching'     => __( 'Searching devices…', 'mmi-content-slider' ),
+					'noResults'     => __( 'No product on /devices/', 'mmi-content-slider' ),
+					'inputTooShort' => __( 'Type brand or model (min 2 chars)', 'mmi-content-slider' ),
 					'error'         => __( 'Search failed. Try again.', 'mmi-content-slider' ),
-					'dragHint'      => __( 'Drag tags to set display order on device pages', 'mmi-content-slider' ),
-					'added'         => __( 'Products added', 'mmi-content-slider' ),
+					'alreadyAdded'  => __( 'Already linked', 'mmi-content-slider' ),
+					'emptySelected' => __( 'No products linked yet', 'mmi-content-slider' ),
 				),
 			)
 		);

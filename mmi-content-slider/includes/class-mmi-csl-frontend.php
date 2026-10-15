@@ -11,6 +11,8 @@ class MMI_CSL_Frontend {
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 		add_action( 'woocommerce_before_single_product_related', array( __CLASS__, 'render_latest_news' ), 5 );
 		add_action( 'woocommerce_after_single_product_summary', array( __CLASS__, 'render_latest_news' ), 19 );
+		add_action( 'woocommerce_after_single_product', array( __CLASS__, 'render_latest_news' ), 12 );
+		add_action( 'rehub_after_single_product', array( __CLASS__, 'render_latest_news' ), 10 );
 	}
 
 	public static function enqueue_assets(): void {
