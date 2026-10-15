@@ -102,7 +102,7 @@ class MMI_CSL_Sites {
 	 * @return WP_Post[]
 	 */
 	public static function get_news_for_product( int $product_id, int $limit = 12 ): array {
-		$news_blog = self::get_news_blog_id();
+		$news_blog  = self::get_news_blog_id();
 		$product_id = max( 0, $product_id );
 		$limit      = max( 1, min( 30, $limit ) );
 
@@ -110,6 +110,54 @@ class MMI_CSL_Sites {
 			return array();
 		}
 
+		$news_post_ids = MMI_CSL_Sync::get_news_ids_for_product( $product_id );
+
+		if ( empty( $news_post_ids ) ) {
+			$news_post_ids = self::find_news_ids_by_article_meta( $product_id, $news_blog, $limit );
+		}
+
+		if ( empty( $news_post_ids ) ) {
+			return array();
+		}
+
+		$news_post_ids = array_slice( $news_post_ids, 0, $limit );
+
+		$switched = false;
+		if ( is_multisite() && get_current_blog_id() !== $news_blog ) {
+			switch_to_blog( $news_blog );
+			$switched = true;
+		}
+
+		$query = new WP_Query(
+			array(
+				'post_type'              => 'post',
+				'post_status'            => 'publish',
+				'post__in'               => $news_post_ids,
+				'orderby'                => 'post__in',
+				'posts_per_page'         => count( $news_post_ids ),
+				'ignore_sticky_posts'    => true,
+				'no_found_rows'          => true,
+				'update_post_meta_cache' => false,
+				'update_post_term_cache' => false,
+			)
+		);
+
+		$posts = $query->posts;
+		wp_reset_postdata();
+
+		if ( $switched ) {
+			restore_current_blog();
+		}
+
+		return is_array( $posts ) ? $posts : array();
+	}
+
+	/**
+	 * Fallback when reverse index is missing (legacy links).
+	 *
+	 * @return int[]
+	 */
+	private static function find_news_ids_by_article_meta( int $product_id, int $news_blog, int $limit ): array {
 		$switched = false;
 		if ( is_multisite() && get_current_blog_id() !== $news_blog ) {
 			switch_to_blog( $news_blog );
@@ -123,6 +171,7 @@ class MMI_CSL_Sites {
 				'posts_per_page'         => $limit,
 				'orderby'                => 'date',
 				'order'                  => 'DESC',
+				'fields'                 => 'ids',
 				'ignore_sticky_posts'    => true,
 				'no_found_rows'          => true,
 				'update_post_meta_cache' => false,
@@ -137,13 +186,25 @@ class MMI_CSL_Sites {
 			)
 		);
 
-		$posts = $query->posts;
+		$ids = is_array( $query->posts ) ? array_map( 'intval', $query->posts ) : array();
 		wp_reset_postdata();
 
 		if ( $switched ) {
 			restore_current_blog();
 		}
 
-		return is_array( $posts ) ? $posts : array();
+		return $ids;
+	}
+
+	/**
+	 * Whether the current request is on the devices subsite (URL or blog ID).
+	 */
+	public static function is_devices_site(): bool {
+		if ( (int) get_current_blog_id() === self::get_devices_blog_id() ) {
+			return true;
+		}
+
+		$home = (string) home_url( '/' );
+		return false !== strpos( $home, '/devices' );
 	}
 }

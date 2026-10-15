@@ -9,6 +9,7 @@ class MMI_CSL_Frontend {
 
 	public static function init(): void {
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
+		add_action( 'woocommerce_before_single_product_related', array( __CLASS__, 'render_latest_news' ), 5 );
 		add_action( 'woocommerce_after_single_product_summary', array( __CLASS__, 'render_latest_news' ), 19 );
 	}
 
@@ -63,11 +64,22 @@ class MMI_CSL_Frontend {
 			return false;
 		}
 
-		return (int) get_current_blog_id() === MMI_CSL_Sites::get_devices_blog_id();
+		return MMI_CSL_Sites::is_devices_site();
 	}
 
+	/** @var bool */
+	private static $rendered = false;
+
 	public static function render_latest_news(): void {
+		if ( self::$rendered ) {
+			return;
+		}
+
 		if ( ! self::is_devices_product_page() ) {
+			return;
+		}
+
+		if ( ! class_exists( 'WC_Product' ) ) {
 			return;
 		}
 
@@ -128,5 +140,7 @@ class MMI_CSL_Frontend {
 		if ( $switched ) {
 			restore_current_blog();
 		}
+
+		self::$rendered = true;
 	}
 }

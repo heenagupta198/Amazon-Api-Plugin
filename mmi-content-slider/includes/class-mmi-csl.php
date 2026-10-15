@@ -6,6 +6,8 @@
 defined( 'ABSPATH' ) || exit;
 
 require_once MMI_CSL_PATH . 'includes/class-mmi-csl-sites.php';
+require_once MMI_CSL_PATH . 'includes/class-mmi-csl-product-search.php';
+require_once MMI_CSL_PATH . 'includes/class-mmi-csl-sync.php';
 require_once MMI_CSL_PATH . 'includes/class-mmi-csl-admin.php';
 require_once MMI_CSL_PATH . 'includes/class-mmi-csl-frontend.php';
 

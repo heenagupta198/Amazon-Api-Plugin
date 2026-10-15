@@ -1,6 +1,6 @@
 <?php
 /**
- * Post editor: link articles to device products (search + multi-select).
+ * Post editor: link articles to device products (Select2 multi-search).
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -10,6 +10,7 @@ class MMI_CSL_Admin {
 	public static function init(): void {
 		add_action( 'add_meta_boxes', array( __CLASS__, 'register_meta_box' ), 20 );
 		add_action( 'save_post', array( __CLASS__, 'save_meta_box' ), 10, 2 );
+		add_action( 'before_delete_post', array( __CLASS__, 'before_delete_post' ), 10, 2 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 		add_action( 'wp_ajax_mmi_csl_search_products', array( __CLASS__, 'ajax_search_products' ) );
 	}
@@ -39,22 +40,14 @@ class MMI_CSL_Admin {
 		$selected     = self::hydrate_products( $selected_ids );
 		?>
 		<p class="description">
-			<?php esc_html_e( 'Search phones on the Devices site. Selected products will show this article in their Latest News section (above Related Products).', 'mmi-content-slider' ); ?>
+			<?php esc_html_e( 'Type to search devices (name or ID). Select multiple products — news appears on each product page under Latest News.', 'mmi-content-slider' ); ?>
 		</p>
-		<p>
-			<label for="mmi-csl-product-search" class="screen-reader-text"><?php esc_html_e( 'Search products', 'mmi-content-slider' ); ?></label>
-			<input type="text" id="mmi-csl-product-search" class="widefat" placeholder="<?php esc_attr_e( 'Search by name or ID…', 'mmi-content-slider' ); ?>" autocomplete="off" />
-		</p>
-		<ul id="mmi-csl-product-results" class="mmi-csl-results" aria-live="polite"></ul>
-		<ul id="mmi-csl-product-selected" class="mmi-csl-selected">
+		<select id="mmi-csl-product-select" name="mmi_csl_product_ids[]" class="mmi-csl-select" multiple="multiple" style="width:100%;">
 			<?php foreach ( $selected as $item ) : ?>
-				<li data-id="<?php echo esc_attr( (string) $item['id'] ); ?>">
-					<span class="mmi-csl-selected-label"><?php echo esc_html( $item['label'] ); ?></span>
-					<button type="button" class="button-link mmi-csl-remove" aria-label="<?php esc_attr_e( 'Remove', 'mmi-content-slider' ); ?>">&times;</button>
-					<input type="hidden" name="mmi_csl_product_ids[]" value="<?php echo esc_attr( (string) $item['id'] ); ?>" />
-				</li>
+				<option value="<?php echo esc_attr( (string) $item['id'] ); ?>" selected="selected"><?php echo esc_html( $item['label'] ); ?></option>
 			<?php endforeach; ?>
-		</ul>
+		</select>
+		<p class="mmi-csl-hint description"><?php esc_html_e( 'Tip: search “OPPO Find X8” or paste product ID (e.g. 21421).', 'mmi-content-slider' ); ?></p>
 		<?php
 	}
 
@@ -119,8 +112,32 @@ class MMI_CSL_Admin {
 			return;
 		}
 
+		$old_ids = MMI_CSL_Sites::get_linked_product_ids( $post_id );
 		$raw_ids = isset( $_POST['mmi_csl_product_ids'] ) ? (array) wp_unslash( $_POST['mmi_csl_product_ids'] ) : array();
+
 		MMI_CSL_Sites::save_linked_product_ids( $post_id, $raw_ids );
+		$new_ids = MMI_CSL_Sites::get_linked_product_ids( $post_id );
+
+		MMI_CSL_Sync::sync_diff( $post_id, $old_ids, $new_ids );
+	}
+
+	/**
+	 * @param int     $post_id Post ID.
+	 * @param WP_Post $post    Post object.
+	 */
+	public static function before_delete_post( int $post_id, WP_Post $post ): void {
+		if ( 'post' !== $post->post_type ) {
+			return;
+		}
+
+		if ( (int) get_current_blog_id() !== MMI_CSL_Sites::get_news_blog_id() ) {
+			return;
+		}
+
+		$linked = MMI_CSL_Sites::get_linked_product_ids( $post_id );
+		if ( ! empty( $linked ) ) {
+			MMI_CSL_Sync::detach_news_post( $post_id, $linked );
+		}
 	}
 
 	/**
@@ -136,16 +153,31 @@ class MMI_CSL_Admin {
 		}
 
 		wp_enqueue_style(
+			'mmi-csl-select2',
+			'https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css',
+			array(),
+			'4.0.13'
+		);
+
+		wp_enqueue_style(
 			'mmi-csl-admin',
 			MMI_CSL_URL . 'assets/css/admin.css',
-			array(),
+			array( 'mmi-csl-select2' ),
 			MMI_CSL_VERSION
+		);
+
+		wp_enqueue_script(
+			'mmi-csl-select2',
+			'https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js',
+			array( 'jquery' ),
+			'4.0.13',
+			true
 		);
 
 		wp_enqueue_script(
 			'mmi-csl-admin',
 			MMI_CSL_URL . 'assets/js/admin.js',
-			array( 'jquery' ),
+			array( 'jquery', 'mmi-csl-select2' ),
 			MMI_CSL_VERSION,
 			true
 		);
@@ -156,6 +188,13 @@ class MMI_CSL_Admin {
 			array(
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( 'mmi_csl_search' ),
+				'i18n'    => array(
+					'placeholder'   => __( 'Search devices by name or ID…', 'mmi-content-slider' ),
+					'searching'     => __( 'Searching…', 'mmi-content-slider' ),
+					'noResults'     => __( 'No products found', 'mmi-content-slider' ),
+					'inputTooShort' => __( 'Type at least 2 characters or a product ID', 'mmi-content-slider' ),
+					'error'         => __( 'Search failed. Try again.', 'mmi-content-slider' ),
+				),
 			)
 		);
 	}
@@ -165,6 +204,10 @@ class MMI_CSL_Admin {
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Forbidden', 'mmi-content-slider' ) ), 403 );
+		}
+
+		if ( ! MMI_CSL_Product_Search::check_rate_limit() ) {
+			wp_send_json_error( array( 'message' => __( 'Too many searches. Please wait a moment.', 'mmi-content-slider' ) ), 429 );
 		}
 
 		$term = isset( $_GET['term'] ) ? sanitize_text_field( wp_unslash( $_GET['term'] ) ) : '';
@@ -182,35 +225,7 @@ class MMI_CSL_Admin {
 			$switched = true;
 		}
 
-		$args = array(
-			'post_type'              => array( 'product' ),
-			'post_status'            => 'publish',
-			'posts_per_page'         => 25,
-			'orderby'                => 'title',
-			'order'                  => 'ASC',
-			'ignore_sticky_posts'    => true,
-			'no_found_rows'          => true,
-			'update_post_meta_cache' => false,
-			'update_post_term_cache' => false,
-		);
-
-		if ( ctype_digit( $term ) ) {
-			$args['post__in'] = array( (int) $term );
-		} else {
-			$args['s'] = $term;
-		}
-
-		$query = new WP_Query( $args );
-		$items = array();
-
-		foreach ( $query->posts as $product_post ) {
-			$items[] = array(
-				'id'    => (int) $product_post->ID,
-				'label' => sprintf( '#%d — %s', (int) $product_post->ID, get_the_title( $product_post ) ),
-			);
-		}
-
-		wp_reset_postdata();
+		$items = MMI_CSL_Product_Search::search( $term );
 
 		if ( $switched ) {
 			restore_current_blog();

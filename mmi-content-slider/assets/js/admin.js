@@ -1,16 +1,12 @@
 (function ($) {
 	'use strict';
 
-	var searchTimer = null;
-	var $search = $('#mmi-csl-product-search');
-	var $results = $('#mmi-csl-product-results');
-	var $selected = $('#mmi-csl-product-selected');
+	var $select = $('#mmi-csl-product-select');
 
-	if (!$search.length) {
+	if (!$select.length || typeof $.fn.select2 === 'undefined') {
 		return;
 	}
 
-	// Place metabox directly under the AMP box when present.
 	var $linkedBox = $('#mmi_csl_linked_products');
 	if ($linkedBox.length) {
 		var $ampBox = $('#side-sortables .postbox').filter(function () {
@@ -21,78 +17,75 @@
 		}
 	}
 
-	function selectedIds() {
-		var ids = [];
-		$selected.find('input[name="mmi_csl_product_ids[]"]').each(function () {
-			ids.push(String($(this).val()));
-		});
-		return ids;
-	}
+	var searchDelayMs = 350;
+	var lastRequest = null;
 
-	function addProduct(item) {
-		if (selectedIds().indexOf(String(item.id)) !== -1) {
-			return;
-		}
-
-		var $li = $('<li></li>').attr('data-id', item.id);
-		$li.append($('<span class="mmi-csl-selected-label"></span>').text(item.label));
-		$li.append(
-			$('<button type="button" class="button-link mmi-csl-remove" aria-label="Remove">&times;</button>')
-		);
-		$li.append(
-			$('<input type="hidden" name="mmi_csl_product_ids[]">').val(item.id)
-		);
-		$selected.append($li);
-	}
-
-	function renderResults(items) {
-		$results.empty();
-		if (!items || !items.length) {
-			$results.append('<li class="mmi-csl-empty">No products found.</li>');
-			return;
-		}
-
-		items.forEach(function (item) {
-			var $btn = $('<button type="button" class="button-link mmi-csl-add"></button>').text(item.label);
-			$btn.on('click', function () {
-				addProduct(item);
-				$results.empty();
-				$search.val('').trigger('focus');
-			});
-			$results.append($('<li></li>').append($btn));
-		});
-	}
-
-	function runSearch() {
-		var term = $.trim($search.val());
-		if (term.length < 2 && !/^\d+$/.test(term)) {
-			$results.empty();
-			return;
-		}
-
-		$.getJSON(MmiCslAdmin.ajaxUrl, {
-			action: 'mmi_csl_search_products',
-			nonce: MmiCslAdmin.nonce,
-			term: term
-		})
-			.done(function (response) {
-				if (!response || !response.success) {
-					renderResults([]);
-					return;
+	$select.select2({
+		width: '100%',
+		placeholder: MmiCslAdmin.i18n.placeholder,
+		allowClear: true,
+		closeOnSelect: false,
+		minimumInputLength: 2,
+		language: {
+			inputTooShort: function () {
+				return MmiCslAdmin.i18n.inputTooShort;
+			},
+			noResults: function () {
+				return MmiCslAdmin.i18n.noResults;
+			},
+			searching: function () {
+				return MmiCslAdmin.i18n.searching;
+			}
+		},
+		ajax: {
+			url: MmiCslAdmin.ajaxUrl,
+			dataType: 'json',
+			delay: searchDelayMs,
+			cache: true,
+			data: function (params) {
+				return {
+					action: 'mmi_csl_search_products',
+					nonce: MmiCslAdmin.nonce,
+					term: params.term || ''
+				};
+			},
+			transport: function (params, success, failure) {
+				var term = $.trim(params.data.term || '');
+				if (term.length < 2 && !/^\d+$/.test(term)) {
+					success({ success: true, data: { items: [] } });
+					return null;
 				}
-				renderResults(response.data.items || []);
-			})
-			.fail(function () {
-				renderResults([]);
-			});
-	}
 
-	$search.on('input', function () {
-		window.clearTimeout(searchTimer);
-		searchTimer = window.setTimeout(runSearch, 280);
+				if (lastRequest) {
+					lastRequest.abort();
+				}
+
+				lastRequest = $.ajax(params);
+				lastRequest.then(success);
+				lastRequest.fail(failure);
+				return lastRequest;
+			},
+			processResults: function (response) {
+				if (!response || !response.success || !response.data || !response.data.items) {
+					return { results: [] };
+				}
+
+				var results = response.data.items.map(function (item) {
+					return {
+						id: String(item.id),
+						text: item.label
+					};
+				});
+
+				return { results: results };
+			}
+		}
 	});
 
-	$selected.on('click', '.mmi-csl-remove', function () {
-		$(this).closest('li').remove();
+	$select.on('select2:open', function () {
+		document.querySelector('.select2-container--open .select2-search__field').setAttribute(
+			'placeholder',
+			MmiCslAdmin.i18n.placeholder
+		);
 	});
 })(jQuery);
