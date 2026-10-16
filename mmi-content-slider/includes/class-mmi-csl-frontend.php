@@ -1,6 +1,6 @@
 <?php
 /**
- * Devices subsite: Latest News carousel on single product pages (ReHub-compatible).
+ * Devices site: Latest News via REST from English news site (separate WP/DB).
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -9,7 +9,6 @@ class MMI_CSL_Frontend {
 
 	public static function init(): void {
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
-		// ReHub outputs related products outside default WC hooks — render in footer and move in DOM.
 		add_action( 'wp_footer', array( __CLASS__, 'render_latest_news_footer' ), 15 );
 	}
 
@@ -23,14 +22,6 @@ class MMI_CSL_Frontend {
 			MMI_CSL_URL . 'assets/css/latest.css',
 			array(),
 			MMI_CSL_VERSION
-		);
-
-		wp_enqueue_script(
-			'mmi-latest',
-			MMI_CSL_URL . 'assets/js/latest.js',
-			array(),
-			MMI_CSL_VERSION,
-			true
 		);
 
 		if ( ! wp_script_is( 'swiper', 'enqueued' ) ) {
@@ -47,7 +38,6 @@ class MMI_CSL_Frontend {
 				'11.0.0',
 				true
 			);
-			wp_script_add_data( 'swiper', 'strategy', 'defer' );
 		}
 
 		wp_enqueue_script(
@@ -67,15 +57,8 @@ class MMI_CSL_Frontend {
 		return MMI_CSL_Sites::is_devices_site();
 	}
 
-	/**
-	 * Print Latest News and insert before ReHub #related-section-woo-area.
-	 */
 	public static function render_latest_news_footer(): void {
-		if ( ! self::is_devices_product_page() ) {
-			return;
-		}
-
-		if ( ! class_exists( 'WC_Product' ) ) {
+		if ( ! self::is_devices_product_page() || ! class_exists( 'WC_Product' ) ) {
 			return;
 		}
 
@@ -85,28 +68,15 @@ class MMI_CSL_Frontend {
 		}
 
 		$product_id = (int) $product->get_id();
-		$posts      = MMI_CSL_Sites::get_news_for_product( $product_id, 12 );
+		$items      = MMI_CSL_Remote::get_news_items_for_product( $product_id, 12 );
 
-		if ( empty( $posts ) ) {
+		if ( empty( $items ) ) {
 			return;
 		}
 
-		$news_blog = MMI_CSL_Sites::get_news_blog_id();
-		$switched  = false;
-
-		if ( is_multisite() && get_current_blog_id() !== $news_blog ) {
-			switch_to_blog( $news_blog );
-			$switched = true;
-		}
-
 		echo '<div id="mmi-latest-news-mount" class="mmi-latest-news-mount">';
-		self::print_carousel_markup( $posts );
+		self::print_carousel_markup( $items );
 		echo '</div>';
-
-		if ( $switched ) {
-			restore_current_blog();
-		}
-
 		?>
 		<script>
 		(function () {
@@ -118,38 +88,30 @@ class MMI_CSL_Frontend {
 			if (anchor && anchor.parentNode) {
 				anchor.parentNode.insertBefore(mount, anchor);
 			}
-			mount.style.display = '';
 		})();
 		</script>
 		<?php
 	}
 
 	/**
-	 * @param WP_Post[] $posts News posts (main site).
+	 * @param array<int,array{id:int,title:string,url:string,date:string,image:string}> $items News rows.
 	 */
-	private static function print_carousel_markup( array $posts ): void {
+	private static function print_carousel_markup( array $items ): void {
 		?>
 		<section class="related-news-slider mmi-device-latest-news" aria-labelledby="mmi-latest-news-heading">
 			<h3 id="mmi-latest-news-heading" class="mmi-latest-news-title"><?php esc_html_e( 'Latest News', 'mmi-content-slider' ); ?></h3>
 			<div class="swiper related-news-swiper">
 				<div class="swiper-wrapper">
-					<?php
-					foreach ( $posts as $news_post ) :
-						$post_id   = (int) $news_post->ID;
-						$permalink = get_permalink( $post_id );
-						$title     = get_the_title( $post_id );
-						$thumb     = get_the_post_thumbnail_url( $post_id, 'medium' );
-						$date      = get_the_date( '', $post_id );
-						?>
+					<?php foreach ( $items as $item ) : ?>
 						<div class="swiper-slide">
 							<article class="news-box">
-								<a href="<?php echo esc_url( $permalink ); ?>" class="news-box-link" rel="bookmark">
-									<?php if ( $thumb ) : ?>
-										<img src="<?php echo esc_url( $thumb ); ?>" alt="<?php echo esc_attr( $title ); ?>" loading="lazy" width="280" height="158" />
+								<a href="<?php echo esc_url( $item['url'] ); ?>" class="news-box-link" rel="bookmark">
+									<?php if ( ! empty( $item['image'] ) ) : ?>
+										<img src="<?php echo esc_url( $item['image'] ); ?>" alt="<?php echo esc_attr( $item['title'] ); ?>" loading="lazy" width="280" height="158" />
 									<?php endif; ?>
-									<h4 class="news-box-title"><?php echo esc_html( $title ); ?></h4>
-									<?php if ( $date ) : ?>
-										<time class="news-box-date" datetime="<?php echo esc_attr( get_the_date( 'c', $post_id ) ); ?>"><?php echo esc_html( $date ); ?></time>
+									<h4 class="news-box-title"><?php echo esc_html( $item['title'] ); ?></h4>
+									<?php if ( ! empty( $item['date'] ) ) : ?>
+										<time class="news-box-date" datetime="<?php echo esc_attr( $item['date'] ); ?>"><?php echo esc_html( date_i18n( get_option( 'date_format' ), strtotime( $item['date'] ) ) ); ?></time>
 									<?php endif; ?>
 								</a>
 							</article>

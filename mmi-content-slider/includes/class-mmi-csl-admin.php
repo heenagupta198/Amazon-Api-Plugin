@@ -8,6 +8,7 @@ defined( 'ABSPATH' ) || exit;
 class MMI_CSL_Admin {
 
 	public static function init(): void {
+		add_action( 'admin_notices', array( __CLASS__, 'devices_plugin_notice' ) );
 		add_action( 'add_meta_boxes', array( __CLASS__, 'register_meta_box' ), 20 );
 		add_action( 'save_post', array( __CLASS__, 'save_meta_box' ), 10, 2 );
 		add_action( 'before_delete_post', array( __CLASS__, 'before_delete_post' ), 10, 2 );
@@ -17,7 +18,7 @@ class MMI_CSL_Admin {
 	}
 
 	public static function register_meta_box(): void {
-		if ( (int) get_current_blog_id() !== MMI_CSL_Sites::get_news_blog_id() ) {
+		if ( ! MMI_CSL_Sites::is_news_site() ) {
 			return;
 		}
 
@@ -46,7 +47,13 @@ class MMI_CSL_Admin {
 		</div>
 		<div class="mmi-csl-panel is-active" data-panel="search">
 			<p class="description">
-				<?php esc_html_e( 'Data source: mymobileindia.com/devices/ (WooCommerce products). Pick the exact phone model — news shows only on those product pages.', 'mmi-content-slider' ); ?>
+				<?php
+				printf(
+					/* translators: %s: devices site URL */
+					esc_html__( 'Live search from %s (separate WordPress / WooCommerce). Link the exact product ID from that site.', 'mmi-content-slider' ),
+					esc_html( MMI_CSL_Settings::get_devices_site_url() )
+				);
+				?>
 			</p>
 			<div class="mmi-csl-brand-row" id="mmi-csl-brand-row" aria-label="<?php esc_attr_e( 'Quick brand filter', 'mmi-content-slider' ); ?>"></div>
 			<label for="mmi-csl-product-search" class="mmi-csl-label"><?php esc_html_e( 'Add product', 'mmi-content-slider' ); ?></label>
@@ -84,31 +91,7 @@ class MMI_CSL_Admin {
 			return array();
 		}
 
-		$devices_blog = MMI_CSL_Sites::get_devices_blog_id();
-		$switched     = false;
-
-		if ( is_multisite() && get_current_blog_id() !== $devices_blog ) {
-			switch_to_blog( $devices_blog );
-			$switched = true;
-		}
-
-		$out = array();
-		foreach ( $ids as $id ) {
-			$title = get_the_title( $id );
-			if ( ! $title ) {
-				continue;
-			}
-			$out[] = array(
-				'id'    => (int) $id,
-				'label' => sprintf( '#%d — %s', (int) $id, $title ),
-			);
-		}
-
-		if ( $switched ) {
-			restore_current_blog();
-		}
-
-		return $out;
+		return MMI_CSL_Remote::resolve_product_ids( $ids );
 	}
 
 	/**
@@ -120,7 +103,7 @@ class MMI_CSL_Admin {
 			return;
 		}
 
-		if ( (int) get_current_blog_id() !== MMI_CSL_Sites::get_news_blog_id() ) {
+		if ( ! MMI_CSL_Sites::is_news_site() ) {
 			return;
 		}
 
@@ -142,7 +125,13 @@ class MMI_CSL_Admin {
 		MMI_CSL_Sites::save_linked_product_ids( $post_id, $raw_ids );
 		$new_ids = MMI_CSL_Sites::get_linked_product_ids( $post_id );
 
-		MMI_CSL_Sync::sync_diff( $post_id, $old_ids, $new_ids );
+		if ( is_multisite() ) {
+			MMI_CSL_Sync::sync_diff( $post_id, $old_ids, $new_ids );
+		}
+
+		foreach ( array_merge( $old_ids, $new_ids ) as $pid ) {
+			delete_transient( 'mmi_csl_news_p_' . (int) $pid );
+		}
 	}
 
 	/**
@@ -154,7 +143,7 @@ class MMI_CSL_Admin {
 			return;
 		}
 
-		if ( (int) get_current_blog_id() !== MMI_CSL_Sites::get_news_blog_id() ) {
+		if ( ! MMI_CSL_Sites::is_news_site() ) {
 			return;
 		}
 
@@ -172,7 +161,7 @@ class MMI_CSL_Admin {
 			return;
 		}
 
-		if ( (int) get_current_blog_id() !== MMI_CSL_Sites::get_news_blog_id() ) {
+		if ( ! MMI_CSL_Sites::is_news_site() ) {
 			return;
 		}
 
@@ -209,16 +198,7 @@ class MMI_CSL_Admin {
 		);
 
 		$brands = array();
-		$devices_blog = MMI_CSL_Sites::get_devices_blog_id();
-		$switched     = false;
-		if ( is_multisite() && get_current_blog_id() !== $devices_blog ) {
-			switch_to_blog( $devices_blog );
-			$switched = true;
-		}
-		$brands = MMI_CSL_Product_Search::get_popular_brands( 14 );
-		if ( $switched ) {
-			restore_current_blog();
-		}
+		$brands = MMI_CSL_Remote::get_brands();
 
 		wp_localize_script(
 			'mmi-csl-admin',
@@ -257,18 +237,15 @@ class MMI_CSL_Admin {
 			wp_send_json_success( array( 'items' => array() ) );
 		}
 
-		$devices_blog = MMI_CSL_Sites::get_devices_blog_id();
-		$switched     = false;
+		$items = MMI_CSL_Remote::search_products( $term );
 
-		if ( is_multisite() && get_current_blog_id() !== $devices_blog ) {
-			switch_to_blog( $devices_blog );
-			$switched = true;
-		}
-
-		$items = MMI_CSL_Product_Search::search( $term );
-
-		if ( $switched ) {
-			restore_current_blog();
+		if ( empty( $items ) && is_multisite() ) {
+			$devices_blog = MMI_CSL_Sites::get_devices_blog_id();
+			if ( get_current_blog_id() !== $devices_blog ) {
+				switch_to_blog( $devices_blog );
+				$items = MMI_CSL_Product_Search::search( $term );
+				restore_current_blog();
+			}
 		}
 
 		wp_send_json_success( array( 'items' => $items ) );
@@ -289,21 +266,30 @@ class MMI_CSL_Admin {
 			wp_send_json_success( array( 'items' => array() ) );
 		}
 
-		$devices_blog = MMI_CSL_Sites::get_devices_blog_id();
-		$switched     = false;
-
-		if ( is_multisite() && get_current_blog_id() !== $devices_blog ) {
-			switch_to_blog( $devices_blog );
-			$switched = true;
-		}
-
-		$items = MMI_CSL_Product_Search::resolve_ids( $ids );
-
-		if ( $switched ) {
-			restore_current_blog();
-		}
+		$items = MMI_CSL_Remote::resolve_product_ids( $ids );
 
 		wp_send_json_success( array( 'items' => $items ) );
+	}
+
+	public static function devices_plugin_notice(): void {
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return;
+		}
+
+		if ( ! MMI_CSL_Sites::is_news_site() ) {
+			return;
+		}
+
+		if ( ! MMI_CSL_Remote::devices_api_reachable() ) {
+			echo '<div class="notice notice-error"><p>';
+			printf(
+				/* translators: 1: settings url 2: devices url */
+				esc_html__( 'MMI Device News cannot reach the devices store API. Check %1$s and ensure %2$s allows REST (wp-json).', 'mmi-content-slider' ),
+				'<a href="' . esc_url( admin_url( 'options-general.php?page=mmi-csl-settings' ) ) . '">' . esc_html__( 'Settings → MMI Device News', 'mmi-content-slider' ) . '</a>',
+				esc_html( MMI_CSL_Settings::get_devices_site_url() )
+			);
+			echo '</p></div>';
+		}
 	}
 
 	private static function get_request_term(): string {

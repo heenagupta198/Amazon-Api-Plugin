@@ -5,9 +5,12 @@
 
 defined( 'ABSPATH' ) || exit;
 
+require_once MMI_CSL_PATH . 'includes/class-mmi-csl-settings.php';
 require_once MMI_CSL_PATH . 'includes/class-mmi-csl-sites.php';
 require_once MMI_CSL_PATH . 'includes/class-mmi-csl-product-search.php';
+require_once MMI_CSL_PATH . 'includes/class-mmi-csl-remote.php';
 require_once MMI_CSL_PATH . 'includes/class-mmi-csl-sync.php';
+require_once MMI_CSL_PATH . 'includes/class-mmi-csl-rest.php';
 require_once MMI_CSL_PATH . 'includes/class-mmi-csl-admin.php';
 require_once MMI_CSL_PATH . 'includes/class-mmi-csl-frontend.php';
 
@@ -25,10 +28,15 @@ final class MMI_CSL {
 	}
 
 	private function __construct() {
+		MMI_CSL_Settings::init();
+		MMI_CSL_Rest::init();
+
 		if ( is_admin() ) {
 			MMI_CSL_Admin::init();
 		}
 
-		MMI_CSL_Frontend::init();
+		if ( MMI_CSL_Sites::is_devices_site() ) {
+			MMI_CSL_Frontend::init();
+		}
 	}
 }

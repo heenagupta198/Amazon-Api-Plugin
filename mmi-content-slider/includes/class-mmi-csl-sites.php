@@ -11,6 +11,13 @@ class MMI_CSL_Sites {
 	const OPTION_NEWS_BLOG_ID    = 'mmi_csl_news_blog_id';
 
 	/**
+	 * English news site (not the /devices/ WooCommerce install).
+	 */
+	public static function is_news_site(): bool {
+		return ! self::is_devices_site();
+	}
+
+	/**
 	 * Blog ID where news posts are published (usually the main site).
 	 */
 	public static function get_news_blog_id(): int {
@@ -101,8 +108,12 @@ class MMI_CSL_Sites {
 	 *
 	 * @return WP_Post[]
 	 */
-	public static function get_news_for_product( int $product_id, int $limit = 12 ): array {
-		$news_blog  = self::get_news_blog_id();
+	/**
+	 * News articles linked to a devices product ID (local DB on news site).
+	 *
+	 * @return int[]
+	 */
+	public static function find_news_post_ids_for_product( int $product_id, int $limit = 12 ): array {
 		$product_id = max( 0, $product_id );
 		$limit      = max( 1, min( 30, $limit ) );
 
@@ -110,58 +121,32 @@ class MMI_CSL_Sites {
 			return array();
 		}
 
-		$from_index = MMI_CSL_Sync::get_news_ids_for_product( $product_id );
-		$from_meta  = self::find_news_ids_by_article_meta( $product_id, $news_blog, $limit );
-		$news_post_ids = array_values( array_unique( array_merge( $from_index, $from_meta ) ) );
-
-		if ( empty( $news_post_ids ) ) {
+		if ( self::is_devices_site() ) {
 			return array();
 		}
 
-		$news_post_ids = array_slice( $news_post_ids, 0, $limit );
-
-		$switched = false;
-		if ( is_multisite() && get_current_blog_id() !== $news_blog ) {
-			switch_to_blog( $news_blog );
-			$switched = true;
+		$from_index = array();
+		if ( is_multisite() ) {
+			$devices_blog = self::get_devices_blog_id();
+			$switched     = false;
+			if ( get_current_blog_id() !== $devices_blog ) {
+				switch_to_blog( $devices_blog );
+				$switched = true;
+			}
+			$from_index = MMI_CSL_Sync::get_news_ids_for_product( $product_id );
+			if ( $switched ) {
+				restore_current_blog();
+			}
 		}
 
-		$query = new WP_Query(
-			array(
-				'post_type'              => 'post',
-				'post_status'            => 'publish',
-				'post__in'               => $news_post_ids,
-				'orderby'                => 'post__in',
-				'posts_per_page'         => count( $news_post_ids ),
-				'ignore_sticky_posts'    => true,
-				'no_found_rows'          => true,
-				'update_post_meta_cache' => false,
-				'update_post_term_cache' => false,
-			)
-		);
-
-		$posts = $query->posts;
-		wp_reset_postdata();
-
-		if ( $switched ) {
-			restore_current_blog();
-		}
-
-		return is_array( $posts ) ? $posts : array();
+		$from_meta = self::query_news_ids_by_meta( $product_id, $limit );
+		return array_values( array_unique( array_merge( $from_index, $from_meta ) ) );
 	}
 
 	/**
-	 * Fallback when reverse index is missing (legacy links).
-	 *
 	 * @return int[]
 	 */
-	private static function find_news_ids_by_article_meta( int $product_id, int $news_blog, int $limit ): array {
-		$switched = false;
-		if ( is_multisite() && get_current_blog_id() !== $news_blog ) {
-			switch_to_blog( $news_blog );
-			$switched = true;
-		}
-
+	private static function query_news_ids_by_meta( int $product_id, int $limit ): array {
 		$query = new WP_Query(
 			array(
 				'post_type'              => 'post',
@@ -187,10 +172,6 @@ class MMI_CSL_Sites {
 		$ids = is_array( $query->posts ) ? array_map( 'intval', $query->posts ) : array();
 		wp_reset_postdata();
 
-		if ( $switched ) {
-			restore_current_blog();
-		}
-
 		return $ids;
 	}
 
@@ -198,7 +179,8 @@ class MMI_CSL_Sites {
 	 * Whether the current request is on the devices subsite (URL or blog ID).
 	 */
 	public static function is_devices_site(): bool {
-		if ( (int) get_current_blog_id() === self::get_devices_blog_id() ) {
+		$siteurl = (string) get_option( 'siteurl', '' );
+		if ( false !== strpos( $siteurl, '/devices' ) ) {
 			return true;
 		}
 
@@ -207,7 +189,6 @@ class MMI_CSL_Sites {
 			return true;
 		}
 
-		$siteurl = (string) get_option( 'siteurl', '' );
-		return false !== strpos( $siteurl, '/devices' );
+		return is_multisite() && (int) get_current_blog_id() === self::get_devices_blog_id();
 	}
 }
