@@ -1,6 +1,6 @@
 <?php
 /**
- * Devices subsite: Latest News carousel on single product pages.
+ * Devices subsite: Latest News carousel on single product pages (ReHub-compatible).
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -9,10 +9,8 @@ class MMI_CSL_Frontend {
 
 	public static function init(): void {
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
-		add_action( 'woocommerce_before_single_product_related', array( __CLASS__, 'render_latest_news' ), 5 );
-		add_action( 'woocommerce_after_single_product_summary', array( __CLASS__, 'render_latest_news' ), 19 );
-		add_action( 'woocommerce_after_single_product', array( __CLASS__, 'render_latest_news' ), 12 );
-		add_action( 'rehub_after_single_product', array( __CLASS__, 'render_latest_news' ), 10 );
+		// ReHub outputs related products outside default WC hooks — render in footer and move in DOM.
+		add_action( 'wp_footer', array( __CLASS__, 'render_latest_news_footer' ), 15 );
 	}
 
 	public static function enqueue_assets(): void {
@@ -69,14 +67,10 @@ class MMI_CSL_Frontend {
 		return MMI_CSL_Sites::is_devices_site();
 	}
 
-	/** @var bool */
-	private static $rendered = false;
-
-	public static function render_latest_news(): void {
-		if ( self::$rendered ) {
-			return;
-		}
-
+	/**
+	 * Print Latest News and insert before ReHub #related-section-woo-area.
+	 */
+	public static function render_latest_news_footer(): void {
 		if ( ! self::is_devices_product_page() ) {
 			return;
 		}
@@ -105,6 +99,35 @@ class MMI_CSL_Frontend {
 			$switched = true;
 		}
 
+		echo '<div id="mmi-latest-news-mount" class="mmi-latest-news-mount">';
+		self::print_carousel_markup( $posts );
+		echo '</div>';
+
+		if ( $switched ) {
+			restore_current_blog();
+		}
+
+		?>
+		<script>
+		(function () {
+			var mount = document.getElementById('mmi-latest-news-mount');
+			if (!mount) {
+				return;
+			}
+			var anchor = document.querySelector('#related-section-woo-area, .related-woo-area');
+			if (anchor && anchor.parentNode) {
+				anchor.parentNode.insertBefore(mount, anchor);
+			}
+			mount.style.display = '';
+		})();
+		</script>
+		<?php
+	}
+
+	/**
+	 * @param WP_Post[] $posts News posts (main site).
+	 */
+	private static function print_carousel_markup( array $posts ): void {
 		?>
 		<section class="related-news-slider mmi-device-latest-news" aria-labelledby="mmi-latest-news-heading">
 			<h3 id="mmi-latest-news-heading" class="mmi-latest-news-title"><?php esc_html_e( 'Latest News', 'mmi-content-slider' ); ?></h3>
@@ -138,11 +161,5 @@ class MMI_CSL_Frontend {
 			</div>
 		</section>
 		<?php
-
-		if ( $switched ) {
-			restore_current_blog();
-		}
-
-		self::$rendered = true;
 	}
 }

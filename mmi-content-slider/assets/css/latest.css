@@ -432,6 +432,11 @@ padding:16px 18px;
    Product page: Latest News carousel
 ========================================== */
 
+.mmi-latest-news-mount {
+    clear: both;
+    width: 100%;
+}
+
 .mmi-device-latest-news.related-news-slider {
     clear: both;
     margin: 28px 0 24px;

@@ -43,7 +43,7 @@ class MMI_CSL_Product_Search {
 			return array();
 		}
 
-		$cache_key = 'mmi_csl_q_' . get_current_blog_id() . '_v4_' . md5( strtolower( $term ) . '|' . $limit );
+		$cache_key = 'mmi_csl_q_' . get_current_blog_id() . '_v5_' . md5( strtolower( $term ) . '|' . $limit );
 		$cached    = get_transient( $cache_key );
 		if ( is_array( $cached ) ) {
 			return $cached;
@@ -63,19 +63,32 @@ class MMI_CSL_Product_Search {
 		$scored = array();
 		$tokens = self::tokenize( $term );
 
-		// Brand-first: "OPPO" → only Oppo brand products from product_brand.
-		$brand_items = self::query_products_for_brand_term( $term, $tokens, $types, $limit );
-		if ( ! empty( $brand_items ) ) {
-			self::merge_scored( $scored, $brand_items, 200 );
+		// Exact / near-exact title matches always win (fixes "OPPO Reno12 Pro" vs random Oppo F-series).
+		self::merge_scored( $scored, self::query_phrase_title( $term, $types, $limit * 2 ), 500 );
+		self::merge_scored( $scored, self::query_title_tokens( $term, $types, $limit * 2, true ), 450 );
+		self::merge_scored( $scored, self::query_slug( $term, $types, $limit * 2 ), 200 );
+
+		$brand_term   = self::resolve_brand_term( $term, $tokens );
+		$model_tokens = self::get_model_tokens( $tokens, $brand_term );
+
+		if ( $brand_term instanceof WP_Term && ! empty( $model_tokens ) ) {
+			self::merge_scored(
+				$scored,
+				self::query_in_brand_term( (int) $brand_term->term_id, $brand_term->taxonomy, $types, $limit, $model_tokens ),
+				400
+			);
+		} elseif ( $brand_term instanceof WP_Term && 1 === count( $tokens ) ) {
+			// Brand-only search (e.g. "Oppo") — newest models first, not A–Z F-series.
+			self::merge_scored(
+				$scored,
+				self::query_in_brand_term( (int) $brand_term->term_id, $brand_term->taxonomy, $types, $limit, array() ),
+				120
+			);
 		}
 
-		self::merge_scored( $scored, self::query_phrase_title( $term, $types, $limit * 2 ), 120 );
-		self::merge_scored( $scored, self::query_title_tokens( $term, $types, $limit * 2, true ), 80 );
-		self::merge_scored( $scored, self::query_slug( $term, $types, $limit * 2 ), 50 );
-
 		if ( empty( $scored ) ) {
-			self::merge_scored( $scored, self::query_title_tokens( $term, $types, $limit * 2, false ), 30 );
-			self::merge_scored( $scored, self::query_loose_substring( $term, $types, $limit * 2 ), 20 );
+			self::merge_scored( $scored, self::query_title_tokens( $term, $types, $limit * 2, false ), 80 );
+			self::merge_scored( $scored, self::query_loose_substring( $term, $types, $limit * 2 ), 40 );
 		}
 
 		$items = self::sort_and_format( $scored, $limit, $tokens );
@@ -157,13 +170,17 @@ class MMI_CSL_Product_Search {
 	 * @param string[] $types Post types.
 	 * @return array<int,array{id:int,title:string,score:int}>
 	 */
-	private static function query_products_for_brand_term( string $term, array $tokens, array $types, int $limit ): array {
-		$brand_term = self::resolve_brand_term( $term, $tokens );
-		if ( ! $brand_term ) {
-			return array();
+	/**
+	 * @param string[]     $tokens     Search tokens.
+	 * @param WP_Term|null $brand_term Matched brand term.
+	 * @return string[]
+	 */
+	private static function get_model_tokens( array $tokens, ?WP_Term $brand_term ): array {
+		if ( ! $brand_term instanceof WP_Term ) {
+			return $tokens;
 		}
 
-		$model_tokens = array_values(
+		return array_values(
 			array_filter(
 				$tokens,
 				static function ( string $token ) use ( $brand_term ): bool {
@@ -173,8 +190,6 @@ class MMI_CSL_Product_Search {
 				}
 			)
 		);
-
-		return self::query_in_brand_term( (int) $brand_term->term_id, $brand_term->taxonomy, $types, $limit, $model_tokens );
 	}
 
 	/**
@@ -243,7 +258,11 @@ class MMI_CSL_Product_Search {
 			$params[] = '%' . $wpdb->esc_like( $token ) . '%';
 		}
 
-		$sql     .= ' ORDER BY p.post_title ASC LIMIT %d';
+		if ( empty( $model_tokens ) ) {
+			$sql .= ' ORDER BY p.post_date DESC LIMIT %d';
+		} else {
+			$sql .= ' ORDER BY p.post_title ASC LIMIT %d';
+		}
 		$params[] = $limit;
 
 		return self::rows_to_scored( $wpdb->get_results( $wpdb->prepare( $sql, $params ) ), 90, $model_tokens );

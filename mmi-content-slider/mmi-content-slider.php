@@ -2,7 +2,7 @@
 /**
  * Plugin Name: MMI Content Slider
  * Description: Link news articles to device products and show a Latest News carousel on product spec pages (multisite).
- * Version:     1.4.0
+ * Version:     1.5.0
  * Author:      MyMobileIndia
  * Text Domain: mmi-content-slider
  * Requires at least: 6.0
@@ -12,7 +12,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'MMI_CSL_VERSION', '1.4.0' );
+define( 'MMI_CSL_VERSION', '1.5.0' );
 define( 'MMI_CSL_FILE', __FILE__ );
 define( 'MMI_CSL_PATH', plugin_dir_path( __FILE__ ) );
 define( 'MMI_CSL_URL', plugin_dir_url( __FILE__ ) );

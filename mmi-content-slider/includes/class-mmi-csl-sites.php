@@ -110,11 +110,9 @@ class MMI_CSL_Sites {
 			return array();
 		}
 
-		$news_post_ids = MMI_CSL_Sync::get_news_ids_for_product( $product_id );
-
-		if ( empty( $news_post_ids ) ) {
-			$news_post_ids = self::find_news_ids_by_article_meta( $product_id, $news_blog, $limit );
-		}
+		$from_index = MMI_CSL_Sync::get_news_ids_for_product( $product_id );
+		$from_meta  = self::find_news_ids_by_article_meta( $product_id, $news_blog, $limit );
+		$news_post_ids = array_values( array_unique( array_merge( $from_index, $from_meta ) ) );
 
 		if ( empty( $news_post_ids ) ) {
 			return array();
