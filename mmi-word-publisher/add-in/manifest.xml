@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OfficeApp
+  xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+  xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
+  xsi:type="TaskPaneApp">
+  <Id>8f3c2a1b-4d5e-6f70-8a9b-0c1d2e3f4a5b</Id>
+  <Version>1.0.0.0</Version>
+  <ProviderName>MyMobileIndia</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="MyMobileIndia Word Publisher"/>
+  <Description DefaultValue="Send article title, text, bold subheadings and links to WordPress as a draft."/>
+  <IconUrl DefaultValue="https://mymobileindia.com/wp-content/plugins/mmi-word-publisher/add-in/assets/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://mymobileindia.com/wp-content/plugins/mmi-word-publisher/add-in/assets/icon-80.png"/>
+  <SupportUrl DefaultValue="https://mymobileindia.com"/>
+  <AppDomains>
+    <AppDomain>https://mymobileindia.com</AppDomain>
+  </AppDomains>
+  <Hosts>
+    <Host Name="Document"/>
+  </Hosts>
+  <DefaultSettings>
+    <SourceLocation DefaultValue="https://mymobileindia.com/wp-content/plugins/mmi-word-publisher/add-in/taskpane.html"/>
+  </DefaultSettings>
+  <Permissions>ReadWriteDocument</Permissions>
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
+    <Hosts>
+      <Host xsi:type="Document">
+        <DesktopFormFactor>
+          <GetStarted>
+            <Title resid="GetStarted.Title"/>
+            <Description resid="GetStarted.Description"/>
+            <LearnMoreUrl resid="GetStarted.LearnMoreUrl"/>
+          </GetStarted>
+          <FunctionFile resid="Commands.Url"/>
+          <ExtensionPoint xsi:type="PrimaryCommandSurface">
+            <OfficeTab id="TabHome">
+              <Group id="MMI.Group">
+                <Label resid="MMI.GroupLabel"/>
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16"/>
+                  <bt:Image size="32" resid="Icon.32"/>
+                  <bt:Image size="80" resid="Icon.80"/>
+                </Icon>
+                <Control xsi:type="Button" id="MMI.SendButton">
+                  <Label resid="MMI.SendLabel"/>
+                  <Supertip>
+                    <Title resid="MMI.SendLabel"/>
+                    <Description resid="MMI.SendDesc"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16"/>
+                    <bt:Image size="32" resid="Icon.32"/>
+                    <bt:Image size="80" resid="Icon.80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>MMI.Taskpane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url"/>
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+    </Hosts>
+    <Resources>
+      <bt:Images>
+        <bt:Image id="Icon.16" DefaultValue="https://mymobileindia.com/wp-content/plugins/mmi-word-publisher/add-in/assets/icon-16.png"/>
+        <bt:Image id="Icon.32" DefaultValue="https://mymobileindia.com/wp-content/plugins/mmi-word-publisher/add-in/assets/icon-32.png"/>
+        <bt:Image id="Icon.80" DefaultValue="https://mymobileindia.com/wp-content/plugins/mmi-word-publisher/add-in/assets/icon-80.png"/>
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://mymobileindia.com"/>
+        <bt:Url id="Commands.Url" DefaultValue="https://mymobileindia.com/wp-content/plugins/mmi-word-publisher/add-in/commands.html"/>
+        <bt:Url id="Taskpane.Url" DefaultValue="https://mymobileindia.com/wp-content/plugins/mmi-word-publisher/add-in/taskpane.html"/>
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="GetStarted.Title" DefaultValue="MyMobileIndia Word Publisher"/>
+        <bt:String id="GetStarted.Description" DefaultValue="Open the task pane, save your WordPress login once, then send drafts."/>
+        <bt:String id="MMI.GroupLabel" DefaultValue="MyMobileIndia"/>
+        <bt:String id="MMI.SendLabel" DefaultValue="Send to MyMobileIndia"/>
+        <bt:String id="MMI.SendDesc" DefaultValue="Send this article to WordPress as a draft (add images later in WP)."/>
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="GetStarted.Description" DefaultValue="Configure site URL and Application Password in the task pane."/>
+      </bt:LongStrings>
+    </Resources>
+  </VersionOverrides>
+</OfficeApp>
