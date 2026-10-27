@@ -1,0 +1,35 @@
+/**
+ * ReHub / Devices mobile menu: equal-length hamburger lines (matches English news TagDiv icon).
+ */
+
+@media (max-width: 1024px) {
+	#main_header .responsive_nav_wrap .dl-trigger svg,
+	#main_header .responsive_nav_wrap .dl-trigger svg g,
+	#main_header .responsive_nav_wrap .dl-trigger svg line {
+		display: none !important;
+	}
+
+	#main_header .responsive_nav_wrap .dl-trigger {
+		position: relative;
+		display: inline-flex !important;
+		align-items: center !important;
+		justify-content: center !important;
+		width: 54px;
+		height: 54px;
+		padding: 0 !important;
+		margin: 0;
+		border: 0;
+		background: transparent !important;
+		box-shadow: none !important;
+	}
+
+	#main_header .responsive_nav_wrap .dl-trigger::before {
+		content: "";
+		display: block;
+		width: 26px;
+		height: 2px;
+		border-radius: 2px;
+		background-color: #e31e24;
+		box-shadow: 0 9px 0 #e31e24, 0 18px 0 #e31e24;
+	}
+}

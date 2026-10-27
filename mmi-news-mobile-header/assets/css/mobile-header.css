@@ -1,56 +1,95 @@
 /**
- * TagDiv mobile header: menu (left) | logo (center) | search (right)
- * Matches ReHub layout on https://www.mymobileindia.com/devices/
+ * TagDiv mobile header (≤767px): menu (left) | logo (center) | search (right)
+ * Column order in builder: 1=logo, 2=search, 3=menu — reordered via flex only.
  */
 
-@media (max-width: 1018px) {
-	.td-header-mobile-wrap .vc_row,
-	.td-header-mobile-sticky-wrap .vc_row {
+@media (max-width: 767px) {
+	.td-header-mobile-wrap .tdc-row > .vc_row,
+	.td-header-mobile-sticky-wrap .tdc-row > .vc_row,
+	.td-header-mobile-wrap .tdc-row .vc_row.tdc-element-style,
+	.td-header-mobile-sticky-wrap .tdc-row .vc_row.tdc-element-style {
 		display: flex !important;
-		flex-wrap: nowrap !important;
+		flex-flow: row nowrap !important;
 		align-items: center !important;
 		justify-content: space-between !important;
-		width: 100%;
+		width: 100% !important;
+		margin-left: 0 !important;
+		margin-right: 0 !important;
 	}
 
-	.td-header-mobile-wrap .vc_column:has(.tdb_mobile_menu),
-	.td-header-mobile-sticky-wrap .vc_column:has(.tdb_mobile_menu) {
-		order: 1;
-		flex: 0 0 auto;
+	/* Logo column (1st) */
+	.td-header-mobile-wrap .tdc-row > .vc_row > .vc_column:nth-child(1),
+	.td-header-mobile-sticky-wrap .tdc-row > .vc_row > .vc_column:nth-child(1) {
+		order: 2 !important;
+		flex: 1 1 auto !important;
 		width: auto !important;
-		max-width: none;
+		max-width: none !important;
+		min-width: 0 !important;
+		padding-left: 0 !important;
+		padding-right: 0 !important;
+		text-align: center !important;
 	}
 
-	.td-header-mobile-wrap .vc_column:has(.tdb_header_logo),
-	.td-header-mobile-sticky-wrap .vc_column:has(.tdb_header_logo) {
-		order: 2;
-		flex: 1 1 auto;
+	/* Search column (2nd) */
+	.td-header-mobile-wrap .tdc-row > .vc_row > .vc_column:nth-child(2),
+	.td-header-mobile-sticky-wrap .tdc-row > .vc_row > .vc_column:nth-child(2) {
+		order: 3 !important;
+		flex: 0 0 auto !important;
 		width: auto !important;
-		max-width: none;
-		min-width: 0;
-		text-align: center;
+		max-width: none !important;
+		padding-left: 0 !important;
+		padding-right: 0 !important;
 	}
 
-	.td-header-mobile-wrap .vc_column:has(.tdb_mobile_search),
-	.td-header-mobile-sticky-wrap .vc_column:has(.tdb_mobile_search) {
-		order: 3;
-		flex: 0 0 auto;
+	/* Menu column (3rd) */
+	.td-header-mobile-wrap .tdc-row > .vc_row > .vc_column:nth-child(3),
+	.td-header-mobile-sticky-wrap .tdc-row > .vc_row > .vc_column:nth-child(3) {
+		order: 1 !important;
+		flex: 0 0 auto !important;
 		width: auto !important;
-		max-width: none;
+		max-width: none !important;
+		padding-left: 0 !important;
+		padding-right: 0 !important;
 	}
 
 	.td-header-mobile-wrap .tdb_header_logo .tdb-logo-a,
 	.td-header-mobile-sticky-wrap .tdb_header_logo .tdb-logo-a {
 		justify-content: center !important;
 		align-items: center !important;
+		margin-left: auto !important;
+		margin-right: auto !important;
 	}
 
 	.td-header-mobile-wrap .tdb_header_logo .tdb-block-inner,
 	.td-header-mobile-sticky-wrap .tdb_header_logo .tdb-block-inner {
-		text-align: center;
+		text-align: center !important;
 	}
 
-	/* Brand red icons — same as Devices header */
+	.td-header-mobile-wrap .tdb_header_logo .tdb-logo-img,
+	.td-header-mobile-sticky-wrap .tdb_header_logo .tdb-logo-img {
+		margin-left: auto !important;
+		margin-right: auto !important;
+	}
+
+	/* Equal-width hamburger + search icons (TagDiv SVG) */
+	.td-header-mobile-wrap .tdb-mobile-menu-button,
+	.td-header-mobile-sticky-wrap .tdb-mobile-menu-button,
+	.td-header-mobile-wrap .tdb-header-search-button-mob,
+	.td-header-mobile-sticky-wrap .tdb-header-search-button-mob {
+		display: inline-flex !important;
+		align-items: center !important;
+		justify-content: center !important;
+	}
+
+	.td-header-mobile-wrap .tdb-mobile-menu-icon-svg,
+	.td-header-mobile-sticky-wrap .tdb-mobile-menu-icon-svg,
+	.td-header-mobile-wrap .tdb-mobile-search-icon-svg,
+	.td-header-mobile-sticky-wrap .tdb-mobile-search-icon-svg {
+		display: inline-flex !important;
+		align-items: center !important;
+		justify-content: center !important;
+	}
+
 	.td-header-mobile-wrap .tdb_mobile_menu svg,
 	.td-header-mobile-wrap .tdb_mobile_menu svg *,
 	.td-header-mobile-wrap .tdb_mobile_search svg,
