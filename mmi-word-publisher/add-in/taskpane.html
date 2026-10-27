@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MyMobileIndia Word Publisher</title>
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <link rel="stylesheet" href="taskpane.css" />
+</head>
+<body>
+  <header>
+    <h1>Send to MyMobileIndia</h1>
+    <p class="hint">Draft on WordPress — images add karein baad mein WP mein.</p>
+  </header>
+
+  <section id="settings">
+    <h2>WordPress login (ek baar save)</h2>
+    <label>
+      Site URL
+      <input type="url" id="siteUrl" placeholder="https://mymobileindia.com" autocomplete="url" />
+    </label>
+    <label>
+      Username
+      <input type="text" id="wpUser" autocomplete="username" />
+    </label>
+    <label>
+      Application Password
+      <input type="password" id="appPass" autocomplete="current-password" />
+    </label>
+    <button type="button" id="btnSave" class="secondary">Save settings</button>
+    <button type="button" id="btnTest" class="secondary">Test connection</button>
+  </section>
+
+  <section id="send">
+    <h2>Article</h2>
+    <p class="hint">Title = document ka pehla Heading 1, ya Word Title property. Bold subheadings aur links HTML mein jayenge.</p>
+    <button type="button" id="btnSend" class="primary">Send to WordPress (Draft)</button>
+  </section>
+
+  <section id="status" aria-live="polite"></section>
+
+  <script src="taskpane.js"></script>
+</body>
+</html>
