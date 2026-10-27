@@ -1,21 +1,14 @@
-MMI Mobile Header (News) v1.2.2
-================================
+MMI Mobile Header (News) v1.3.0 — SINGLE FILE
+================================================
 
-English news site ONLY (www.mymobileindia.com). Not for /devices/.
+Upload mmi-mobile-header.zip on English news WordPress ONLY.
 
-HOMEPAGE STILL WRONG AFTER CLEAR CACHE?
----------------------------------------
-WP Rocket was saving an EMPTY <style id="mmi-news-mobile-header"></style> on the
-cached homepage. v1.2.2 uses only mobile-header.css (no inline CSS).
+Contains ONE file: mmi-mobile-header.php (no assets folder — no CSS URL, no 404).
 
-Also: homepage TagDiv columns use width 64%/18% — v1.2.2 overrides those on mobile.
+Steps:
+1. Delete old "MMI Mobile Header" plugin completely.
+2. Upload zip → Activate.
+3. WP Rocket → Clear & preload cache (mobile + homepage).
+4. Test logged OUT on phone.
 
-AFTER INSTALL OR UPDATE
------------------------
-1. WP Rocket → Clear cache → "Clear and preload" (include MOBILE cache).
-2. If Cloudflare is on: Purge Everything once.
-3. Test in Chrome Incognito on phone (not logged in to WordPress).
-
-Install: Upload mmi-mobile-header.zip → Activate.
-
-Lightweight: one small CSS file, no JavaScript, no database.
+Do NOT open mobile-header.css in browser — v1.3.0 does not use that file.
