@@ -1,12 +1,14 @@
-MMI Mobile Header (News) v1.2.1
+MMI Mobile Header (News) v1.2.2
 ================================
 
 English news site ONLY (www.mymobileindia.com). Not for /devices/.
 
-WHY ADMIN SEES FIX BUT PHONE (LOGGED OUT) DOES NOT
--------------------------------------------------
-WP Rocket (and similar) do not cache pages for logged-in admins.
-Guests and your phone (logged out) get OLD cached HTML until you purge cache.
+HOMEPAGE STILL WRONG AFTER CLEAR CACHE?
+---------------------------------------
+WP Rocket was saving an EMPTY <style id="mmi-news-mobile-header"></style> on the
+cached homepage. v1.2.2 uses only mobile-header.css (no inline CSS).
+
+Also: homepage TagDiv columns use width 64%/18% — v1.2.2 overrides those on mobile.
 
 AFTER INSTALL OR UPDATE
 -----------------------
