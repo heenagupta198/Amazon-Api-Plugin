@@ -2,7 +2,7 @@
 /**
  * Plugin Name: MMI Mobile Header (News)
  * Description: Mobile header on mymobileindia.com news site: menu (left), logo (center), search (right). CSS only — no JS, no front-end queries.
- * Version: 1.2.0
+ * Version: 1.2.1
  * Author: MMI
  * Requires at least: 5.8
  * Requires PHP: 7.4
@@ -15,38 +15,90 @@
 
 defined( 'ABSPATH' ) || exit;
 
+define( 'MMI_MOBILE_HEADER_VERSION', '1.2.1' );
+define( 'MMI_MOBILE_HEADER_FILE', __FILE__ );
+define( 'MMI_MOBILE_HEADER_URL', plugin_dir_url( __FILE__ ) );
+
 /**
- * One static CSS block in head (homepage + all templates). Avoids extra HTTP and WP Rocket dropping an external file.
+ * Clear page caches so logged-out / mobile visitors see new header (not only logged-in admin).
  */
-function mmi_news_mobile_header_css(): void {
+function mmi_mobile_header_purge_caches(): void {
+	if ( function_exists( 'rocket_clean_domain' ) ) {
+		rocket_clean_domain();
+	}
+	if ( function_exists( 'rocket_clean_minify' ) ) {
+		rocket_clean_minify();
+	}
+	if ( function_exists( 'litespeed_purge_all' ) ) {
+		do_action( 'litespeed_purge_all' );
+	}
+	if ( function_exists( 'wp_cache_clear_cache' ) ) {
+		wp_cache_clear_cache();
+	}
+	if ( class_exists( 'WpeCommon' ) && method_exists( 'WpeCommon', 'purge_varnish_cache' ) ) {
+		WpeCommon::purge_varnish_cache();
+	}
+}
+register_activation_hook( MMI_MOBILE_HEADER_FILE, 'mmi_mobile_header_purge_caches' );
+
+/**
+ * @param array<string,mixed> $upgrader_object
+ * @param array<string,mixed> $options
+ */
+function mmi_mobile_header_purge_on_plugin_update( $upgrader_object, $options ): void {
+	if ( empty( $options['action'] ) || 'update' !== $options['action'] ) {
+		return;
+	}
+	if ( empty( $options['type'] ) || 'plugin' !== $options['type'] ) {
+		return;
+	}
+	if ( empty( $options['plugins'] ) || ! is_array( $options['plugins'] ) ) {
+		return;
+	}
+	$basename = plugin_basename( MMI_MOBILE_HEADER_FILE );
+	if ( in_array( $basename, $options['plugins'], true ) ) {
+		mmi_mobile_header_purge_caches();
+	}
+}
+add_action( 'upgrader_process_complete', 'mmi_mobile_header_purge_on_plugin_update', 10, 2 );
+
+/**
+ * Front-end CSS (logged-in users often bypass cache; file + inline keeps guest/mobile HTML correct after purge).
+ */
+function mmi_mobile_header_enqueue(): void {
 	if ( is_admin() ) {
 		return;
 	}
-	?>
-<style id="mmi-news-mobile-header">
-@media (max-width:767px){
-.td-header-mobile-wrap .vc_row.tdc-element-style,
-.td-header-mobile-sticky-wrap .vc_row.tdc-element-style{
-display:flex!important;flex-flow:row nowrap!important;align-items:center!important;justify-content:space-between!important;width:100%!important;margin:0!important}
-.td-header-mobile-wrap .vc_row.tdc-element-style>.vc_column,
-.td-header-mobile-sticky-wrap .vc_row.tdc-element-style>.vc_column,
-.td-header-mobile-wrap .vc_row.tdc-element-style .wpb_wrapper,
-.td-header-mobile-sticky-wrap .vc_row.tdc-element-style .wpb_wrapper{
-display:contents!important}
-.td-header-mobile-wrap .tdb_mobile_menu,
-.td-header-mobile-sticky-wrap .tdb_mobile_menu{order:1!important;flex:0 0 auto!important}
-.td-header-mobile-wrap .tdb_header_logo,
-.td-header-mobile-sticky-wrap .tdb_header_logo{order:2!important;flex:1 1 auto!important;min-width:0!important;text-align:center!important}
-.td-header-mobile-wrap .tdb_mobile_search,
-.td-header-mobile-sticky-wrap .tdb_mobile_search{order:3!important;flex:0 0 auto!important}
-.td-header-mobile-wrap .tdb_header_logo .tdb-logo-a,
-.td-header-mobile-sticky-wrap .tdb_header_logo .tdb-logo-a{justify-content:center!important;margin-left:auto!important;margin-right:auto!important}
-.td-header-mobile-wrap .tdb_mobile_menu svg,.td-header-mobile-wrap .tdb_mobile_menu svg *,
-.td-header-mobile-wrap .tdb_mobile_search svg,.td-header-mobile-wrap .tdb_mobile_search svg *,
-.td-header-mobile-sticky-wrap .tdb_mobile_menu svg,.td-header-mobile-sticky-wrap .tdb_mobile_menu svg *,
-.td-header-mobile-sticky-wrap .tdb_mobile_search svg,.td-header-mobile-sticky-wrap .tdb_mobile_search svg *{fill:#e31e24!important}
+
+	wp_enqueue_style(
+		'mmi-mobile-header',
+		MMI_MOBILE_HEADER_URL . 'assets/mobile-header.css',
+		array(),
+		MMI_MOBILE_HEADER_VERSION
+	);
 }
-</style>
-	<?php
+add_action( 'wp_enqueue_scripts', 'mmi_mobile_header_enqueue', 9999 );
+
+/**
+ * WP Rocket: do not strip this stylesheet when Remove Unused CSS is on.
+ *
+ * @param array<int,string> $excluded
+ * @return array<int,string>
+ */
+function mmi_mobile_header_rocket_exclude_css( $excluded ) {
+	$excluded[] = '/mmi-mobile-header/assets/mobile-header.css';
+	return $excluded;
 }
-add_action( 'wp_head', 'mmi_news_mobile_header_css', 99 );
+add_filter( 'rocket_exclude_css', 'mmi_mobile_header_rocket_exclude_css' );
+
+/**
+ * WP Rocket: keep inline rules if used.
+ *
+ * @param array<int,string> $patterns
+ * @return array<int,string>
+ */
+function mmi_mobile_header_rocket_rucss_inline_exclude( $patterns ) {
+	$patterns[] = 'mmi-news-mobile-header';
+	return $patterns;
+}
+add_filter( 'rocket_rucss_inline_content_exclusions', 'mmi_mobile_header_rocket_rucss_inline_exclude' );

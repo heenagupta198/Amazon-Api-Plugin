@@ -1,14 +1,19 @@
-MMI Mobile Header (News) v1.2.0
+MMI Mobile Header (News) v1.2.1
 ================================
 
-Upload only on the main English news WordPress (www.mymobileindia.com).
-Do not install on the /devices/ subsite.
+English news site ONLY (www.mymobileindia.com). Not for /devices/.
 
-Install:
-1. Plugins → Add New → Upload Plugin → choose mmi-mobile-header.zip
-2. Activate "MMI Mobile Header (News)"
-3. Clear WP Rocket cache (especially homepage)
+WHY ADMIN SEES FIX BUT PHONE (LOGGED OUT) DOES NOT
+-------------------------------------------------
+WP Rocket (and similar) do not cache pages for logged-in admins.
+Guests and your phone (logged out) get OLD cached HTML until you purge cache.
 
-Mobile (≤767px): hamburger | logo | search — same layout idea as the Devices site.
+AFTER INSTALL OR UPDATE
+-----------------------
+1. WP Rocket → Clear cache → "Clear and preload" (include MOBILE cache).
+2. If Cloudflare is on: Purge Everything once.
+3. Test in Chrome Incognito on phone (not logged in to WordPress).
 
-Lightweight: one small inline CSS block in wp_head, no JavaScript, no database options.
+Install: Upload mmi-mobile-header.zip → Activate.
+
+Lightweight: one small CSS file, no JavaScript, no database.
