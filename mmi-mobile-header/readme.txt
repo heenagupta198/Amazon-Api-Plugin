@@ -1,14 +1,16 @@
-MMI Mobile Header (News) v1.3.0 — SINGLE FILE
-================================================
+MMI Mobile Header (News) v1.4.0
+================================
 
-Upload mmi-mobile-header.zip on English news WordPress ONLY.
+Fix: Works on HOME + all CATEGORIES + articles (not only single posts).
 
-Contains ONE file: mmi-mobile-header.php (no assets folder — no CSS URL, no 404).
+Problem was WP Rocket Used CSS on homepage left an EMPTY
+<style id="mmi-news-mobile-header"></style> and removed mobile @media rules.
 
-Steps:
-1. Delete old "MMI Mobile Header" plugin completely.
-2. Upload zip → Activate.
-3. WP Rocket → Clear & preload cache (mobile + homepage).
-4. Test logged OUT on phone.
+v1.4.0 injects CSS via rocket_buffer + RUCSS safelist + clears Used CSS on activate.
 
-Do NOT open mobile-header.css in browser — v1.3.0 does not use that file.
+Install: delete old plugin → upload zip → activate → WP Rocket:
+  - Clear cache
+  - Clear Used CSS / Remove Unused CSS (if button exists)
+  - Preload
+
+Single file plugin — no mobile-header.css URL.

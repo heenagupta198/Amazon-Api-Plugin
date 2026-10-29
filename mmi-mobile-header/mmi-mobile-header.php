@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: MMI Mobile Header (News)
- * Description: Mobile header: menu (left), logo (center), search (right). Single-file plugin — no extra CSS URL (no 404).
- * Version: 1.3.0
+ * Description: Mobile header menu | logo | search on all pages (home, categories, articles). WP Rocket safe.
+ * Version: 1.4.0
  * Author: MMI
  * Requires at least: 5.8
  * Requires PHP: 7.4
@@ -13,9 +13,9 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'MMI_MOBILE_HEADER_VERSION', '1.3.0' );
+define( 'MMI_MOBILE_HEADER_VERSION', '1.4.0' );
 define( 'MMI_MOBILE_HEADER_FILE', __FILE__ );
-define( 'MMI_MOBILE_HEADER_STYLE_ID', 'mmi-mh-layout-v130' );
+define( 'MMI_MOBILE_HEADER_MARKER', 'mmi-mh-v140' );
 
 /**
  * @return string
@@ -53,38 +53,25 @@ function mmi_mobile_header_get_css(): string {
  * @return string
  */
 function mmi_mobile_header_style_tag(): string {
-	return '<style id="' . esc_attr( MMI_MOBILE_HEADER_STYLE_ID ) . '">'
+	return '<style data-' . MMI_MOBILE_HEADER_MARKER . '="1">'
 		. mmi_mobile_header_get_css()
 		. '</style>';
 }
 
 /**
- * Front-end: register inline style (no external file).
- */
-function mmi_mobile_header_enqueue(): void {
-	if ( is_admin() ) {
-		return;
-	}
-	wp_register_style( 'mmi-mobile-header-layout', false, array(), MMI_MOBILE_HEADER_VERSION );
-	wp_enqueue_style( 'mmi-mobile-header-layout' );
-	wp_add_inline_style( 'mmi-mobile-header-layout', mmi_mobile_header_get_css() );
-}
-add_action( 'wp_enqueue_scripts', 'mmi_mobile_header_enqueue', 9999 );
-
-/**
- * Late head output (backup if enqueue is stripped).
+ * Print CSS in head (no id= — WP Rocket was emptying id="mmi-news-mobile-header" on home/category).
  */
 function mmi_mobile_header_print_style(): void {
 	if ( is_admin() ) {
 		return;
 	}
-	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static CSS from plugin.
+	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	echo mmi_mobile_header_style_tag();
 }
 add_action( 'wp_head', 'mmi_mobile_header_print_style', 99999 );
 
 /**
- * Inject into WP Rocket cached HTML so guest homepage keeps rules.
+ * Inject on cached HTML (homepage/category Use CSS bundle strips mobile @media rules).
  *
  * @param string $html
  * @return string
@@ -93,7 +80,7 @@ function mmi_mobile_header_rocket_buffer( $html ) {
 	if ( is_admin() || ! is_string( $html ) || '' === $html ) {
 		return $html;
 	}
-	if ( false !== strpos( $html, MMI_MOBILE_HEADER_STYLE_ID ) ) {
+	if ( false !== strpos( $html, MMI_MOBILE_HEADER_MARKER ) ) {
 		return $html;
 	}
 	$tag = mmi_mobile_header_style_tag();
@@ -102,7 +89,39 @@ function mmi_mobile_header_rocket_buffer( $html ) {
 	}
 	return $html;
 }
-add_filter( 'rocket_buffer', 'mmi_mobile_header_rocket_buffer', 999 );
+add_filter( 'rocket_buffer', 'mmi_mobile_header_rocket_buffer', 99999 );
+
+/**
+ * Keep mobile header rules when Remove Unused CSS runs (often desktop crawl drops @media max-width).
+ *
+ * @param array<int,string> $safelist
+ * @return array<int,string>
+ */
+function mmi_mobile_header_rucss_safelist( $safelist ) {
+	$keep = array(
+		'.td-header-mobile-wrap',
+		'.td-header-mobile-sticky-wrap',
+		'.td-header-mobile-wrap .vc_row.tdc-element-style',
+		'.td-header-mobile-wrap .vc_row.tdc-element-style > .vc_column:nth-child(1)',
+		'.td-header-mobile-wrap .vc_row.tdc-element-style > .vc_column:nth-child(2)',
+		'.td-header-mobile-wrap .vc_row.tdc-element-style > .vc_column:nth-child(3)',
+		'.tdb_mobile_menu',
+		'.tdb_mobile_search',
+		'.tdb_header_logo',
+	);
+	return array_merge( $safelist, $keep );
+}
+add_filter( 'rocket_rucss_safelist', 'mmi_mobile_header_rucss_safelist' );
+
+/**
+ * @param array<int,string> $excluded
+ * @return array<int,string>
+ */
+function mmi_mobile_header_rocket_used_css_excluded( $excluded ) {
+	$excluded[] = MMI_MOBILE_HEADER_MARKER;
+	return $excluded;
+}
+add_filter( 'rocket_rucss_inline_content_exclusions', 'mmi_mobile_header_rocket_used_css_excluded' );
 
 /**
  * Clear caches on activate / update.
@@ -114,11 +133,14 @@ function mmi_mobile_header_purge_caches(): void {
 	if ( function_exists( 'rocket_clean_minify' ) ) {
 		rocket_clean_minify();
 	}
+	if ( function_exists( 'rocket_clean_used_css' ) ) {
+		rocket_clean_used_css();
+	}
 }
 register_activation_hook( MMI_MOBILE_HEADER_FILE, 'mmi_mobile_header_purge_caches' );
 
 /**
- * @param array<string,mixed> $upgrader_object
+ * @param mixed               $upgrader_object
  * @param array<string,mixed> $options
  */
 function mmi_mobile_header_purge_on_plugin_update( $upgrader_object, $options ): void {
@@ -137,13 +159,3 @@ function mmi_mobile_header_purge_on_plugin_update( $upgrader_object, $options ):
 	}
 }
 add_action( 'upgrader_process_complete', 'mmi_mobile_header_purge_on_plugin_update', 10, 2 );
-
-/**
- * @param array<int,string> $patterns
- * @return array<int,string>
- */
-function mmi_mobile_header_rocket_rucss_inline_exclude( $patterns ) {
-	$patterns[] = MMI_MOBILE_HEADER_STYLE_ID;
-	return $patterns;
-}
-add_filter( 'rocket_rucss_inline_content_exclusions', 'mmi_mobile_header_rocket_rucss_inline_exclude' );
