@@ -115,3 +115,152 @@
 		grid-template-columns: 1fr;
 	}
 }
+
+/* ——— Featured hero (1 large + 3 side) ——— */
+
+.mmi-feature-hero {
+	margin: 24px 0;
+}
+
+.mmi-feature-hero__header,
+.mmi-feature-news__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	margin-bottom: 16px;
+}
+
+.mmi-feature-hero__header--link-only {
+	justify-content: flex-end;
+}
+
+.mmi-feature-hero__title {
+	margin: 0;
+	font-size: 1.35rem;
+	font-weight: 700;
+	color: #111;
+}
+
+.mmi-feature-hero__view-all {
+	font-size: 0.95rem;
+	font-weight: 700;
+	color: #d32f2f;
+	text-decoration: none;
+}
+
+.mmi-feature-hero__view-all:hover {
+	color: #b71c1c;
+	text-decoration: underline;
+}
+
+.mmi-feature-hero__layout {
+	display: grid;
+	grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+	gap: 20px;
+	border: 1px solid #e8e8e8;
+	border-radius: 4px;
+	overflow: hidden;
+	background: #fff;
+}
+
+.mmi-feature-hero__lead-image {
+	display: block;
+	aspect-ratio: 16 / 10;
+	overflow: hidden;
+	background: #f0f0f0;
+}
+
+.mmi-feature-hero__lead-image img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+.mmi-feature-hero__lead-body {
+	padding: 14px 16px 18px;
+}
+
+.mmi-feature-hero__date {
+	display: block;
+	font-size: 0.8rem;
+	color: #757575;
+	margin-bottom: 8px;
+}
+
+.mmi-feature-hero__lead-title {
+	margin: 0;
+	font-size: 1.15rem;
+	font-weight: 700;
+	line-height: 1.35;
+}
+
+.mmi-feature-hero__lead-title a {
+	color: #111;
+	text-decoration: none;
+}
+
+.mmi-feature-hero__side {
+	display: flex;
+	flex-direction: column;
+	border-left: 1px solid #eee;
+}
+
+.mmi-feature-hero__side-item {
+	display: grid;
+	grid-template-columns: 120px minmax(0, 1fr);
+	gap: 12px;
+	padding: 12px 14px;
+	border-bottom: 1px solid #eee;
+	align-items: center;
+}
+
+.mmi-feature-hero__side-item:last-child {
+	border-bottom: 0;
+}
+
+.mmi-feature-hero__side-thumb {
+	display: block;
+	border-radius: 4px;
+	overflow: hidden;
+	aspect-ratio: 4 / 3;
+	background: #f0f0f0;
+}
+
+.mmi-feature-hero__side-thumb img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+.mmi-feature-hero__side-title {
+	margin: 6px 0 0;
+	font-size: 0.9rem;
+	font-weight: 700;
+	line-height: 1.35;
+}
+
+.mmi-feature-hero__side-title a {
+	color: #111;
+	text-decoration: none;
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+@media (max-width: 767px) {
+	.mmi-feature-hero__layout {
+		grid-template-columns: 1fr;
+	}
+
+	.mmi-feature-hero__side {
+		display: none;
+	}
+
+	.mmi-feature-hero__lead-image {
+		aspect-ratio: 16 / 9;
+	}
+}

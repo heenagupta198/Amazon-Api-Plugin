@@ -17,6 +17,7 @@ final class MMI_FN_Shortcode {
 	 */
 	public static function register(): void {
 		add_shortcode( 'mmi_feature_news', array( __CLASS__, 'render' ) );
+		add_shortcode( 'mmi_featured_news', array( __CLASS__, 'render' ) );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 	}
 
@@ -24,29 +25,22 @@ final class MMI_FN_Shortcode {
 	 * Enqueue styles when shortcode is present on the page.
 	 */
 	public static function enqueue_assets(): void {
-		if ( ! self::page_has_shortcode() ) {
+		if ( is_admin() && ! wp_doing_ajax() ) {
 			return;
 		}
+		self::enqueue_styles();
+	}
+
+	/**
+	 * Public enqueue for hero + news shortcodes.
+	 */
+	public static function enqueue_styles(): void {
 		wp_enqueue_style(
 			'mmi-feature-news',
 			MMI_FN_URL . 'assets/css/feature-news.css',
 			array(),
 			MMI_FN_VERSION
 		);
-	}
-
-	/**
-	 * Detect shortcode in main query content (and TagDiv templates when possible).
-	 */
-	private static function page_has_shortcode(): bool {
-		if ( is_admin() ) {
-			return false;
-		}
-		$post = get_queried_object();
-		if ( $post instanceof WP_Post && has_shortcode( $post->post_content, 'mmi_feature_news' ) ) {
-			return true;
-		}
-		return is_front_page() || is_home();
 	}
 
 	/**
@@ -56,12 +50,7 @@ final class MMI_FN_Shortcode {
 	 * @return string
 	 */
 	public static function render( $atts = array() ): string {
-		wp_enqueue_style(
-			'mmi-feature-news',
-			MMI_FN_URL . 'assets/css/feature-news.css',
-			array(),
-			MMI_FN_VERSION
-		);
+		self::enqueue_styles();
 
 		$settings = MMI_FN_Settings::get();
 		$atts     = shortcode_atts(
@@ -70,6 +59,7 @@ final class MMI_FN_Shortcode {
 				'category'       => $settings['category_slug'],
 				'desktop_count'  => (string) $settings['desktop_count'],
 				'mobile_count'   => (string) $settings['mobile_count'],
+				'offset'         => '0',
 				'view_all_label' => $settings['view_all_label'],
 				'view_all_url'   => $settings['view_all_url'],
 			),
@@ -79,25 +69,12 @@ final class MMI_FN_Shortcode {
 
 		$desktop = max( 1, (int) $atts['desktop_count'] );
 		$mobile  = max( 1, (int) $atts['mobile_count'] );
-		$limit   = max( $desktop, $mobile );
+		$offset  = max( 0, (int) $atts['offset'] );
+		$fetch   = max( $desktop, $mobile );
 
-		$cat = get_category_by_slug( sanitize_title( $atts['category'] ) );
-		$args = array(
-			'post_type'           => 'post',
-			'post_status'         => 'publish',
-			'posts_per_page'      => $limit,
-			'ignore_sticky_posts' => true,
-			'no_found_rows'       => true,
-		);
-		if ( $cat ) {
-			$args['cat'] = (int) $cat->term_id;
-		} else {
-			$args['category_name'] = sanitize_title( $atts['category'] );
-		}
-
-		$query = new WP_Query( $args );
-		if ( ! $query->have_posts() ) {
-			return '';
+		$items = MMI_FN_Remote_Posts::get_posts( sanitize_title( $atts['category'] ), $fetch, $offset );
+		if ( empty( $items ) ) {
+			return MMI_FN_Remote_Posts::empty_message( 'mmi_feature_news' );
 		}
 
 		$view_all_url = $atts['view_all_url'] ? esc_url( $atts['view_all_url'] ) : esc_url( MMI_FN_Settings::view_all_url() );
@@ -127,12 +104,10 @@ final class MMI_FN_Shortcode {
 			<div class="mmi-feature-news__grid">
 				<?php
 				$index = 0;
-				while ( $query->have_posts() ) {
-					$query->the_post();
+				foreach ( $items as $item ) {
 					++$index;
-					self::render_card( $index );
+					self::render_card( $item, $index );
 				}
-				wp_reset_postdata();
 				?>
 			</div>
 		</section>
@@ -143,49 +118,28 @@ final class MMI_FN_Shortcode {
 	/**
 	 * Single card markup.
 	 *
-	 * @param int $index 1-based index in the grid.
+	 * @param MMI_FN_Post_Item $item  Post data.
+	 * @param int              $index 1-based index in the grid.
 	 */
-	private static function render_card( int $index ): void {
-		$permalink = get_permalink();
-		$title     = get_the_title();
-		$author    = get_the_author();
-		$time_ago  = self::human_time_ago( get_the_time( 'U' ) );
-		$thumb     = get_the_post_thumbnail_url( get_the_ID(), 'medium_large' );
-		if ( ! $thumb ) {
-			$thumb = get_the_post_thumbnail_url( get_the_ID(), 'full' );
-		}
+	private static function render_card( MMI_FN_Post_Item $item, int $index ): void {
+		$time_ago = MMI_FN_Remote_Posts::human_time_ago( $item );
 		?>
 		<article class="mmi-feature-news__card" data-mmi-fn-index="<?php echo esc_attr( (string) $index ); ?>">
-			<a class="mmi-feature-news__image-link" href="<?php echo esc_url( $permalink ); ?>" aria-hidden="true" tabindex="-1">
-				<?php if ( $thumb ) : ?>
-					<img class="mmi-feature-news__image" src="<?php echo esc_url( $thumb ); ?>" alt="" loading="lazy" decoding="async" />
+			<a class="mmi-feature-news__image-link" href="<?php echo esc_url( $item->link ); ?>" aria-hidden="true" tabindex="-1">
+				<?php if ( $item->image_url ) : ?>
+					<img class="mmi-feature-news__image" src="<?php echo esc_url( $item->image_url ); ?>" alt="" loading="lazy" decoding="async" />
 				<?php endif; ?>
 			</a>
 			<div class="mmi-feature-news__body">
 				<div class="mmi-feature-news__meta">
-					<span class="mmi-feature-news__author"><?php echo esc_html( sprintf( __( 'By %s', 'mmi-feature-news' ), $author ) ); ?></span>
-					<time class="mmi-feature-news__date" datetime="<?php echo esc_attr( get_the_date( 'c' ) ); ?>"><?php echo esc_html( $time_ago ); ?></time>
+					<span class="mmi-feature-news__author"><?php echo esc_html( sprintf( __( 'By %s', 'mmi-feature-news' ), $item->author_name ) ); ?></span>
+					<time class="mmi-feature-news__date" datetime="<?php echo esc_attr( gmdate( 'c', $item->timestamp ) ); ?>"><?php echo esc_html( $time_ago ); ?></time>
 				</div>
 				<h3 class="mmi-feature-news__card-title">
-					<a href="<?php echo esc_url( $permalink ); ?>"><?php echo esc_html( $title ); ?></a>
+					<a href="<?php echo esc_url( $item->link ); ?>"><?php echo esc_html( $item->title ); ?></a>
 				</h3>
 			</div>
 		</article>
 		<?php
-	}
-
-	/**
-	 * @param int|string $post_time Unix timestamp.
-	 */
-	private static function human_time_ago( $post_time ): string {
-		$post_time = (int) $post_time;
-		if ( $post_time <= 0 ) {
-			return '';
-		}
-		$diff = human_time_diff( $post_time, (int) current_time( 'timestamp' ) );
-		return sprintf(
-			__( '%s ago', 'mmi-feature-news' ),
-			$diff
-		);
 	}
 }
