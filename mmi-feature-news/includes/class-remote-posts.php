@@ -267,15 +267,8 @@ final class MMI_FN_Remote_Posts {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return '';
 		}
-		$s = MMI_FN_Settings::get();
 		return '<p class="mmi-fn-admin-notice" style="padding:12px;border:1px dashed #c62828;background:#ffebee;color:#111;">'
-			. esc_html(
-				sprintf(
-					/* translators: 1: shortcode context */
-					__( 'MMI Feature News (%1$s): no posts loaded. On /devices/ enable remote news and set source URL to https://www.mymobileindia.com in Settings → MMI Feature News.', 'mmi-feature-news' ),
-					$context
-				)
-			)
+			. esc_html__( 'MMI Feature: no posts loaded. Enable “Load from English site” in Settings → MMI Feature Section.', 'mmi-feature-news' )
 			. '</p>';
 	}
 }

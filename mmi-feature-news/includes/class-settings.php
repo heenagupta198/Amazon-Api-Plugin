@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin settings.
+ * Plugin settings (Feature section only).
  *
  * @package MMI_Feature_News
  */
@@ -8,7 +8,7 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Settings API for Feature News.
+ * Settings API.
  */
 final class MMI_FN_Settings {
 
@@ -23,28 +23,20 @@ final class MMI_FN_Settings {
 	}
 
 	/**
-	 * Default settings.
-	 *
 	 * @return array<string, mixed>
 	 */
 	public static function defaults(): array {
 		return array(
-			'section_title'       => 'Feature',
-			'hero_title'          => '',
-			'hero_show_header'    => 0,
-			'hero_show_view_all'  => 0,
-			'category_slug'       => 'tech-news',
-			'desktop_count'       => 4,
-			'mobile_count'        => 1,
-			'view_all_label'      => 'View All',
-			'view_all_url'        => 'https://www.mymobileindia.com/tech-news/',
-			'use_remote_news'     => 1,
-			'news_site_url'       => 'https://www.mymobileindia.com',
-			'remote_category_id'  => 10,
-			'cache_minutes'       => 10,
-			'patch_tagdiv_block'  => 1,
-			'tagdiv_block_class'  => 'tdi_59',
-			'hide_legacy_block'   => 0,
+			'section_title'      => 'Feature',
+			'category_slug'      => 'feature',
+			'desktop_count'      => 4,
+			'mobile_count'       => 1,
+			'view_all_label'     => 'View All',
+			'view_all_url'       => 'https://www.mymobileindia.com/feature/',
+			'use_remote_news'    => 1,
+			'news_site_url'      => 'https://www.mymobileindia.com',
+			'remote_category_id' => 9,
+			'cache_minutes'      => 10,
 		);
 	}
 
@@ -83,9 +75,6 @@ final class MMI_FN_Settings {
 		$out   = self::defaults();
 
 		$out['section_title']      = sanitize_text_field( $input['section_title'] ?? $out['section_title'] );
-		$out['hero_title']         = sanitize_text_field( $input['hero_title'] ?? $out['hero_title'] );
-		$out['hero_show_header']   = empty( $input['hero_show_header'] ) ? 0 : 1;
-		$out['hero_show_view_all'] = empty( $input['hero_show_view_all'] ) ? 0 : 1;
 		$out['category_slug']      = sanitize_title( $input['category_slug'] ?? $out['category_slug'] );
 		$out['desktop_count']      = max( 1, min( 12, (int) ( $input['desktop_count'] ?? $out['desktop_count'] ) ) );
 		$out['mobile_count']       = max( 1, min( 4, (int) ( $input['mobile_count'] ?? $out['mobile_count'] ) ) );
@@ -95,14 +84,6 @@ final class MMI_FN_Settings {
 		$out['news_site_url']      = esc_url_raw( $input['news_site_url'] ?? $out['news_site_url'] );
 		$out['remote_category_id'] = max( 0, (int) ( $input['remote_category_id'] ?? $out['remote_category_id'] ) );
 		$out['cache_minutes']      = max( 1, min( 120, (int) ( $input['cache_minutes'] ?? $out['cache_minutes'] ) ) );
-		$out['patch_tagdiv_block'] = empty( $input['patch_tagdiv_block'] ) ? 0 : 1;
-		$out['hide_legacy_block']  = empty( $input['hide_legacy_block'] ) ? 0 : 1;
-
-		$class = sanitize_html_class( $input['tagdiv_block_class'] ?? $out['tagdiv_block_class'] );
-		if ( '' === $class ) {
-			$class = 'tdi_59';
-		}
-		$out['tagdiv_block_class'] = $class;
 
 		return $out;
 	}
@@ -115,18 +96,7 @@ final class MMI_FN_Settings {
 		if ( ! empty( $s['view_all_url'] ) ) {
 			return $s['view_all_url'];
 		}
-		$slug = $s['category_slug'];
-		if ( $slug ) {
-			$term = get_category_by_slug( $slug );
-			if ( $term && ! is_wp_error( $term ) ) {
-				$link = get_category_link( $term->term_id );
-				if ( $link && ! is_wp_error( $link ) ) {
-					return $link;
-				}
-			}
-			return home_url( '/' . $slug . '/' );
-		}
-		return home_url( '/' );
+		return 'https://www.mymobileindia.com/feature/';
 	}
 
 	/**
@@ -134,8 +104,8 @@ final class MMI_FN_Settings {
 	 */
 	public static function add_menu(): void {
 		add_options_page(
-			__( 'MMI Feature News', 'mmi-feature-news' ),
-			__( 'MMI Feature News', 'mmi-feature-news' ),
+			__( 'MMI Feature Section', 'mmi-feature-news' ),
+			__( 'MMI Feature Section', 'mmi-feature-news' ),
 			'manage_options',
 			'mmi-feature-news',
 			array( __CLASS__, 'render_page' )
@@ -152,86 +122,39 @@ final class MMI_FN_Settings {
 		$s = self::get();
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'MMI Feature News', 'mmi-feature-news' ); ?></h1>
-			<p><?php esc_html_e( 'For ReHub /devices: posts are loaded from the English news site (Feature category). Use two Elementor shortcodes — hero on top, grid below.', 'mmi-feature-news' ); ?></p>
+			<h1><?php esc_html_e( 'MMI Feature Section', 'mmi-feature-news' ); ?></h1>
+			<p><?php esc_html_e( 'Shortcode: [mmi_feature_news] — loads Feature posts from the English site on /devices/.', 'mmi-feature-news' ); ?></p>
 			<form method="post" action="options.php">
 				<?php settings_fields( 'mmi_feature_news' ); ?>
 				<table class="form-table" role="presentation">
 					<tr>
-						<th scope="row"><?php esc_html_e( 'News source URL', 'mmi-feature-news' ); ?></th>
+						<th scope="row"><?php esc_html_e( 'Section title', 'mmi-feature-news' ); ?></th>
+						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[section_title]" type="text" class="regular-text" value="<?php echo esc_attr( $s['section_title'] ); ?>" /></td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'English site URL', 'mmi-feature-news' ); ?></th>
+						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[news_site_url]" type="url" class="large-text" value="<?php echo esc_attr( $s['news_site_url'] ); ?>" /></td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Load from English site', 'mmi-feature-news' ); ?></th>
+						<td><label><input name="<?php echo esc_attr( self::OPTION ); ?>[use_remote_news]" type="checkbox" value="1" <?php checked( 1, (int) $s['use_remote_news'] ); ?> /> <?php esc_html_e( 'Required on /devices/', 'mmi-feature-news' ); ?></label></td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Feature category ID', 'mmi-feature-news' ); ?></th>
+						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[remote_category_id]" type="number" min="0" value="<?php echo esc_attr( (string) $s['remote_category_id'] ); ?>" /> <code>9</code></td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Desktop / mobile count', 'mmi-feature-news' ); ?></th>
 						<td>
-							<input name="<?php echo esc_attr( self::OPTION ); ?>[news_site_url]" type="url" class="large-text" value="<?php echo esc_attr( $s['news_site_url'] ); ?>" />
-							<p class="description"><?php esc_html_e( 'English site: https://www.mymobileindia.com (used when /devices/ has no local Feature posts).', 'mmi-feature-news' ); ?></p>
+							<input name="<?php echo esc_attr( self::OPTION ); ?>[desktop_count]" type="number" min="1" max="12" value="<?php echo esc_attr( (string) $s['desktop_count'] ); ?>" /> /
+							<input name="<?php echo esc_attr( self::OPTION ); ?>[mobile_count]" type="number" min="1" max="4" value="<?php echo esc_attr( (string) $s['mobile_count'] ); ?>" />
 						</td>
 					</tr>
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Fetch from English site', 'mmi-feature-news' ); ?></th>
+						<th scope="row"><?php esc_html_e( 'View All', 'mmi-feature-news' ); ?></th>
 						<td>
-							<label>
-								<input name="<?php echo esc_attr( self::OPTION ); ?>[use_remote_news]" type="checkbox" value="1" <?php checked( 1, (int) $s['use_remote_news'] ); ?> />
-								<?php esc_html_e( 'Use REST API when this site has no Feature posts (required on /devices/).', 'mmi-feature-news' ); ?>
-							</label>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><?php esc_html_e( 'Remote category ID', 'mmi-feature-news' ); ?></th>
-						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[remote_category_id]" type="number" min="0" value="<?php echo esc_attr( (string) $s['remote_category_id'] ); ?>" /> <span class="description">Feature = 9</span></td>
-					</tr>
-					<tr>
-						<th scope="row"><?php esc_html_e( 'Hero title (optional)', 'mmi-feature-news' ); ?></th>
-						<td>
-							<input name="<?php echo esc_attr( self::OPTION ); ?>[hero_title]" type="text" class="regular-text" value="<?php echo esc_attr( $s['hero_title'] ); ?>" placeholder="<?php esc_attr_e( 'Leave empty — no heading on tech-news block', 'mmi-feature-news' ); ?>" />
-							<p><label><input name="<?php echo esc_attr( self::OPTION ); ?>[hero_show_header]" type="checkbox" value="1" <?php checked( 1, (int) ( $s['hero_show_header'] ?? 0 ) ); ?> /> <?php esc_html_e( 'Show hero header row', 'mmi-feature-news' ); ?></label></p>
-							<p><label><input name="<?php echo esc_attr( self::OPTION ); ?>[hero_show_view_all]" type="checkbox" value="1" <?php checked( 1, (int) ( $s['hero_show_view_all'] ?? 0 ) ); ?> /> <?php esc_html_e( 'Show View All on hero (top right)', 'mmi-feature-news' ); ?></label></p>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><?php esc_html_e( 'Grid section title', 'mmi-feature-news' ); ?></th>
-						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[section_title]" type="text" class="regular-text" value="<?php echo esc_attr( $s['section_title'] ); ?>" /><p class="description"><?php esc_html_e( 'Use “Feature” only (not “Feature News”).', 'mmi-feature-news' ); ?></p></td>
-					</tr>
-					<tr>
-						<th scope="row"><?php esc_html_e( 'Category slug', 'mmi-feature-news' ); ?></th>
-						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[category_slug]" type="text" class="regular-text" value="<?php echo esc_attr( $s['category_slug'] ); ?>" /></td>
-					</tr>
-					<tr>
-						<th scope="row"><?php esc_html_e( 'Posts on desktop', 'mmi-feature-news' ); ?></th>
-						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[desktop_count]" type="number" min="1" max="12" value="<?php echo esc_attr( (string) $s['desktop_count'] ); ?>" /></td>
-					</tr>
-					<tr>
-						<th scope="row"><?php esc_html_e( 'Posts on mobile', 'mmi-feature-news' ); ?></th>
-						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[mobile_count]" type="number" min="1" max="4" value="<?php echo esc_attr( (string) $s['mobile_count'] ); ?>" /></td>
-					</tr>
-					<tr>
-						<th scope="row"><?php esc_html_e( 'View All label', 'mmi-feature-news' ); ?></th>
-						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[view_all_label]" type="text" class="regular-text" value="<?php echo esc_attr( $s['view_all_label'] ); ?>" /></td>
-					</tr>
-					<tr>
-						<th scope="row"><?php esc_html_e( 'View All URL', 'mmi-feature-news' ); ?></th>
-						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[view_all_url]" type="url" class="large-text" placeholder="<?php echo esc_attr( self::view_all_url() ); ?>" value="<?php echo esc_attr( $s['view_all_url'] ); ?>" /></td>
-					</tr>
-					<tr>
-						<th scope="row"><?php esc_html_e( 'Patch old TagDiv block', 'mmi-feature-news' ); ?></th>
-						<td>
-							<label>
-								<input name="<?php echo esc_attr( self::OPTION ); ?>[patch_tagdiv_block]" type="checkbox" value="1" <?php checked( 1, (int) $s['patch_tagdiv_block'] ); ?> />
-								<?php esc_html_e( 'Disable slider / pagination / auto-advance on existing block (CSS + JS)', 'mmi-feature-news' ); ?>
-							</label>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><?php esc_html_e( 'TagDiv block CSS class', 'mmi-feature-news' ); ?></th>
-						<td>
-							<input name="<?php echo esc_attr( self::OPTION ); ?>[tagdiv_block_class]" type="text" class="regular-text" value="<?php echo esc_attr( $s['tagdiv_block_class'] ); ?>" />
-							<p class="description"><?php esc_html_e( 'Example: tdi_59 (inspect the old Feature module on the homepage).', 'mmi-feature-news' ); ?></p>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><?php esc_html_e( 'Hide legacy block', 'mmi-feature-news' ); ?></th>
-						<td>
-							<label>
-								<input name="<?php echo esc_attr( self::OPTION ); ?>[hide_legacy_block]" type="checkbox" value="1" <?php checked( 1, (int) $s['hide_legacy_block'] ); ?> />
-								<?php esc_html_e( 'Hide the old TagDiv block when using the shortcode (recommended after placing [mmi_feature_news]).', 'mmi-feature-news' ); ?>
-							</label>
+							<input name="<?php echo esc_attr( self::OPTION ); ?>[view_all_label]" type="text" class="regular-text" value="<?php echo esc_attr( $s['view_all_label'] ); ?>" />
+							<input name="<?php echo esc_attr( self::OPTION ); ?>[view_all_url]" type="url" class="large-text" value="<?php echo esc_attr( $s['view_all_url'] ); ?>" />
 						</td>
 					</tr>
 				</table>
