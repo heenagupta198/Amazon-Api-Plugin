@@ -29,16 +29,18 @@ final class MMI_FN_Settings {
 	 */
 	public static function defaults(): array {
 		return array(
-			'section_title'       => 'Featured News',
-			'hero_title'          => 'Featured',
-			'category_slug'       => 'feature',
+			'section_title'       => 'Feature',
+			'hero_title'          => '',
+			'hero_show_header'    => 0,
+			'hero_show_view_all'  => 0,
+			'category_slug'       => 'tech-news',
 			'desktop_count'       => 4,
 			'mobile_count'        => 1,
 			'view_all_label'      => 'View All',
-			'view_all_url'        => 'https://www.mymobileindia.com/feature/',
+			'view_all_url'        => 'https://www.mymobileindia.com/tech-news/',
 			'use_remote_news'     => 1,
 			'news_site_url'       => 'https://www.mymobileindia.com',
-			'remote_category_id'  => 9,
+			'remote_category_id'  => 10,
 			'cache_minutes'       => 10,
 			'patch_tagdiv_block'  => 1,
 			'tagdiv_block_class'  => 'tdi_59',
@@ -82,6 +84,8 @@ final class MMI_FN_Settings {
 
 		$out['section_title']      = sanitize_text_field( $input['section_title'] ?? $out['section_title'] );
 		$out['hero_title']         = sanitize_text_field( $input['hero_title'] ?? $out['hero_title'] );
+		$out['hero_show_header']   = empty( $input['hero_show_header'] ) ? 0 : 1;
+		$out['hero_show_view_all'] = empty( $input['hero_show_view_all'] ) ? 0 : 1;
 		$out['category_slug']      = sanitize_title( $input['category_slug'] ?? $out['category_slug'] );
 		$out['desktop_count']      = max( 1, min( 12, (int) ( $input['desktop_count'] ?? $out['desktop_count'] ) ) );
 		$out['mobile_count']       = max( 1, min( 4, (int) ( $input['mobile_count'] ?? $out['mobile_count'] ) ) );
@@ -174,12 +178,16 @@ final class MMI_FN_Settings {
 						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[remote_category_id]" type="number" min="0" value="<?php echo esc_attr( (string) $s['remote_category_id'] ); ?>" /> <span class="description">Feature = 9</span></td>
 					</tr>
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Hero section title', 'mmi-feature-news' ); ?></th>
-						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[hero_title]" type="text" class="regular-text" value="<?php echo esc_attr( $s['hero_title'] ); ?>" /></td>
+						<th scope="row"><?php esc_html_e( 'Hero title (optional)', 'mmi-feature-news' ); ?></th>
+						<td>
+							<input name="<?php echo esc_attr( self::OPTION ); ?>[hero_title]" type="text" class="regular-text" value="<?php echo esc_attr( $s['hero_title'] ); ?>" placeholder="<?php esc_attr_e( 'Leave empty — no heading on tech-news block', 'mmi-feature-news' ); ?>" />
+							<p><label><input name="<?php echo esc_attr( self::OPTION ); ?>[hero_show_header]" type="checkbox" value="1" <?php checked( 1, (int) ( $s['hero_show_header'] ?? 0 ) ); ?> /> <?php esc_html_e( 'Show hero header row', 'mmi-feature-news' ); ?></label></p>
+							<p><label><input name="<?php echo esc_attr( self::OPTION ); ?>[hero_show_view_all]" type="checkbox" value="1" <?php checked( 1, (int) ( $s['hero_show_view_all'] ?? 0 ) ); ?> /> <?php esc_html_e( 'Show View All on hero (top right)', 'mmi-feature-news' ); ?></label></p>
+						</td>
 					</tr>
 					<tr>
 						<th scope="row"><?php esc_html_e( 'Grid section title', 'mmi-feature-news' ); ?></th>
-						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[section_title]" type="text" class="regular-text" value="<?php echo esc_attr( $s['section_title'] ); ?>" /></td>
+						<td><input name="<?php echo esc_attr( self::OPTION ); ?>[section_title]" type="text" class="regular-text" value="<?php echo esc_attr( $s['section_title'] ); ?>" /><p class="description"><?php esc_html_e( 'Use “Feature” only (not “Feature News”).', 'mmi-feature-news' ); ?></p></td>
 					</tr>
 					<tr>
 						<th scope="row"><?php esc_html_e( 'Category slug', 'mmi-feature-news' ); ?></th>

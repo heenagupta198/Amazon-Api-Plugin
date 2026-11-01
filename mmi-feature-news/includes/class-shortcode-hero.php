@@ -1,6 +1,6 @@
 <?php
 /**
- * Featured hero: 1 large + 3 side posts (ReHub /devices), static — no slider.
+ * Tech news hero: 1 large + 3 side (ReHub /devices). Mobile: lead + horizontal slides.
  *
  * @package MMI_Feature_News
  */
@@ -8,7 +8,7 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Hero shortcode for top "Featured" block.
+ * Hero shortcode — Tech News from English site.
  */
 final class MMI_FN_Shortcode_Hero {
 
@@ -18,6 +18,7 @@ final class MMI_FN_Shortcode_Hero {
 	public static function register(): void {
 		add_shortcode( 'mmi_feature_hero', array( __CLASS__, 'render' ) );
 		add_shortcode( 'mmi_featured_hero', array( __CLASS__, 'render' ) );
+		add_shortcode( 'mmi_tech_news_hero', array( __CLASS__, 'render' ) );
 	}
 
 	/**
@@ -29,13 +30,14 @@ final class MMI_FN_Shortcode_Hero {
 		$settings = MMI_FN_Settings::get();
 		$atts     = shortcode_atts(
 			array(
-				'title'          => $settings['hero_title'],
-				'category'       => $settings['category_slug'],
-				'count'          => '4',
-				'offset'         => '0',
-				'view_all_label' => $settings['view_all_label'],
-				'view_all_url'   => '',
-				'show_header'    => '1',
+				'title'           => $settings['hero_title'],
+				'category'        => $settings['category_slug'],
+				'count'           => '4',
+				'offset'          => '0',
+				'view_all_label'  => $settings['view_all_label'],
+				'view_all_url'    => '',
+				'show_header'     => ! empty( $settings['hero_show_header'] ) ? '1' : '0',
+				'show_view_all'   => ! empty( $settings['hero_show_view_all'] ) ? '1' : '0',
 			),
 			$atts,
 			'mmi_feature_hero'
@@ -52,25 +54,29 @@ final class MMI_FN_Shortcode_Hero {
 		$lead = $items[0];
 		$side = array_slice( $items, 1, 3 );
 
-		$view_all_url = $atts['view_all_url'] ? esc_url( $atts['view_all_url'] ) : esc_url( MMI_FN_Settings::view_all_url() );
-		$title        = esc_html( $atts['title'] );
-		$view_label   = esc_html( $atts['view_all_label'] );
-		$show_header  = '0' !== $atts['show_header'];
+		$view_all_url  = $atts['view_all_url'] ? esc_url( $atts['view_all_url'] ) : esc_url( MMI_FN_Settings::view_all_url() );
+		$title         = trim( (string) $atts['title'] );
+		$view_label    = esc_html( $atts['view_all_label'] );
+		$show_header   = '0' !== $atts['show_header'];
+		$show_view_all = '0' !== $atts['show_view_all'];
+		$aria          = $title ? $title : __( 'Tech News', 'mmi-feature-news' );
 
 		$uid = 'mmi-fh-' . wp_unique_id();
 
 		ob_start();
 		?>
-		<section id="<?php echo esc_attr( $uid ); ?>" class="mmi-feature-hero" aria-label="<?php echo esc_attr( $title ); ?>">
-			<?php if ( $show_header && '' !== $title ) : ?>
+		<section id="<?php echo esc_attr( $uid ); ?>" class="mmi-feature-hero mmi-tech-news-hero" aria-label="<?php echo esc_attr( $aria ); ?>">
+			<?php if ( $show_header && ( '' !== $title || $show_view_all ) ) : ?>
 				<header class="mmi-feature-hero__header">
-					<h2 class="mmi-feature-hero__title"><?php echo $title; ?></h2>
-					<a class="mmi-feature-hero__view-all" href="<?php echo $view_all_url; ?>"><?php echo $view_label; ?></a>
+					<?php if ( '' !== $title ) : ?>
+						<h2 class="mmi-feature-hero__title"><?php echo esc_html( $title ); ?></h2>
+					<?php else : ?>
+						<span class="mmi-feature-hero__title-spacer" aria-hidden="true"></span>
+					<?php endif; ?>
+					<?php if ( $show_view_all ) : ?>
+						<a class="mmi-feature-hero__view-all" href="<?php echo $view_all_url; ?>"><?php echo $view_label; ?></a>
+					<?php endif; ?>
 				</header>
-			<?php elseif ( $show_header ) : ?>
-				<div class="mmi-feature-hero__header mmi-feature-hero__header--link-only">
-					<a class="mmi-feature-hero__view-all" href="<?php echo $view_all_url; ?>"><?php echo $view_label; ?></a>
-				</div>
 			<?php endif; ?>
 			<div class="mmi-feature-hero__layout">
 				<article class="mmi-feature-hero__lead">
@@ -89,9 +95,9 @@ final class MMI_FN_Shortcode_Hero {
 					</div>
 				</article>
 				<?php if ( ! empty( $side ) ) : ?>
-					<div class="mmi-feature-hero__side">
+					<div class="mmi-feature-hero__side" role="list">
 						<?php foreach ( $side as $item ) : ?>
-							<article class="mmi-feature-hero__side-item">
+							<article class="mmi-feature-hero__side-item" role="listitem">
 								<a class="mmi-feature-hero__side-thumb" href="<?php echo esc_url( $item->link ); ?>">
 									<?php if ( $item->image_url ) : ?>
 										<img src="<?php echo esc_url( $item->image_url ); ?>" alt="" loading="lazy" decoding="async" />

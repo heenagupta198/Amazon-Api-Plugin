@@ -1,51 +1,36 @@
-# ReHub `/devices/` — Feature sections from English site
+# ReHub `/devices/` — v1.2.0
 
-## Why it was blank
+## Download
 
-`/devices/` is a **separate WordPress shop** (ReHub + Elementor). It does **not** have the English **Feature** posts.  
-Version **1.0.0** only queried local posts → **empty shortcode** (`[...]` in Elementor).
+**[mmi-feature-news-v1.2.0.zip](https://github.com/heenagupta198/Amazon-Api-Plugin/raw/cursor/feature-news-static-grid-3fd9/mmi-feature-news-v1.2.0.zip)**
 
-**v1.1.0** loads posts from **https://www.mymobileindia.com** (category **Feature**, ID **9**) via REST API.
+## What changed in v1.2.0
 
----
+| Item | Fix |
+|------|-----|
+| Content | **Tech News** from [mymobileindia.com/tech-news/](https://www.mymobileindia.com/tech-news/) (category ID **10**) |
+| Hero heading | **No “Featured” title** and **no View All** on top block (default) |
+| Grid heading | **“Feature”** only — not “Feature News” |
+| Desktop layout | Left + right **equal height**, less white gap |
+| Mobile | Side posts show as **horizontal swipe slider** under main story |
 
-## Install v1.1.0
+## Elementor shortcodes (devices homepage)
 
-1. Download: https://github.com/heenagupta198/Amazon-Api-Plugin/raw/cursor/feature-news-static-grid-3fd9/mmi-feature-news-v1.1.0.zip  
-   (or replace plugin folder after pull)
-2. **Plugins → deactivate → delete old MMI Feature News → Upload new zip → Activate**
-3. **Settings → MMI Feature News**:
-   - **Fetch from English site** ✓
-   - **News source URL:** `https://www.mymobileindia.com`
-   - **Remote category ID:** `9`
-   - **View All URL:** `https://www.mymobileindia.com/feature/`
-4. **Elementor** on https://www.mymobileindia.com/devices/ homepage:
+1. **Tech news block (top):** `[mmi_feature_hero]` or `[mmi_tech_news_hero]`  
+   — Do **not** add `title="Featured"` unless you want a heading.
 
-| Block (top → bottom) | Shortcode widget content |
-|----------------------|---------------------------|
-| **Featured** (big + 3 small) | `[mmi_feature_hero]` |
-| **Featured News** (4 cards) | `[mmi_feature_news title="Featured News"]` |
+2. **Feature grid (below):** `[mmi_feature_news]`  
+   — Title comes from settings (**Feature**). View All → tech-news archive.
 
-5. **Update** page → clear **WP Rocket** cache.
+After upload: **Plugins → deactivate → activate** (runs v1.2 settings upgrade) → **Settings → MMI Feature News → Save** → clear WP Rocket cache.
 
----
+## If old titles still show
 
-## Layout rules (your mockups)
+Open **Settings → MMI Feature News** and set:
 
-| Section | Desktop | Mobile |
-|---------|---------|--------|
-| `[mmi_feature_hero]` | 1 large + 3 side posts, **no slider arrows** | **Only latest 1** + View All |
-| `[mmi_feature_news]` | **4** cards + View All | **1** card + View All |
-
-Links open on **English site** (correct for Feature articles).
-
-Optional: avoid duplicate stories — use `[mmi_feature_news offset="4"]` to show the next 4 after the hero.
-
----
-
-## Elementor still empty?
-
-- Confirm plugin **v1.1.0** (Plugins list)
-- Settings saved with **Use remote news** enabled
-- Server can reach `https://www.mymobileindia.com/wp-json/` (host firewall)
-- Logged-in admin may see a red dashed notice if API fails
+- Category slug: `tech-news`  
+- Remote category ID: `10`  
+- View All URL: `https://www.mymobileindia.com/tech-news/`  
+- Grid title: `Feature`  
+- Hero title: *(empty)*  
+- Uncheck hero header / View All  
