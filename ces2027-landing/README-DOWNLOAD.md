@@ -1,6 +1,6 @@
 # CES 2027 Leroux page template — direct download
 
-**Current build: `2026-11-04.5`** (check `CES2027_TEMPLATE_VERSION` in the PHP file after upload)
+**Current build: `2026-11-04.7`** (check `CES2027_TEMPLATE_VERSION` in the PHP file after upload)
 
 Use these links in the browser (right‑click → **Save link as…** if tap does not download).
 
