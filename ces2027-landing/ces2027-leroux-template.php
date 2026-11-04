@@ -2,7 +2,7 @@
 /**
  * Template Name: CES 2027 Landing Page
  * Description: ICEA India Pavilion at CES 2027 landing page.
- * CES2027_TEMPLATE_VERSION: 2026-11-04.7
+ * CES2027_TEMPLATE_VERSION: 2026-11-04.8
  *
  * Important:
  * - Keeps the active Leroux theme header, desktop menu, mobile menu and footer.
@@ -40,12 +40,27 @@ body.page-template-ces2027-leroux-template #qodef-page-title {
 	display: none !important;
 }
 
-body.page-template-ces2027-leroux-template #qodef-page-inner,
 body.page-template-ces2027-leroux-template #qodef-page-content {
 	width: 100% !important;
 	max-width: 100% !important;
-	padding: 0 !important;
 	margin: 0 !important;
+	padding: 0 !important;
+}
+
+body.page-template-ces2027-leroux-template #qodef-page-inner {
+	width: 100% !important;
+	max-width: 100% !important;
+	margin: 0 !important;
+	padding-left: 0 !important;
+	padding-right: 0 !important;
+	padding-bottom: 0 !important;
+	padding-top: var(--ces-theme-header-offset, 0px) !important;
+}
+
+@media screen and (max-width: 782px) {
+	body.page-template-ces2027-leroux-template #qodef-page-inner {
+		padding-top: var(--ces-theme-header-offset, 0px) !important;
+	}
 }
 
 #ces-2027-page {
@@ -71,7 +86,7 @@ body.page-template-ces2027-leroux-template #qodef-page-content {
 	--ces-scroll-offset: calc(var(--ces-sticky-top) + var(--ces-nav-height) + 20px);
 	width: 100%;
 	margin: 0;
-	padding: var(--ces-theme-header-offset, 0px) 0 0;
+	padding: 0;
 	background: var(--ces-white);
 	color: var(--ces-ink);
 	font-family: "Plus Jakarta Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -178,6 +193,12 @@ body.page-template-ces2027-leroux-template #qodef-page-content {
 	z-index: 1;
 	opacity: 0.9;
 	animation: ces-hero-glow 8s ease-in-out infinite alternate;
+}
+
+@media screen and (max-width: 782px) {
+	#ces-2027-page .ces-banner-video {
+		object-position: center 26%;
+	}
 }
 
 
@@ -1370,7 +1391,35 @@ body.page-template-ces2027-leroux-template #qodef-page-content {
 
 </style>
 
-<main id="ces-2027-page" data-ces-template-version="2026-11-04.6">
+<main id="ces-2027-page" data-ces-template-version="2026-11-04.8">
+<script>
+(function () {
+	'use strict';
+	function applyHeaderOffset() {
+		if (!window.matchMedia('(max-width: 782px)').matches) {
+			return;
+		}
+		var page = document.getElementById('ces-2027-page');
+		var mobileHeader = document.querySelector('#qodef-page-mobile-header') || document.querySelector('.qodef-mobile-header-wrapper');
+		if (!page || !mobileHeader) {
+			return;
+		}
+		var pageTop = page.getBoundingClientRect().top;
+		var headerBottom = mobileHeader.getBoundingClientRect().bottom;
+		var overlap = Math.ceil(headerBottom - pageTop + 6);
+		if (overlap <= 0) {
+			document.body.style.setProperty('--ces-theme-header-offset', '0px');
+			page.style.setProperty('--ces-theme-header-offset', '0px');
+			return;
+		}
+		var value = overlap + 'px';
+		document.body.style.setProperty('--ces-theme-header-offset', value);
+		page.style.setProperty('--ces-theme-header-offset', value);
+	}
+	applyHeaderOffset();
+})();
+</script>
+
 
 	<header class="ces-hero" id="ces-top-banner">
 			<div class="ces-hero-glow" aria-hidden="true"></div>
@@ -1559,6 +1608,36 @@ body.page-template-ces2027-leroux-template #qodef-page-content {
 	});
 
 	function measureThemeHeaderOffset() {
+		var admin = document.getElementById('wpadminbar');
+		var adminHeight = admin ? (admin.offsetHeight || 0) : 0;
+		var isMobileView = window.matchMedia('(max-width: 782px)').matches;
+		var mobileBuffer = isMobileView ? 6 : 0;
+
+		function visibleHeight(el) {
+			if (!el) {
+				return 0;
+			}
+			var style = window.getComputedStyle(el);
+			if (style.display === 'none' || style.visibility === 'hidden') {
+				return 0;
+			}
+			var rect = el.getBoundingClientRect();
+			return Math.max(rect.height, el.offsetHeight || 0, el.scrollHeight || 0);
+		}
+
+		if (isMobileView) {
+			var mobileRoot = document.querySelector('#qodef-page-mobile-header') || document.querySelector('.qodef-mobile-header-wrapper');
+			if (mobileRoot) {
+				var mobileRect = mobileRoot.getBoundingClientRect();
+				var pageTop = page.getBoundingClientRect().top;
+				var overlap = mobileRect.bottom - pageTop;
+				if (overlap <= 1) {
+					return 0;
+				}
+				return Math.round(overlap + mobileBuffer);
+			}
+		}
+
 		var selectors = [
 			'#wpadminbar',
 			'#qodef-page-mobile-header',
@@ -1570,7 +1649,6 @@ body.page-template-ces2027-leroux-template #qodef-page-content {
 		];
 		var seen = typeof WeakSet !== 'undefined' ? new WeakSet() : null;
 		var maxBottom = 0;
-		var isMobileView = window.matchMedia('(max-width: 782px)').matches;
 
 		selectors.forEach(function (selector) {
 			document.querySelectorAll(selector).forEach(function (el) {
@@ -1589,21 +1667,21 @@ body.page-template-ces2027-leroux-template #qodef-page-content {
 					return;
 				}
 				var pinned = style.position === 'fixed' || style.position === 'sticky';
-				if (!pinned && rect.top > 2) {
+				if (!pinned && rect.top > 6) {
 					return;
 				}
 				if (isMobileView && selector === '#qodef-page-header' && document.querySelector('#qodef-page-mobile-header')) {
 					return;
 				}
-				maxBottom = Math.max(maxBottom, rect.bottom);
+				maxBottom = Math.max(maxBottom, rect.bottom, adminHeight + visibleHeight(el));
 			});
 		});
 
 		if (maxBottom < 1) {
-			maxBottom = isMobileView ? 64 : 88;
+			maxBottom = isMobileView ? 92 : 88;
 		}
 
-		return Math.round(maxBottom);
+		return Math.round(maxBottom + mobileBuffer);
 	}
 
 	function updateNavOffsets() {
@@ -1621,10 +1699,19 @@ body.page-template-ces2027-leroux-template #qodef-page-content {
 		}
 	}
 
-	updateNavOffsets();
-	window.addEventListener('resize', updateNavOffsets);
-	window.addEventListener('load', updateNavOffsets);
-	window.addEventListener('orientationchange', updateNavOffsets);
+	function syncOffsetsSoon() {
+		updateNavOffsets();
+		window.requestAnimationFrame(function () {
+			updateNavOffsets();
+			window.requestAnimationFrame(updateNavOffsets);
+		});
+	}
+
+	syncOffsetsSoon();
+	window.addEventListener('DOMContentLoaded', syncOffsetsSoon);
+	window.addEventListener('resize', syncOffsetsSoon);
+	window.addEventListener('load', syncOffsetsSoon);
+	window.addEventListener('orientationchange', syncOffsetsSoon);
 
 	if (typeof ResizeObserver !== 'undefined') {
 		var headerResizeObserver = new ResizeObserver(function () {
