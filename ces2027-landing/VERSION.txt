@@ -1,5 +1,1 @@
-2026-11-04.5
-
-If your uploaded PHP does not contain this string in the file header comment
-(CES2027_TEMPLATE_VERSION) and in <main data-ces-template-version="...">,
-you are still on an old file — download the ZIP again from the link in README-DOWNLOAD.md.
+2026-11-04.6
