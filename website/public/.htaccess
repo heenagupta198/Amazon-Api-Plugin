@@ -1,0 +1,31 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Security headers
+  <IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    Header set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+  </IfModule>
+
+  # Block access to sensitive files
+  <FilesMatch "\.(env|log|json|lock)$">
+    Order allow,deny
+    Deny from all
+  </FilesMatch>
+
+  # React SPA - route all requests to index.html except existing files
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_URI} !^/api/
+  RewriteRule . /index.html [L]
+</IfModule>
+
+# Disable directory listing
+Options -Indexes
+
+# Limit request size
+LimitRequestBody 1048576
