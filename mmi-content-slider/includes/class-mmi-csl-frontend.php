@@ -1,6 +1,6 @@
 <?php
 /**
- * Devices site: Latest News via REST from English news site (separate WP/DB).
+ * Devices site: Related Articles carousel above ReHub Related Products.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -24,7 +24,8 @@ class MMI_CSL_Frontend {
 			MMI_CSL_VERSION
 		);
 
-		if ( ! wp_script_is( 'swiper', 'enqueued' ) ) {
+		$swiper_loaded = wp_script_is( 'swiper', 'enqueued' ) || wp_script_is( 'swiper-js', 'enqueued' );
+		if ( ! $swiper_loaded ) {
 			wp_enqueue_style(
 				'swiper',
 				'https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css',
@@ -43,54 +44,73 @@ class MMI_CSL_Frontend {
 		wp_enqueue_script(
 			'mmi-csl-related-news',
 			MMI_CSL_URL . 'assets/js/related-news.js',
-			array( 'swiper' ),
+			array(),
 			MMI_CSL_VERSION,
 			true
+		);
+
+		$product_id = self::get_current_product_id();
+		wp_localize_script(
+			'mmi-csl-related-news',
+			'MmiCslNews',
+			array(
+				'productId' => $product_id,
+				'restUrl'   => trailingslashit( MMI_CSL_Settings::get_news_rest_url() ) . 'mmi-csl/v1/news-by-product/',
+				'heading'   => __( 'Related Articles', 'mmi-content-slider' ),
+				'prevLabel' => __( 'Previous', 'mmi-content-slider' ),
+				'nextLabel' => __( 'Next', 'mmi-content-slider' ),
+			)
 		);
 	}
 
 	private static function is_devices_product_page(): bool {
-		if ( ! function_exists( 'is_product' ) || ! is_product() ) {
+		if ( ! MMI_CSL_Sites::is_devices_site() ) {
 			return false;
 		}
 
-		return MMI_CSL_Sites::is_devices_site();
+		if ( function_exists( 'is_product' ) && is_product() ) {
+			return true;
+		}
+
+		return is_singular( array( 'product', 'devices' ) );
+	}
+
+	private static function get_current_product_id(): int {
+		if ( function_exists( 'wc_get_product' ) ) {
+			global $product;
+			if ( $product instanceof WC_Product ) {
+				return (int) $product->get_id();
+			}
+
+			$from_query = wc_get_product( get_queried_object_id() );
+			if ( $from_query instanceof WC_Product ) {
+				return (int) $from_query->get_id();
+			}
+		}
+
+		return (int) get_queried_object_id();
 	}
 
 	public static function render_latest_news_footer(): void {
-		if ( ! self::is_devices_product_page() || ! class_exists( 'WC_Product' ) ) {
+		if ( ! self::is_devices_product_page() ) {
 			return;
 		}
 
-		global $product;
-		if ( ! $product instanceof WC_Product ) {
+		$product_id = self::get_current_product_id();
+		if ( $product_id <= 0 ) {
 			return;
 		}
 
-		$product_id = (int) $product->get_id();
-		$items      = MMI_CSL_Remote::get_news_items_for_product( $product_id, 12 );
-
-		if ( empty( $items ) ) {
-			return;
+		$items = array();
+		if ( class_exists( 'MMI_CSL_Remote' ) ) {
+			$items = MMI_CSL_Remote::get_news_items_for_product( $product_id, 12 );
 		}
 
-		echo '<div id="mmi-latest-news-mount" class="mmi-latest-news-mount">';
-		self::print_carousel_markup( $items );
+		echo '<div id="mmi-latest-news-mount" class="mmi-latest-news-mount" data-product-id="' . esc_attr( (string) $product_id ) . '">';
+		if ( ! empty( $items ) ) {
+			self::print_carousel_markup( $items );
+		}
 		echo '</div>';
-		?>
-		<script>
-		(function () {
-			var mount = document.getElementById('mmi-latest-news-mount');
-			if (!mount) {
-				return;
-			}
-			var anchor = document.querySelector('#related-section-woo-area, .related-woo-area');
-			if (anchor && anchor.parentNode) {
-				anchor.parentNode.insertBefore(mount, anchor);
-			}
-		})();
-		</script>
-		<?php
 	}
 
 	/**
@@ -99,8 +119,8 @@ class MMI_CSL_Frontend {
 	private static function print_carousel_markup( array $items ): void {
 		?>
 		<section class="related-news-slider mmi-device-latest-news" aria-labelledby="mmi-latest-news-heading">
-			<h3 id="mmi-latest-news-heading" class="mmi-latest-news-title"><?php esc_html_e( 'Latest News', 'mmi-content-slider' ); ?></h3>
-			<div class="swiper related-news-swiper">
+			<h3 id="mmi-latest-news-heading" class="mmi-latest-news-title"><?php esc_html_e( 'Related Articles', 'mmi-content-slider' ); ?></h3>
+			<div class="swiper mmi-related-news-swiper">
 				<div class="swiper-wrapper">
 					<?php foreach ( $items as $item ) : ?>
 						<div class="swiper-slide">

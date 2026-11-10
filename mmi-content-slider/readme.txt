@@ -3,7 +3,7 @@ Contributors: mymobileindia
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.2.0
+Stable tag: 1.7.0
 License: GPLv2 or later
 
 Link news articles on the main site to device products and show a Latest News carousel on WooCommerce product pages (multisite /devices/).
@@ -14,7 +14,8 @@ Link news articles on the main site to device products and show a Latest News ca
 2. Network-activate the plugin (recommended) or activate on the main news site and the Devices subsite.
 3. Edit a news post on the main site — use the **Linked Device Products** box in the sidebar (below other meta boxes such as AMP).
 4. Search by product name or numeric ID, add one or more devices, and publish.
-5. Open that product on `https://www.mymobileindia.com/devices/` — **Latest News** appears after specifications and before **Related Products**.
+5. Open that product on `https://www.mymobileindia.com/devices/` — **Related Articles** appears just above ReHub **Related Products** (`#related-section-woo-area`).
+6. Activate this plugin on **both** WordPress installs (English news + Devices). News stores the links; Devices renders the carousel.
 
 == Notes ==
 

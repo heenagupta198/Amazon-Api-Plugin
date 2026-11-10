@@ -438,9 +438,17 @@ padding:16px 18px;
 }
 
 .mmi-device-latest-news.related-news-slider {
+    display: block !important;
+    overflow: visible !important;
     clear: both;
     margin: 28px 0 24px;
     padding: 0 5px;
+    gap: 0;
+}
+
+.mmi-device-latest-news .news-box {
+    min-width: 0;
+    width: 100%;
 }
 
 .mmi-device-latest-news .mmi-latest-news-title {
@@ -450,9 +458,11 @@ padding:16px 18px;
     color: #111;
 }
 
-.related-news-slider .related-news-swiper {
+.related-news-slider .related-news-swiper,
+.related-news-slider .mmi-related-news-swiper {
     position: relative;
     padding: 0 36px 8px;
+    overflow: hidden;
 }
 
 .related-news-slider .news-box {

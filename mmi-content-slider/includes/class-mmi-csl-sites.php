@@ -72,22 +72,40 @@ class MMI_CSL_Sites {
 	}
 
 	/**
-	 * @return int[] Sanitized product IDs from post meta.
+	 * Normalize stored linked IDs (JSON ints, JSON strings, or PHP-serialized arrays).
+	 *
+	 * @param mixed $raw Meta value.
+	 * @return int[]
 	 */
-	public static function get_linked_product_ids( int $post_id ): array {
-		$raw = get_post_meta( $post_id, MMI_CSL_META_KEY, true );
-		if ( is_string( $raw ) && '' !== $raw ) {
-			$decoded = json_decode( $raw, true );
-			if ( is_array( $decoded ) ) {
-				return array_values( array_unique( array_filter( array_map( 'intval', $decoded ) ) ) );
-			}
-		}
-
+	public static function parse_id_list( $raw ): array {
 		if ( is_array( $raw ) ) {
 			return array_values( array_unique( array_filter( array_map( 'intval', $raw ) ) ) );
 		}
 
+		if ( ! is_string( $raw ) || '' === trim( $raw ) ) {
+			return array();
+		}
+
+		$decoded = json_decode( $raw, true );
+		if ( is_array( $decoded ) ) {
+			return array_values( array_unique( array_filter( array_map( 'intval', $decoded ) ) ) );
+		}
+
+		if ( function_exists( 'maybe_unserialize' ) ) {
+			$unserialized = maybe_unserialize( $raw );
+			if ( is_array( $unserialized ) ) {
+				return array_values( array_unique( array_filter( array_map( 'intval', $unserialized ) ) ) );
+			}
+		}
+
 		return array();
+	}
+
+	/**
+	 * @return int[] Sanitized product IDs from post meta.
+	 */
+	public static function get_linked_product_ids( int $post_id ): array {
+		return self::parse_id_list( get_post_meta( $post_id, MMI_CSL_META_KEY, true ) );
 	}
 
 	/**
@@ -103,11 +121,6 @@ class MMI_CSL_Sites {
 		update_post_meta( $post_id, MMI_CSL_META_KEY, wp_json_encode( $product_ids ) );
 	}
 
-	/**
-	 * Fetch published news posts linked to a devices subsite product.
-	 *
-	 * @return WP_Post[]
-	 */
 	/**
 	 * News articles linked to a devices product ID (local DB on news site).
 	 *
@@ -144,13 +157,45 @@ class MMI_CSL_Sites {
 	}
 
 	/**
+	 * Match JSON `[22404,22257]` (integers) as well as `["22404"]` (quoted strings).
+	 * The previous LIKE `"22404"` never matched integer JSON, so REST always returned [].
+	 *
 	 * @return int[]
 	 */
 	private static function query_news_ids_by_meta( int $product_id, int $limit ): array {
+		global $wpdb;
+
+		$like = '%' . $wpdb->esc_like( (string) $product_id ) . '%';
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value LIKE %s",
+				MMI_CSL_META_KEY,
+				$like
+			)
+		);
+
+		if ( empty( $rows ) || ! is_array( $rows ) ) {
+			return array();
+		}
+
+		$matched = array();
+		foreach ( $rows as $row ) {
+			$ids = self::parse_id_list( isset( $row->meta_value ) ? $row->meta_value : '' );
+			if ( in_array( $product_id, $ids, true ) ) {
+				$matched[] = (int) $row->post_id;
+			}
+		}
+
+		$matched = array_values( array_unique( array_filter( $matched ) ) );
+		if ( empty( $matched ) ) {
+			return array();
+		}
+
 		$query = new WP_Query(
 			array(
 				'post_type'              => 'post',
 				'post_status'            => 'publish',
+				'post__in'               => $matched,
 				'posts_per_page'         => $limit,
 				'orderby'                => 'date',
 				'order'                  => 'DESC',
@@ -159,13 +204,6 @@ class MMI_CSL_Sites {
 				'no_found_rows'          => true,
 				'update_post_meta_cache' => false,
 				'update_post_term_cache' => false,
-				'meta_query'             => array(
-					array(
-						'key'     => MMI_CSL_META_KEY,
-						'value'   => '"' . $product_id . '"',
-						'compare' => 'LIKE',
-					),
-				),
 			)
 		);
 
