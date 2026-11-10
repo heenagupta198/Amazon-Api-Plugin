@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>India Pavilion at CES 2027 | ICEA</title>
+<meta name="description" content="Explore the India Pavilion and India Night at CES 2027, 6–9 January in Las Vegas. Contact ICEA for participation enquiries.">
+<link rel="preload" as="image" href="media/india-pavilion-poster.jpg">
+<style>
+:root {
+  --navy: #061728;
+  --ink: #152c40;
+  --muted: #526475;
+  --orange: #ed721c;
+  --line: #dce4e9;
+  --pale: #f3f6f8;
+  --green: #19835d;
+  --nav-height: 72px;
+}
+* { box-sizing: border-box; }
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--nav-height) + 16px);
+}
+body {
+  margin: 0;
+  background: #fff;
+  color: var(--ink);
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.7;
+}
+a { color: inherit; }
+a:focus-visible {
+  outline: 3px solid #ed721c;
+  outline-offset: 6px;
+}
+h1, h2, h3, p { margin-top: 0; }
+h2 {
+  font-size: clamp(28px, 3.5vw, 40px);
+  line-height: 1.2;
+  letter-spacing: -1px;
+  margin-bottom: 22px;
+}
+h3 { font-size: 19px; line-height: 1.4; margin-bottom: 8px; }
+p { margin-bottom: 18px; }
+.wrap { width: min(1040px, calc(100% - 64px)); margin: auto; }
+
+.hero {
+  max-width: 1200px;
+  margin: auto;
+  position: relative;
+  background: var(--navy);
+}
+.banner {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  object-position: center;
+  background: var(--navy) url("media/india-pavilion-poster.jpg") center / cover no-repeat;
+}
+
+.skip {
+  position: absolute;
+  left: 16px;
+  top: -100px;
+  background: #fff;
+  padding: 10px;
+  z-index: 30;
+}
+.skip:focus { top: 10px; }
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.section { padding: 72px 0; }
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #a34709;
+  font-weight: 700;
+  font-size: 11px;
+  margin-bottom: 14px;
+}
+.about-grid { display: grid; grid-template-columns: 1fr 1.75fr; gap: 60px; }
+.about-copy { font-size: 16px; color: var(--muted); }
+.about-copy p:last-child { margin-bottom: 0; }
+.pavilion { background: var(--pale); border-block: 1px solid var(--line); }
+.section-intro { max-width: 760px; font-size: 18px; color: var(--muted); margin-bottom: 38px; }
+.facts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  border-top: 1px solid #cbd7df;
+}
+.fact { padding: 26px 25px 24px 0; border-bottom: 1px solid #cbd7df; }
+.fact:nth-child(3n + 2),
+.fact:nth-child(3n + 3) { padding-left: 25px; border-left: 1px solid #cbd7df; }
+.fact-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  color: #627584;
+  margin-bottom: 9px;
+}
+.fact p:last-child { font-size: 14px; color: var(--muted); margin-bottom: 0; }
+.benefit {
+  border-left: 3px solid var(--green);
+  padding: 5px 0 5px 20px;
+  margin: 30px 0 0;
+  font-size: 16px;
+}
+
+.night { background: var(--navy); color: white; }
+.night .eyebrow { color: #ffaf69; }
+.night p { color: #c8d4de; }
+.night h2 { max-width: 400px; }
+.night .lead { font-size: 18px; }
+.audience { border-top: 1px solid #354959; padding-top: 22px; margin-top: 28px; }
+.audience strong {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: #fff;
+  margin-bottom: 8px;
+}
+.night-layout {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  align-items: center;
+  gap: clamp(24px, 4vw, 64px);
+}
+.night-layout > div { max-width: 750px; }
+.night-image { display: block; width: 100%; height: auto; }
+
+.terms-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 60px; }
+.placeholder {
+  background: var(--pale);
+  border: 1px dashed #aebfcb;
+  border-radius: 3px;
+  padding: 28px 30px;
+}
+.status {
+  display: inline-block;
+  background: #e4ebf0;
+  color: #354d60;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  margin-bottom: 14px;
+  font-weight: bold;
+}
+.placeholder p { color: var(--muted); margin-bottom: 0; }
+
+.contact {
+  padding: 52px 0;
+  background: #f5eee7;
+  border-top: 1px solid #eaded1;
+}
+.contact-inner { display: flex; justify-content: space-between; align-items: center; gap: 40px; }
+.contact h2 { font-size: 30px; margin-bottom: 10px; }
+.contact p { margin: 0; color: var(--muted); }
+.contact-card {
+  border-left: 1px solid #d5c6b6;
+  padding-left: 36px;
+  min-width: 300px;
+  font-style: normal;
+}
+.contact-card strong { font-size: 19px; display: block; margin-bottom: 8px; }
+.contact-card a { display: block; text-decoration: none; }
+.contact-card a:hover { text-decoration: underline; }
+.contact-card a:first-of-type { color: #9d4200; font-weight: bold; }
+
+footer { padding: 24px 0; font-size: 11px; color: #627584; }
+.footer-inner { display: flex; justify-content: space-between; gap: 20px; }
+footer a { text-decoration: none; }
+
+.exhibitor-benefits { margin-top: 40px; }
+.exhibitor-benefits h3 { font-size: 24px; }
+.exhibitor-benefits dl { margin: 18px 0 0; }
+.exhibitor-benefits dl > div {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) 3fr;
+  gap: 24px;
+  padding: 15px 0;
+  border-top: 1px solid var(--line);
+}
+.exhibitor-benefits dt { font-weight: 700; }
+.exhibitor-benefits dd { margin: 0; color: var(--muted); }
+
+.section-nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(255, 255, 255, 0.97);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(8px);
+}
+.section-nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  min-height: var(--nav-height);
+  padding-block: 10px;
+}
+.event-label {
+  background: linear-gradient(110deg, #f0f1f2, #fff3eb);
+  padding: 9px 17px;
+  border-radius: 28px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.section-links {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  align-items: center;
+}
+.section-links a {
+  padding: 9px 13px;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 24px;
+  text-decoration: none;
+  font-size: 14px;
+  white-space: nowrap;
+}
+.section-links a:hover,
+.section-links a[aria-current="location"] {
+  background: #fff4ec;
+  color: #b84c00;
+  text-decoration: underline;
+  text-underline-offset: 8px;
+}
+
+@media (min-width: 1500px) {
+  .hero { margin-top: 24px; }
+}
+@media (max-width: 800px) {
+  .wrap { width: calc(100% - 40px); }
+  .section { padding: 48px 0; }
+  .about-grid,
+  .terms-grid { grid-template-columns: 1fr; gap: 12px; }
+  .facts { grid-template-columns: repeat(2, 1fr); }
+  .fact { padding: 22px 16px !important; border-left: 0 !important; }
+  .fact:nth-child(even) { border-left: 1px solid #cbd7df !important; }
+  .contact-card { min-width: 260px; padding-left: 25px; }
+}
+@media (max-width: 760px) {
+  :root { --nav-height: 108px; }
+  .section-nav-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding-block: 10px;
+  }
+  .section-links {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 6px;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+  .section-links::-webkit-scrollbar { display: none; }
+  .section-links a {
+    padding: 10px 14px;
+    min-height: 44px;
+    font-size: 13px;
+    flex: 0 0 auto;
+  }
+}
+@media (max-width: 720px) {
+  .night-layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .facts,
+  .night-layout { grid-template-columns: 1fr; }
+  .fact { padding: 22px 0 !important; }
+  .fact:nth-child(even) { border-left: 0 !important; }
+  .section-intro { font-size: 16px; }
+  .night-layout { gap: 30px; }
+  .contact-inner { display: block; }
+  .contact-card {
+    margin-top: 25px;
+    padding: 22px 0 0;
+    border-left: 0;
+    border-top: 1px solid #d5c6b6;
+  }
+  .footer-inner { display: block; }
+  .footer-inner a { display: inline-block; margin-top: 10px; }
+  .placeholder { padding: 24px; }
+  .about-copy { font-size: 15px; }
+  .exhibitor-benefits dl > div { grid-template-columns: 1fr; gap: 3px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+@media print {
+  .skip,
+  .section-nav { display: none; }
+  .section { padding: 28px 0; }
+  .night { background: white; color: var(--ink); }
+  .night p { color: var(--muted); }
+  .night h3,
+  .audience strong { color: var(--ink); }
+  .contact { background: white; }
+  .facts,
+  .night-layout { break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="hero" id="top">
+  <h1 class="sr-only">India Pavilion at CES 2027</h1>
+  <!--
+    Keep the banner as real media files (or WordPress Media Library URLs).
+    Do not inline the video/poster as base64 — that forces extra compression
+    and makes the hero look blurry on retina screens.
+    Recommended: 1920×600 (or 2400×750) H.264 MP4 at 4–8 Mbps, plus a matching JPEG/WebP poster.
+  -->
+  <video
+    id="pavilion-film"
+    class="banner"
+    width="1280"
+    height="400"
+    muted
+    loop
+    playsinline
+    preload="metadata"
+    poster="media/india-pavilion-poster.jpg"
+    aria-label="India Pavilion at CES 2027, 6–9 January 2027, Las Vegas, Nevada, USA"
+  >
+    <source type="video/mp4" src="media/india-pavilion-banner.mp4">
+  </video>
+</header>
+
+<nav class="section-nav" aria-label="Page sections">
+  <div class="wrap section-nav-inner">
+    <a class="event-label" href="#top">CES 2027</a>
+    <div class="section-links">
+      <a href="#about-ces" aria-current="location">About CES</a>
+      <a href="#india-pavilion">India Pavilion</a>
+      <a href="#india-night">India Night</a>
+      <a href="#participation">Participation</a>
+      <a href="#contact">Contact Us</a>
+    </div>
+  </div>
+</nav>
+
+<main id="main">
+  <section class="section" id="about-ces" aria-labelledby="about-title">
+    <div class="wrap about-grid">
+      <div>
+        <p class="eyebrow">The global stage for innovation</p>
+        <h2 id="about-title">About CES</h2>
+      </div>
+      <div class="about-copy">
+        <p>CES® is the most powerful tech event in the world — the proving ground for breakthrough technologies and global innovators. Owned and produced by the Consumer Technology Association (CTA)®, CES is the only trade show that showcases the entire tech landscape at one event.</p>
+        <p>CES showcases companies including manufacturers, developers and suppliers of consumer technology hardware, content, technology delivery systems and more. It also includes a conference program where the world's business leaders and pioneering thinkers address the industry's most relevant issues.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section pavilion" id="india-pavilion" aria-labelledby="pavilion-title">
+    <div class="wrap">
+      <p class="eyebrow">One nation. A unified presence.</p>
+      <h2 id="pavilion-title">India Pavilion at CES</h2>
+      <p class="section-intro">The first-ever India Pavilion at CES brings large companies, startups and states together under one unified India presence — showcasing the breadth of India's technology ecosystem on a global stage.</p>
+      <p class="section-intro">Exhibiting in a Global Country Pavilion at the <a href="https://www.google.com/search?kgmid=%2Fm%2F01p15w&amp;q=Consumer+Electronics+Show+%28CES%29">Consumer Electronics Show (CES)</a> allows mid/ large companies and startups to leverage collective national branding and shared infrastructure rather than operating as a single booth on the massive trade show floor.</p>
+      <div class="facts">
+        <article class="fact">
+          <p class="fact-label">The format</p>
+          <h3>One unified India presence</h3>
+          <p>A collective showcase connecting India's diverse technology ecosystem with a global audience.</p>
+        </article>
+        <article class="fact">
+          <p class="fact-label">The concept</p>
+          <h3>A shared stage for India</h3>
+          <p>A dedicated pavilion that brings India's technology capabilities together in one place.</p>
+        </article>
+        <article class="fact">
+          <p class="fact-label">Who can participate</p>
+          <h3>Companies, startups &amp; states</h3>
+          <p>A platform for large companies, emerging startups and all Indian states.</p>
+        </article>
+        <article class="fact">
+          <p class="fact-label">Speaking opportunities</p>
+          <h3>Voices shaping the future</h3>
+          <p>Speaking opportunities for the Secretary, MeitY, leading CEOs, startup founders and other participants.</p>
+        </article>
+        <article class="fact">
+          <p class="fact-label">Participant benefit</p>
+          <h3>A single window</h3>
+          <p>A single-window approach for participants, with additional participation benefits to be detailed.</p>
+        </article>
+      </div>
+      <section class="exhibitor-benefits" aria-labelledby="benefits-title">
+        <h3 id="benefits-title">Benefits of exhibiting in a country pavilion</h3>
+        <dl>
+          <div>
+            <dt>High-Velocity Traffic</dt>
+            <dd>Commands 30% to 50% more targeted buyer engagement by acting as a consolidated, high-efficiency destination for international investors and distributors.</dd>
+          </div>
+          <div>
+            <dt>Instant Credibility</dt>
+            <dd>Leverages authoritative government backing and rigorous curation to serve as an immediate quality stamp of operational and technical trust.</dd>
+          </div>
+          <div>
+            <dt>Cost Efficiencies</dt>
+            <dd>Slashes capital expenditure through subsidized booth packages, shared utility overhead, and government-backed grants.</dd>
+          </div>
+          <div>
+            <dt>Frictionless Logistics</dt>
+            <dd>Eliminates administrative friction by providing turnkey booth construction, onsite management, and shared executive meeting spaces.</dd>
+          </div>
+          <div>
+            <dt>Amplified Media Power</dt>
+            <dd>Multiplies brand exposure by plugging directly into collective national PR campaigns, dedicated press tours, and exclusive VIP networking receptions.</dd>
+          </div>
+        </dl>
+      </section>
+      <p class="benefit">Come together to present India's innovation, ambition and capabilities to the world.</p>
+    </div>
+  </section>
+
+  <section class="section night" id="india-night" aria-labelledby="night-title">
+    <div class="wrap night-layout">
+      <div>
+        <p class="eyebrow">Beyond the pavilion</p>
+        <h2 id="night-title">India Night.<br>India's story,<br>on the global stage.</h2>
+        <p class="lead">The first-ever India-specific event designed to build India's narrative on the global stage — bringing together the people shaping technology, business and investment.</p>
+        <div class="audience">
+          <strong>The audience</strong>
+          <p>Industry leaders, CEOs, entrepreneurs and media.</p>
+        </div>
+      </div>
+      <img
+        class="night-image"
+        width="1536"
+        height="1024"
+        loading="lazy"
+        alt="Guests gather around banquet tables as four panelists sit beneath an India Night backdrop patterned with saffron and teal lines."
+        src="media/india-night.jpg"
+      >
+    </div>
+  </section>
+
+  <section class="section" id="participation" aria-labelledby="terms-title">
+    <div class="wrap terms-grid">
+      <div>
+        <p class="eyebrow">Plan your participation</p>
+        <h2 id="terms-title">Terms of Participation</h2>
+      </div>
+      <div class="placeholder">
+        <span class="status">Coming soon</span>
+        <h3>Participation details will be available here.</h3>
+        <!-- Replace this placeholder with the approved Terms of Participation. -->
+        <p>Terms of participation will be published shortly. For enquiries in the meantime, please contact the ICEA team below.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="contact" id="contact" aria-labelledby="contact-title">
+    <div class="wrap contact-inner">
+      <div>
+        <p class="eyebrow">Let's connect</p>
+        <h2 id="contact-title">Contact Us</h2>
+        <p>Get in touch for India Pavilion participation enquiries.</p>
+      </div>
+      <address class="contact-card">
+        <strong>Aditya Saha Junior</strong>
+        <a href="mailto:ces2027@icea.org.in">ces2027@icea.org.in</a>
+        <a href="tel:+918287532536">+91-8287532536</a>
+      </address>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap footer-inner">
+    <span>ICEA · India Cellular &amp; Electronics Association</span>
+    <a href="#top">Back to top ↑</a>
+  </div>
+</footer>
+
+<script>
+(function () {
+  const film = document.getElementById('pavilion-film');
+  const nav = document.querySelector('.section-nav');
+  const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  function applyMotionPreference() {
+    if (!film) return;
+    if (preference.matches) {
+      film.pause();
+      film.removeAttribute('autoplay');
+    } else {
+      film.play().catch(function () {});
+    }
+  }
+  applyMotionPreference();
+  if (preference.addEventListener) preference.addEventListener('change', applyMotionPreference);
+  else preference.addListener(applyMotionPreference);
+
+  const sectionLinks = Array.from(document.querySelectorAll('.section-links a'));
+  const sections = sectionLinks
+    .map(function (link) { return document.querySelector(link.getAttribute('href')); })
+    .filter(Boolean);
+
+  function updateNavigation() {
+    if (!nav || !sections.length) return;
+    const threshold = nav.offsetHeight + 35;
+    let currentSection = sections[0];
+    for (const section of sections) {
+      if (section.getBoundingClientRect().top <= threshold) currentSection = section;
+    }
+    if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 3) {
+      currentSection = sections[sections.length - 1];
+    }
+    for (const link of sectionLinks) {
+      if (link.hash === '#' + currentSection.id) link.setAttribute('aria-current', 'location');
+      else link.removeAttribute('aria-current');
+    }
+  }
+
+  window.addEventListener('scroll', updateNavigation, { passive: true });
+  window.addEventListener('resize', updateNavigation);
+  updateNavigation();
+})();
+</script>
+</body>
+</html>
