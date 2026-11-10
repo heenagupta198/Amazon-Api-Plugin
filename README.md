@@ -1,14 +1,14 @@
 # Amazon-Api-Plugin
 
-## MMI Content Slider (`mmi-content-slider/`)
+## MMI Linked Device Articles (`mmi-linked-device-articles/`)
 
-WordPress multisite plugin for [MyMobileIndia](https://www.mymobileindia.com/):
+Separate plugin from **MMI Content Slider**. Use this for phone-related news articles on Devices product pages.
 
-- **Admin (main site):** search and multi-select device products when editing news posts.
-- **Frontend (Devices site):** show a **Related Articles** carousel on linked product pages, immediately above ReHub **Related Products**.
+- **English news site:** Linked Device Products metabox on articles.
+- **Devices site:** Related Articles carousel immediately above ReHub Related Products.
 
-v1.7.0: news REST now matches integer product IDs stored in `_mmi_linked_product_ids` (previously the lookup required quoted strings, so `/news-by-product/{id}` returned empty). The devices product page always mounts the carousel and loads articles from the news REST API if server-side fetch is empty.
+Download: `mmi-linked-device-articles-v1.0.0.zip`
 
-Activate **MMI Content Slider 1.7.0** on both WordPress installs (English news + `/devices/`). Download: `mmi-content-slider-v1.7.0.zip`.
+Install the same zip on **both** WordPress installs. Do not replace MMI Content Slider on Devices.
 
-See `mmi-content-slider/readme.txt` for installation.
+See `mmi-linked-device-articles/readme.txt`.
