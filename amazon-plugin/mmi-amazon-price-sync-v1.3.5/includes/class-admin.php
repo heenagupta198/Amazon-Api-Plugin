@@ -501,8 +501,13 @@ class MMI_APS_Admin {
 					<tr>
 						<th scope="row"><?php esc_html_e( 'Amazon Affiliate Tag', 'mmi-amazon-price-sync' ); ?></th>
 						<td>
-							<input type="text" class="regular-text" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_AFFILIATE_TAG ); ?>" value="<?php echo esc_attr( $affiliate_tag ); ?>" placeholder="mymobileind04-21" />
-							<p class="description"><?php esc_html_e( 'Your Amazon Associates tracking ID (Store ID).', 'mmi-amazon-price-sync' ); ?></p>
+							<?php if ( defined( 'MMI_APS_AFFILIATE_TAG' ) && MMI_APS_AFFILIATE_TAG ) : ?>
+								<p class="description"><?php esc_html_e( 'Defined in wp-config.php via MMI_APS_AFFILIATE_TAG (used as Creators API partnerTag).', 'mmi-amazon-price-sync' ); ?></p>
+								<code><?php echo esc_html( $affiliate_tag ); ?></code>
+							<?php else : ?>
+								<input type="text" class="regular-text" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_AFFILIATE_TAG ); ?>" value="<?php echo esc_attr( $affiliate_tag ); ?>" placeholder="mymobileind04-21" />
+								<p class="description"><?php esc_html_e( 'Your Amazon Associates tracking ID (Store ID). Required as partnerTag for Creators API.', 'mmi-amazon-price-sync' ); ?></p>
+							<?php endif; ?>
 						</td>
 					</tr>
 					<tr>
@@ -609,10 +614,12 @@ class MMI_APS_Admin {
 						action: 'mmi_aps_test_api',
 						nonce: '<?php echo esc_js( wp_create_nonce( 'mmi_aps_test_api' ) ); ?>'
 					}).done(function(response) {
+						var msg = (response.data && response.data.message) ? response.data.message : 'Test failed';
+						var safe = $('<div/>').text(msg).html();
 						if (response.success) {
-							$result.html('<div class="notice notice-success"><p>' + response.data.message + '</p></div>');
+							$result.html('<div class="notice notice-success"><p style="white-space:pre-wrap;">' + safe + '</p></div>');
 						} else {
-							$result.html('<div class="notice notice-error"><p>' + (response.data && response.data.message ? response.data.message : 'Test failed') + '</p></div>');
+							$result.html('<div class="notice notice-error"><p style="white-space:pre-wrap;">' + safe + '</p></div>');
 						}
 					}).fail(function() {
 						$result.html('<div class="notice notice-error"><p>Test failed</p></div>');
@@ -703,6 +710,27 @@ class MMI_APS_Admin {
 
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mmi-amazon-price-sync' ) ) );
+		}
+
+		if ( MMI_APS_Settings::use_creators_api() ) {
+			$diag = MMI_APS_Creators_API_Client::diagnose_connection( 'B0H8STM6G2' );
+			$text = implode( "\n", $diag['lines'] );
+
+			if ( ! $diag['ok'] ) {
+				wp_send_json_error( array( 'message' => $text ) );
+			}
+
+			$result = MMI_APS_API_Client::fetch_product( 'B0H8STM6G2', true );
+			if ( $result['success'] && ! empty( $result['data']['price'] ) ) {
+				$text .= "\n" . sprintf(
+					/* translators: 1: formatted price, 2: product title */
+					__( 'Sample price: %1$s — %2$s', 'mmi-amazon-price-sync' ),
+					MMI_APS_Product_Meta::format_inr( (float) $result['data']['price'] ),
+					$result['data']['title'] ?? 'B0H8STM6G2'
+				);
+			}
+
+			wp_send_json_success( array( 'message' => $text ) );
 		}
 
 		$result = MMI_APS_API_Client::fetch_product( 'B0H8STM6G2', true );

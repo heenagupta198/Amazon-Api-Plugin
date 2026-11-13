@@ -17,6 +17,125 @@ class MMI_APS_Creators_API_Client {
 	 * @param string $asin Amazon ASIN.
 	 * @return array{success:bool,data?:array,message?:string}
 	 */
+	/**
+	 * Step-by-step connection test for admin (token vs catalog).
+	 *
+	 * @return array{ok:bool,lines:string[],reason?:string,http_code?:int}
+	 */
+	public static function diagnose_connection( string $asin = 'B0H8STM6G2' ): array {
+		$lines       = array();
+		$partner_tag = MMI_APS_Settings::get_partner_tag();
+		$marketplace = MMI_APS_Settings::get_marketplace();
+
+		$lines[] = sprintf(
+			/* translators: 1: marketplace, 2: partner tag, 3: version */
+			__( 'Config: marketplace=%1$s | partnerTag=%2$s | credential version=%3$s', 'mmi-amazon-price-sync' ),
+			$marketplace,
+			'' !== $partner_tag ? $partner_tag : '(empty)',
+			MMI_APS_Settings::get_creators_version()
+		);
+
+		if ( '' === $partner_tag ) {
+			$lines[] = __( 'Partner Tag missing — set Amazon Affiliate Tag in settings (must match Associates Store ID, e.g. mymobileind04-21).', 'mmi-amazon-price-sync' );
+
+			return array(
+				'ok'    => false,
+				'lines' => $lines,
+			);
+		}
+
+		$auth_error = self::validate_credentials();
+		if ( $auth_error ) {
+			$lines[] = __( 'Credentials: FAILED — ', 'mmi-amazon-price-sync' ) . $auth_error;
+
+			return array(
+				'ok'    => false,
+				'lines' => $lines,
+			);
+		}
+
+		$token = self::get_access_token();
+		if ( is_wp_error( $token ) ) {
+			$lines[] = __( 'Token (OAuth): FAILED — ', 'mmi-amazon-price-sync' ) . $token->get_error_message();
+
+			return array(
+				'ok'    => false,
+				'lines' => $lines,
+			);
+		}
+
+		$lines[] = __( 'Token (OAuth): OK — Credential ID & Secret are valid.', 'mmi-amazon-price-sync' );
+
+		$response = wp_remote_post(
+			self::API_GET_ITEMS_URL,
+			array(
+				'timeout'   => 25,
+				'sslverify' => true,
+				'headers'   => array(
+					'Authorization'              => 'Bearer ' . $token,
+					'Content-Type'               => 'application/json; charset=utf-8',
+					'Accept'                     => 'application/json',
+					'x-marketplace'              => $marketplace,
+					'x-amz-creators-api-version' => MMI_APS_Settings::get_creators_version(),
+				),
+				'body'      => wp_json_encode(
+					array(
+						'itemIds'     => array( strtoupper( $asin ) ),
+						'itemIdType'  => 'ASIN',
+						'marketplace' => $marketplace,
+						'partnerTag'  => $partner_tag,
+						'resources'   => array(
+							'itemInfo.title',
+							'offersV2.listings.price',
+							'offersV2.listings.availability',
+						),
+					)
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			$lines[] = __( 'GetItems: FAILED — ', 'mmi-amazon-price-sync' ) . $response->get_error_message();
+
+			return array(
+				'ok'    => false,
+				'lines' => $lines,
+			);
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		$raw  = wp_remote_retrieve_body( $response );
+		$json = json_decode( $raw, true );
+
+		if ( 200 === $code ) {
+			$lines[] = __( 'GetItems: OK — Creators API is working for your Associates account.', 'mmi-amazon-price-sync' );
+
+			return array(
+				'ok'        => true,
+				'lines'     => $lines,
+				'http_code' => $code,
+			);
+		}
+
+		$reason = is_array( $json ) && isset( $json['reason'] ) ? (string) $json['reason'] : '';
+		$msg    = self::extract_api_error_message( $json, $raw, $code );
+
+		$lines[] = __( 'GetItems: FAILED — ', 'mmi-amazon-price-sync' ) . $msg;
+
+		if ( 'AssociateNotEligible' === $reason || 403 === $code ) {
+			$lines[] = __( 'This is an Amazon account gate, not a plugin bug. Creators credentials can be created even before API catalog access is enabled.', 'mmi-amazon-price-sync' );
+			$lines[] = __( 'Amazon requires ~10 qualifying shipped sales in the rolling last 30 days (not full-year totals). Check Associates Central → Reports with date range = last 30 days only.', 'mmi-amazon-price-sync' );
+			$lines[] = __( 'If shipped count is 9 or earnings are still ₹0, wait until one more order ships and qualifies — API access usually returns within ~48 hours.', 'mmi-amazon-price-sync' );
+		}
+
+		return array(
+			'ok'        => false,
+			'lines'     => $lines,
+			'reason'    => $reason,
+			'http_code' => $code,
+		);
+	}
+
 	public static function fetch_product( string $asin ): array {
 		$asin = strtoupper( sanitize_text_field( $asin ) );
 

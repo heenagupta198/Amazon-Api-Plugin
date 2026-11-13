@@ -206,6 +206,10 @@ class MMI_APS_Settings {
 	}
 
 	public static function get_affiliate_tag(): string {
+		if ( defined( 'MMI_APS_AFFILIATE_TAG' ) && MMI_APS_AFFILIATE_TAG ) {
+			return self::sanitize_affiliate_tag( MMI_APS_AFFILIATE_TAG );
+		}
+
 		return trim( (string) get_option( self::OPTION_AFFILIATE_TAG, '' ) );
 	}
 
