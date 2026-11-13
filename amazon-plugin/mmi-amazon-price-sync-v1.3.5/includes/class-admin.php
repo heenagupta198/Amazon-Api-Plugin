@@ -200,6 +200,7 @@ class MMI_APS_Admin {
 			)
 		);
 		add_action( 'wp_ajax_mmi_aps_test_api', array( __CLASS__, 'ajax_test_api' ) );
+		add_action( 'wp_ajax_mmi_aps_clear_creators_cache', array( __CLASS__, 'ajax_clear_creators_cache' ) );
 		add_action( 'wp_ajax_mmi_aps_sync_batch', array( __CLASS__, 'ajax_sync_batch' ) );
 	}
 
@@ -556,8 +557,10 @@ class MMI_APS_Admin {
 			<p><strong><?php esc_html_e( 'Request URL preview:', 'mmi-amazon-price-sync' ); ?></strong><br><code><?php echo esc_html( $sample_url ); ?></code></p>
 			<p>
 				<button type="button" class="button" id="mmi-aps-test-api"><?php esc_html_e( 'Test API (B0H8STM6G2)', 'mmi-amazon-price-sync' ); ?></button>
+				<button type="button" class="button" id="mmi-aps-clear-creators-cache" style="margin-left:6px;"><?php esc_html_e( 'Clear OAuth cache & Test again', 'mmi-amazon-price-sync' ); ?></button>
 				<span class="spinner" id="mmi-aps-test-spinner" style="float:none;"></span>
 			</p>
+			<p class="description"><?php esc_html_e( 'After Amazon enables your account (10+ qualifying shipped sales in the last 30 days), wait up to 48 hours, then use Clear OAuth cache & Test again.', 'mmi-amazon-price-sync' ); ?></p>
 			<div id="mmi-aps-test-result"></div>
 
 			<hr />
@@ -603,16 +606,27 @@ class MMI_APS_Admin {
 
 			<script>
 			jQuery(function($) {
-				$('#mmi-aps-test-api').on('click', function() {
-					var $btn = $(this);
+				function mmiApsRunApiTest(clearCache) {
+					var $btn = $('#mmi-aps-test-api');
+					var $clear = $('#mmi-aps-clear-creators-cache');
 					var $spinner = $('#mmi-aps-test-spinner');
 					var $result = $('#mmi-aps-test-result');
 					$btn.prop('disabled', true);
+					$clear.prop('disabled', true);
 					$spinner.addClass('is-active');
 					$result.html('');
-					$.post(ajaxurl, {
+					var chain = $.Deferred().resolve();
+					if (clearCache) {
+						chain = $.post(ajaxurl, {
+							action: 'mmi_aps_clear_creators_cache',
+							nonce: '<?php echo esc_js( wp_create_nonce( 'mmi_aps_clear_creators_cache' ) ); ?>'
+						});
+					}
+					chain.then(function() {
+						return $.post(ajaxurl, {
 						action: 'mmi_aps_test_api',
 						nonce: '<?php echo esc_js( wp_create_nonce( 'mmi_aps_test_api' ) ); ?>'
+					});
 					}).done(function(response) {
 						var msg = (response.data && response.data.message) ? response.data.message : 'Test failed';
 						var safe = $('<div/>').text(msg).html();
@@ -625,9 +639,12 @@ class MMI_APS_Admin {
 						$result.html('<div class="notice notice-error"><p>Test failed</p></div>');
 					}).always(function() {
 						$btn.prop('disabled', false);
+						$clear.prop('disabled', false);
 						$spinner.removeClass('is-active');
 					});
-				});
+				}
+				$('#mmi-aps-test-api').on('click', function() { mmiApsRunApiTest(false); });
+				$('#mmi-aps-clear-creators-cache').on('click', function() { mmiApsRunApiTest(true); });
 
 				var syncing = false;
 				$('#mmi-aps-sync-all').on('click', function() {
@@ -703,6 +720,20 @@ class MMI_APS_Admin {
 			</ol>
 		</div>
 		<?php
+	}
+
+	public static function ajax_clear_creators_cache(): void {
+		check_ajax_referer( 'mmi_aps_clear_creators_cache', 'nonce' );
+
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mmi-amazon-price-sync' ) ) );
+		}
+
+		if ( MMI_APS_Settings::use_creators_api() ) {
+			MMI_APS_Creators_API_Client::clear_token_cache();
+		}
+
+		wp_send_json_success( array( 'message' => __( 'OAuth token cache cleared.', 'mmi-amazon-price-sync' ) ) );
 	}
 
 	public static function ajax_test_api(): void {

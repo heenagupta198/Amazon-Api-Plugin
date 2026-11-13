@@ -9,6 +9,12 @@ class MMI_APS_Creators_API_Client {
 
 	private const API_GET_ITEMS_URL = 'https://creatorsapi.amazon/catalog/v1/getItems';
 	private const TRANSIENT_TOKEN   = 'mmi_aps_creators_access_token';
+
+	/** Clear cached OAuth token (use after Amazon re-enables API access). */
+	public static function clear_token_cache(): void {
+		delete_transient( self::TRANSIENT_TOKEN );
+		delete_transient( self::TRANSIENT_THROTTLE );
+	}
 	private const TRANSIENT_THROTTLE = 'mmi_aps_creators_throttle_until';
 
 	/**
