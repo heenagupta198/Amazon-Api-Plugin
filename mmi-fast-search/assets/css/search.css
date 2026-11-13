@@ -1,0 +1,237 @@
+/**
+ * MMI Fast Search — modal overlay (frontend).
+ */
+
+:root {
+	--mmi-fs-backdrop: rgba(8, 12, 24, 0.55);
+	--mmi-fs-surface: #ffffff;
+	--mmi-fs-border: rgba(15, 23, 42, 0.1);
+	--mmi-fs-text: #0f172a;
+	--mmi-fs-muted: #64748b;
+	--mmi-fs-accent: #e11d48;
+	--mmi-fs-radius: 16px;
+	--mmi-fs-shadow: 0 24px 80px rgba(15, 23, 42, 0.22);
+}
+
+.mmi-fs-root {
+	position: fixed;
+	inset: 0;
+	z-index: 999999;
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+	padding: max(16px, env(safe-area-inset-top)) 16px 24px;
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+	transition: opacity 0.18s ease, visibility 0.18s ease;
+}
+
+.mmi-fs-root.is-open {
+	opacity: 1;
+	visibility: visible;
+	pointer-events: auto;
+}
+
+.mmi-fs-backdrop {
+	position: absolute;
+	inset: 0;
+	background: var(--mmi-fs-backdrop);
+	backdrop-filter: blur(6px);
+}
+
+.mmi-fs-dialog {
+	position: relative;
+	width: min(720px, 100%);
+	margin-top: clamp(32px, 12vh, 120px);
+	background: var(--mmi-fs-surface);
+	border-radius: var(--mmi-fs-radius);
+	box-shadow: var(--mmi-fs-shadow);
+	border: 1px solid var(--mmi-fs-border);
+	overflow: hidden;
+	transform: translateY(-8px) scale(0.98);
+	transition: transform 0.2s ease;
+}
+
+.mmi-fs-root.is-open .mmi-fs-dialog {
+	transform: translateY(0) scale(1);
+}
+
+.mmi-fs-form {
+	display: flex;
+	gap: 0;
+	border-bottom: 1px solid var(--mmi-fs-border);
+	align-items: stretch;
+}
+
+.mmi-fs-input-wrap {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 14px 16px;
+}
+
+.mmi-fs-input-wrap svg {
+	flex-shrink: 0;
+	color: var(--mmi-fs-muted);
+}
+
+.mmi-fs-input {
+	flex: 1;
+	border: 0;
+	outline: none;
+	font-size: 17px;
+	line-height: 1.4;
+	color: var(--mmi-fs-text);
+	background: transparent;
+	min-width: 0;
+}
+
+.mmi-fs-input::placeholder {
+	color: #94a3b8;
+}
+
+.mmi-fs-submit {
+	border: 0;
+	background: var(--mmi-fs-text);
+	color: #fff;
+	font-weight: 600;
+	font-size: 14px;
+	padding: 0 22px;
+	cursor: pointer;
+	transition: background 0.15s ease;
+}
+
+.mmi-fs-submit:hover {
+	background: #1e293b;
+}
+
+.mmi-fs-close {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	width: 36px;
+	height: 36px;
+	border: 0;
+	border-radius: 999px;
+	background: #f1f5f9;
+	color: var(--mmi-fs-text);
+	cursor: pointer;
+	font-size: 20px;
+	line-height: 1;
+	z-index: 2;
+}
+
+.mmi-fs-close:hover {
+	background: #e2e8f0;
+}
+
+.mmi-fs-body {
+	max-height: min(60vh, 480px);
+	overflow: auto;
+	-webkit-overflow-scrolling: touch;
+}
+
+.mmi-fs-status {
+	padding: 28px 20px;
+	text-align: center;
+	color: var(--mmi-fs-muted);
+	font-size: 15px;
+}
+
+.mmi-fs-label {
+	padding: 12px 18px 6px;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--mmi-fs-muted);
+}
+
+.mmi-fs-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 4px;
+	padding: 0 8px 8px;
+}
+
+@media (min-width: 600px) {
+	.mmi-fs-grid {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+
+.mmi-fs-card {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 10px;
+	border-radius: 12px;
+	text-decoration: none;
+	color: inherit;
+	transition: background 0.12s ease;
+	min-height: 100%;
+}
+
+.mmi-fs-card:hover,
+.mmi-fs-card:focus-visible {
+	background: #f8fafc;
+	outline: none;
+}
+
+.mmi-fs-thumb {
+	aspect-ratio: 16 / 10;
+	border-radius: 8px;
+	background: linear-gradient(135deg, #e2e8f0, #f8fafc);
+	overflow: hidden;
+}
+
+.mmi-fs-thumb img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+.mmi-fs-title {
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.35;
+	color: var(--mmi-fs-text);
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+.mmi-fs-date {
+	font-size: 11px;
+	color: var(--mmi-fs-muted);
+}
+
+.mmi-fs-footer {
+	border-top: 1px solid var(--mmi-fs-border);
+	padding: 12px 16px 14px;
+	text-align: center;
+}
+
+.mmi-fs-view-all {
+	font-size: 14px;
+	font-style: italic;
+	color: var(--mmi-fs-accent);
+	text-decoration: none;
+}
+
+.mmi-fs-view-all:hover {
+	text-decoration: underline;
+}
+
+body.mmi-fs-lock {
+	overflow: hidden;
+}
+
+/* Floating trigger when tagDiv icon is hijacked (invisible overlay keeps layout) */
+.mmi-fs-hit {
+	cursor: pointer;
+}
