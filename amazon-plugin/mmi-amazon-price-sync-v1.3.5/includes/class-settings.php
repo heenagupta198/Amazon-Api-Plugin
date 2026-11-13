@@ -7,6 +7,11 @@ defined( 'ABSPATH' ) || exit;
 
 class MMI_APS_Settings {
 
+	public const OPTION_API_PROVIDER         = 'mmi_aps_api_provider';
+	public const OPTION_CREATORS_CLIENT_ID   = 'mmi_aps_creators_client_id';
+	public const OPTION_CREATORS_CLIENT_SECRET = 'mmi_aps_creators_client_secret';
+	public const OPTION_CREATORS_VERSION     = 'mmi_aps_creators_version';
+	public const OPTION_MARKETPLACE          = 'mmi_aps_marketplace';
 	public const OPTION_API_KEY      = 'mmi_aps_rapidapi_key';
 	public const OPTION_API_HOST     = 'mmi_aps_rapidapi_host';
 	public const OPTION_API_ENDPOINT = 'mmi_aps_api_endpoint';
@@ -23,8 +28,10 @@ class MMI_APS_Settings {
 	public const OPTION_AFFILIATE_DISCLOSURE = 'mmi_aps_affiliate_disclosure';
 	public const OPTION_CRON_BATCH_SIZE      = 'mmi_aps_cron_batch_size';
 
-	public const DEFAULT_HOST     = 'real-time-amazon-data.p.rapidapi.com';
-	public const DEFAULT_ENDPOINT = '/product-details';
+	public const DEFAULT_HOST       = 'real-time-amazon-data.p.rapidapi.com';
+	public const DEFAULT_ENDPOINT   = '/product-details';
+	public const DEFAULT_MARKETPLACE = 'www.amazon.in';
+	public const DEFAULT_CREATORS_VERSION = '3.2';
 
 	public static function init(): void {
 		add_filter( 'woocommerce_get_settings_pages', array( __CLASS__, 'add_settings_page' ) );
@@ -64,6 +71,74 @@ class MMI_APS_Settings {
 	/**
 	 * Get RapidAPI key — wp-config constant takes priority.
 	 */
+	public static function use_creators_api(): bool {
+		$provider = trim( (string) get_option( self::OPTION_API_PROVIDER, 'creators' ) );
+		return 'rapidapi' !== $provider;
+	}
+
+	public static function get_api_provider(): string {
+		return self::use_creators_api() ? 'creators' : 'rapidapi';
+	}
+
+	public static function get_creators_client_id(): string {
+		if ( defined( 'MMI_APS_CREATORS_CLIENT_ID' ) && MMI_APS_CREATORS_CLIENT_ID ) {
+			return trim( (string) MMI_APS_CREATORS_CLIENT_ID );
+		}
+
+		return trim( (string) get_option( self::OPTION_CREATORS_CLIENT_ID, '' ) );
+	}
+
+	public static function get_creators_client_secret(): string {
+		if ( defined( 'MMI_APS_CREATORS_CLIENT_SECRET' ) && MMI_APS_CREATORS_CLIENT_SECRET ) {
+			return trim( (string) MMI_APS_CREATORS_CLIENT_SECRET );
+		}
+
+		return trim( (string) get_option( self::OPTION_CREATORS_CLIENT_SECRET, '' ) );
+	}
+
+	public static function get_creators_version(): string {
+		if ( defined( 'MMI_APS_CREATORS_VERSION' ) && MMI_APS_CREATORS_VERSION ) {
+			return trim( (string) MMI_APS_CREATORS_VERSION );
+		}
+
+		$version = trim( (string) get_option( self::OPTION_CREATORS_VERSION, self::DEFAULT_CREATORS_VERSION ) );
+		return $version ?: self::DEFAULT_CREATORS_VERSION;
+	}
+
+	public static function get_creators_token_endpoint(): string {
+		$version = self::get_creators_version();
+		$prefix  = substr( $version, 0, 3 );
+
+		if ( '3.1' === $prefix ) {
+			return 'https://api.amazon.com/auth/o2/token';
+		}
+
+		if ( '3.3' === $prefix ) {
+			return 'https://api.amazon.co.jp/auth/o2/token';
+		}
+
+		return 'https://api.amazon.co.uk/auth/o2/token';
+	}
+
+	public static function get_marketplace(): string {
+		$marketplace = trim( (string) get_option( self::OPTION_MARKETPLACE, self::DEFAULT_MARKETPLACE ) );
+		return $marketplace ?: self::DEFAULT_MARKETPLACE;
+	}
+
+	public static function get_partner_tag(): string {
+		return self::get_affiliate_tag();
+	}
+
+	public static function is_api_configured(): bool {
+		if ( self::use_creators_api() ) {
+			return '' !== self::get_creators_client_id()
+				&& '' !== self::get_creators_client_secret()
+				&& '' !== self::get_partner_tag();
+		}
+
+		return '' !== self::get_api_key();
+	}
+
 	public static function get_api_key(): string {
 		if ( defined( 'MMI_APS_RAPIDAPI_KEY' ) && MMI_APS_RAPIDAPI_KEY ) {
 			return trim( (string) MMI_APS_RAPIDAPI_KEY );
@@ -104,7 +179,8 @@ class MMI_APS_Settings {
 
 	public static function get_sync_delay(): int {
 		$delay = (int) get_option( self::OPTION_SYNC_DELAY, 2 );
-		return max( 1, min( 10, $delay ) );
+		$min   = self::use_creators_api() ? 2 : 1;
+		return max( $min, min( 10, $delay ) );
 	}
 
 	public static function get_batch_size(): int {

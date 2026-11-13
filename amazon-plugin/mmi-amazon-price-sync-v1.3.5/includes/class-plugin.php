@@ -17,6 +17,7 @@ final class MMI_APS_Plugin {
 	public const META_TITLE             = '_mmi_amazon_title';
 	public const META_CURRENCY          = '_mmi_amazon_currency';
 	public const META_DELIVERY          = '_mmi_amazon_delivery';
+	public const META_AVAILABILITY      = '_mmi_amazon_availability';
 
 	public static function instance(): self {
 		if ( null === self::$instance ) {

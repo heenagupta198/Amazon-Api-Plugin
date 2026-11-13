@@ -28,6 +28,49 @@ class MMI_APS_Admin {
 	public static function register_settings(): void {
 		register_setting(
 			'mmi_aps_settings',
+			MMI_APS_Settings::OPTION_API_PROVIDER,
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => array( __CLASS__, 'sanitize_api_provider' ),
+				'default'           => 'creators',
+			)
+		);
+		register_setting(
+			'mmi_aps_settings',
+			MMI_APS_Settings::OPTION_CREATORS_CLIENT_ID,
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+			)
+		);
+		register_setting(
+			'mmi_aps_settings',
+			MMI_APS_Settings::OPTION_CREATORS_CLIENT_SECRET,
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+			)
+		);
+		register_setting(
+			'mmi_aps_settings',
+			MMI_APS_Settings::OPTION_CREATORS_VERSION,
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => array( __CLASS__, 'sanitize_creators_version' ),
+				'default'           => MMI_APS_Settings::DEFAULT_CREATORS_VERSION,
+			)
+		);
+		register_setting(
+			'mmi_aps_settings',
+			MMI_APS_Settings::OPTION_MARKETPLACE,
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => array( __CLASS__, 'sanitize_marketplace' ),
+				'default'           => MMI_APS_Settings::DEFAULT_MARKETPLACE,
+			)
+		);
+		register_setting(
+			'mmi_aps_settings',
 			MMI_APS_Settings::OPTION_API_KEY,
 			array(
 				'type'              => 'string',
@@ -162,7 +205,37 @@ class MMI_APS_Admin {
 	 * @param mixed $value Raw value.
 	 */
 	public static function sanitize_sync_delay( $value ): int {
-		return max( 1, min( 10, (int) $value ) );
+		$min = MMI_APS_Settings::use_creators_api() ? 2 : 1;
+		return max( $min, min( 10, (int) $value ) );
+	}
+
+	/**
+	 * @param mixed $value Raw value.
+	 */
+	public static function sanitize_api_provider( $value ): string {
+		$provider = sanitize_text_field( (string) $value );
+		return 'rapidapi' === $provider ? 'rapidapi' : 'creators';
+	}
+
+	/**
+	 * @param mixed $value Raw value.
+	 */
+	public static function sanitize_creators_version( $value ): string {
+		$version = sanitize_text_field( (string) $value );
+		$allowed = array( '3.1', '3.2', '3.3' );
+		return in_array( $version, $allowed, true ) ? $version : MMI_APS_Settings::DEFAULT_CREATORS_VERSION;
+	}
+
+	/**
+	 * @param mixed $value Raw value.
+	 */
+	public static function sanitize_marketplace( $value ): string {
+		$marketplace = strtolower( trim( sanitize_text_field( (string) $value ) ) );
+		if ( '' === $marketplace ) {
+			return MMI_APS_Settings::DEFAULT_MARKETPLACE;
+		}
+
+		return preg_match( '/^www\.amazon\.[a-z.]+$/', $marketplace ) ? $marketplace : MMI_APS_Settings::DEFAULT_MARKETPLACE;
 	}
 
 	/**
@@ -181,6 +254,14 @@ class MMI_APS_Admin {
 			return;
 		}
 
+		$api_provider        = MMI_APS_Settings::get_api_provider();
+		$use_creators        = MMI_APS_Settings::use_creators_api();
+		$creators_id         = MMI_APS_Settings::get_creators_client_id();
+		$creators_secret     = MMI_APS_Settings::get_creators_client_secret();
+		$creators_version    = MMI_APS_Settings::get_creators_version();
+		$marketplace         = MMI_APS_Settings::get_marketplace();
+		$creators_id_const   = defined( 'MMI_APS_CREATORS_CLIENT_ID' ) && MMI_APS_CREATORS_CLIENT_ID;
+		$creators_secret_const = defined( 'MMI_APS_CREATORS_CLIENT_SECRET' ) && MMI_APS_CREATORS_CLIENT_SECRET;
 		$using_constant = defined( 'MMI_APS_RAPIDAPI_KEY' ) && MMI_APS_RAPIDAPI_KEY;
 		$api_key        = MMI_APS_Settings::get_api_key();
 		$api_host       = MMI_APS_Settings::get_api_host();
@@ -206,9 +287,9 @@ class MMI_APS_Admin {
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Amazon Price Sync', 'mmi-amazon-price-sync' ); ?></h1>
-			<p><?php esc_html_e( 'Connect WooCommerce products to Amazon India prices via RapidAPI. Add an ASIN on each product, then click Fetch Price.', 'mmi-amazon-price-sync' ); ?></p>
+			<p><?php esc_html_e( 'Connect WooCommerce products to Amazon India prices via official Creators API (recommended) or RapidAPI. Add an ASIN on each product, then click Fetch Price.', 'mmi-amazon-price-sync' ); ?></p>
 
-			<?php if ( $wrong_host ) : ?>
+			<?php if ( $wrong_host && ! $use_creators ) : ?>
 				<div class="notice notice-error"><p>
 					<?php esc_html_e( 'Wrong API host detected. Change Host to real-time-amazon-data.p.rapidapi.com and Endpoint to /product-details, then Save.', 'mmi-amazon-price-sync' ); ?>
 				</p></div>
@@ -216,6 +297,61 @@ class MMI_APS_Admin {
 
 			<form method="post" action="options.php">
 				<?php settings_fields( 'mmi_aps_settings' ); ?>
+				<h2><?php esc_html_e( 'Amazon Creators API (Official)', 'mmi-amazon-price-sync' ); ?></h2>
+				<p class="description"><?php esc_html_e( 'Uses your Amazon Associates Creators API credentials. Partner Tag must match your Affiliate Tag below. Default limits: 1 request/second and 8,640 requests/day (first 30 days).', 'mmi-amazon-price-sync' ); ?></p>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Price Source', 'mmi-amazon-price-sync' ); ?></th>
+						<td>
+							<select name="<?php echo esc_attr( MMI_APS_Settings::OPTION_API_PROVIDER ); ?>">
+								<option value="creators" <?php selected( $api_provider, 'creators' ); ?>><?php esc_html_e( 'Amazon Creators API (Official)', 'mmi-amazon-price-sync' ); ?></option>
+								<option value="rapidapi" <?php selected( $api_provider, 'rapidapi' ); ?>><?php esc_html_e( 'RapidAPI (Legacy)', 'mmi-amazon-price-sync' ); ?></option>
+							</select>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Credential ID (Client ID)', 'mmi-amazon-price-sync' ); ?></th>
+						<td>
+							<?php if ( $creators_id_const ) : ?>
+								<p class="description"><?php esc_html_e( 'Defined in wp-config.php via MMI_APS_CREATORS_CLIENT_ID.', 'mmi-amazon-price-sync' ); ?></p>
+							<?php else : ?>
+								<input type="text" class="large-text" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_CREATORS_CLIENT_ID ); ?>" value="<?php echo esc_attr( $creators_id ); ?>" autocomplete="off" />
+							<?php endif; ?>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Credential Secret', 'mmi-amazon-price-sync' ); ?></th>
+						<td>
+							<?php if ( $creators_secret_const ) : ?>
+								<p class="description"><?php esc_html_e( 'Defined in wp-config.php via MMI_APS_CREATORS_CLIENT_SECRET.', 'mmi-amazon-price-sync' ); ?></p>
+							<?php else : ?>
+								<input type="password" class="large-text" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_CREATORS_CLIENT_SECRET ); ?>" value="<?php echo esc_attr( $creators_secret ); ?>" autocomplete="new-password" />
+							<?php endif; ?>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Credential Version', 'mmi-amazon-price-sync' ); ?></th>
+						<td>
+							<input type="text" class="small-text" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_CREATORS_VERSION ); ?>" value="<?php echo esc_attr( $creators_version ); ?>" />
+							<p class="description"><?php esc_html_e( 'Use 3.2 for Amazon India (EU token endpoint).', 'mmi-amazon-price-sync' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Marketplace', 'mmi-amazon-price-sync' ); ?></th>
+						<td>
+							<input type="text" class="regular-text" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_MARKETPLACE ); ?>" value="<?php echo esc_attr( $marketplace ); ?>" />
+							<p class="description"><?php esc_html_e( 'India: www.amazon.in', 'mmi-amazon-price-sync' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Token Endpoint', 'mmi-amazon-price-sync' ); ?></th>
+						<td>
+							<code><?php echo esc_html( MMI_APS_Settings::get_creators_token_endpoint() ); ?></code>
+						</td>
+					</tr>
+				</table>
+
+				<h2><?php esc_html_e( 'RapidAPI (Legacy Fallback)', 'mmi-amazon-price-sync' ); ?></h2>
 				<table class="form-table" role="presentation">
 					<tr>
 						<th scope="row"><?php esc_html_e( 'RapidAPI Key', 'mmi-amazon-price-sync' ); ?></th>
@@ -295,7 +431,7 @@ class MMI_APS_Admin {
 						<td>
 							<input type="number" class="small-text" min="1" max="10" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_SYNC_DELAY ); ?>" value="<?php echo esc_attr( (string) $sync_delay ); ?>" />
 							<?php esc_html_e( 'seconds', 'mmi-amazon-price-sync' ); ?>
-							<p class="description"><?php esc_html_e( 'Helps avoid RapidAPI rate limits. 250 products ≈ 8 minutes at 2 seconds.', 'mmi-amazon-price-sync' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Keep at least 2 seconds on Creators API (1 TPS limit). 250 products ≈ 8 minutes at 2 seconds.', 'mmi-amazon-price-sync' ); ?></p>
 						</td>
 					</tr>
 					<tr>
@@ -518,7 +654,7 @@ class MMI_APS_Admin {
 			<hr />
 			<h2><?php esc_html_e( 'How to use', 'mmi-amazon-price-sync' ); ?></h2>
 			<ol>
-				<li><?php esc_html_e( 'Save your RapidAPI key above.', 'mmi-amazon-price-sync' ); ?></li>
+				<li><?php esc_html_e( 'Save Creators API credentials (or RapidAPI key) above.', 'mmi-amazon-price-sync' ); ?></li>
 				<li><?php esc_html_e( 'Edit any WooCommerce product.', 'mmi-amazon-price-sync' ); ?></li>
 				<li><?php esc_html_e( 'Find the Amazon Price Sync box (right sidebar) or Product Data → Amazon Price tab.', 'mmi-amazon-price-sync' ); ?></li>
 				<li><?php esc_html_e( 'Enter ASIN and click Fetch Price from Amazon.', 'mmi-amazon-price-sync' ); ?></li>
@@ -541,6 +677,18 @@ class MMI_APS_Admin {
 		}
 
 		$data = $result['data'];
+		if ( empty( $data['available'] ) || empty( $data['price'] ) ) {
+			wp_send_json_success(
+				array(
+					'message' => sprintf(
+						/* translators: %s: product title */
+						__( 'API connected. Product is Currently Unavailable on Amazon — %s', 'mmi-amazon-price-sync' ),
+						$data['title'] ?: $data['asin']
+					),
+				)
+			);
+		}
+
 		wp_send_json_success(
 			array(
 				'message' => sprintf(
@@ -560,8 +708,8 @@ class MMI_APS_Admin {
 			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mmi-amazon-price-sync' ) ) );
 		}
 
-		if ( '' === MMI_APS_Settings::get_api_key() ) {
-			wp_send_json_error( array( 'message' => __( 'RapidAPI key is not configured.', 'mmi-amazon-price-sync' ) ) );
+		if ( ! MMI_APS_Settings::is_api_configured() ) {
+			wp_send_json_error( array( 'message' => __( 'Amazon API credentials are not configured.', 'mmi-amazon-price-sync' ) ) );
 		}
 
 		$offset = isset( $_POST['offset'] ) ? max( 0, (int) $_POST['offset'] ) : 0;
@@ -600,7 +748,7 @@ class MMI_APS_Admin {
 			return;
 		}
 
-		if ( '' !== MMI_APS_Settings::get_api_key() ) {
+		if ( MMI_APS_Settings::is_api_configured() ) {
 			return;
 		}
 
@@ -613,7 +761,7 @@ class MMI_APS_Admin {
 		echo '<div class="notice notice-warning"><p>';
 		printf(
 			/* translators: %s: settings page URL */
-			wp_kses_post( __( '<strong>MMI Amazon Price Sync:</strong> Add your RapidAPI key in <a href="%s">WooCommerce → Amazon Price Sync</a>.', 'mmi-amazon-price-sync' ) ),
+			wp_kses_post( __( '<strong>MMI Amazon Price Sync:</strong> Add your Amazon Creators API credentials in <a href="%s">WooCommerce → Amazon Price Sync</a>.', 'mmi-amazon-price-sync' ) ),
 			esc_url( $url )
 		);
 		echo '</p></div>';

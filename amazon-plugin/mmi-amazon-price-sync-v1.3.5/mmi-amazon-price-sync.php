@@ -2,8 +2,8 @@
 /**
  * Plugin Name: MMI Amazon Price Sync
  * Plugin URI:  https://github.com/yogesh/comapre-Plugin
- * Description: Sync WooCommerce product prices from Amazon India via RapidAPI using ASIN.
- * Version:     1.3.6
+ * Description: Sync WooCommerce product prices from Amazon India via Creators API or RapidAPI using ASIN.
+ * Version:     2.0.0
  * Author:      Yogesh
  * Text Domain: mmi-amazon-price-sync
  * Requires at least: 6.0
@@ -13,12 +13,13 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'MMI_APS_VERSION', '1.3.6' );
+define( 'MMI_APS_VERSION', '2.0.0' );
 define( 'MMI_APS_FILE', __FILE__ );
 define( 'MMI_APS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'MMI_APS_URL', plugin_dir_url( __FILE__ ) );
 
 require_once MMI_APS_PATH . 'includes/class-api-client.php';
+require_once MMI_APS_PATH . 'includes/class-creators-api-client.php';
 require_once MMI_APS_PATH . 'includes/class-settings.php';
 require_once MMI_APS_PATH . 'includes/class-sync.php';
 require_once MMI_APS_PATH . 'includes/class-cron.php';
