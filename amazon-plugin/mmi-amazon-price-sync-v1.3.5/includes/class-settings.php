@@ -17,6 +17,7 @@ class MMI_APS_Settings {
 	public const OPTION_API_ENDPOINT = 'mmi_aps_api_endpoint';
 	public const OPTION_COUNTRY      = 'mmi_aps_country';
 	public const OPTION_LANGUAGE     = 'mmi_aps_language';
+	public const OPTION_SYNC_ENABLED = 'mmi_aps_sync_enabled';
 	public const OPTION_AUTO_SYNC    = 'mmi_aps_auto_sync_enabled';
 	public const OPTION_SYNC_INTERVAL = 'mmi_aps_sync_interval';
 	public const OPTION_SYNC_DELAY   = 'mmi_aps_sync_delay';
@@ -167,7 +168,19 @@ class MMI_APS_Settings {
 		return $language ?: 'en_IN';
 	}
 
+	/**
+	 * Master switch — when off, no Amazon API price calls (cron, manual fetch, bulk sync).
+	 * Affiliate links on the storefront are unaffected.
+	 */
+	public static function is_price_sync_enabled(): bool {
+		return 'yes' === get_option( self::OPTION_SYNC_ENABLED, 'yes' );
+	}
+
 	public static function is_auto_sync_enabled(): bool {
+		if ( ! self::is_price_sync_enabled() ) {
+			return false;
+		}
+
 		return 'yes' === get_option( self::OPTION_AUTO_SYNC, 'yes' );
 	}
 

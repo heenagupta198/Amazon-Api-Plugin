@@ -87,6 +87,11 @@ class MMI_APS_Product_Meta {
 			</p>
 			<?php
 		}
+		if ( ! MMI_APS_Settings::is_price_sync_enabled() ) : ?>
+			<p class="description" style="color:#b32d2e;">
+				<?php esc_html_e( 'Amazon price sync is OFF (WooCommerce → Amazon Price Sync → Master switch). Turn it on to fetch new prices.', 'mmi-amazon-price-sync' ); ?>
+			</p>
+		<?php endif;
 		?>
 		<p class="form-field mmi-aps-actions">
 			<?php if ( 'panel' === $context ) : ?>

@@ -109,10 +109,11 @@ class MMI_APS_Creators_API_Client {
 				'timeout'   => 25,
 				'sslverify' => true,
 				'headers'   => array(
-					'Authorization'  => 'Bearer ' . $token,
-					'Content-Type'   => 'application/json',
-					'Accept'         => 'application/json',
-					'x-marketplace'  => $marketplace,
+					'Authorization'              => 'Bearer ' . $token,
+					'Content-Type'               => 'application/json; charset=utf-8',
+					'Accept'                     => 'application/json',
+					'x-marketplace'              => $marketplace,
+					'x-amz-creators-api-version' => MMI_APS_Settings::get_creators_version(),
 				),
 				'body'      => wp_json_encode( $body ),
 			)
@@ -363,12 +364,22 @@ class MMI_APS_Creators_API_Client {
 	 */
 	private static function extract_api_error_message( $json, string $body, int $code ): string {
 		if ( is_array( $json ) ) {
-			if ( ! empty( $json['message'] ) && is_string( $json['message'] ) ) {
+			$reason = isset( $json['reason'] ) ? (string) $json['reason'] : '';
+			$msg    = ! empty( $json['message'] ) && is_string( $json['message'] ) ? (string) $json['message'] : '';
+
+			if ( 403 === $code && ( 'AssociateNotEligible' === $reason || false !== stripos( $msg, 'eligibility' ) ) ) {
+				return __(
+					'Creators API (403): Amazon says your Associates account is not eligible yet (AssociateNotEligible). This is not a plugin or credential bug — Amazon requires at least 10 qualifying sales in the last 30 days before API access works. Check Reports in Associates Central. Until then, turn off auto sync under WooCommerce → Amazon Price Sync, or switch Price Source to RapidAPI temporarily.',
+					'mmi-amazon-price-sync'
+				);
+			}
+
+			if ( '' !== $msg ) {
 				return sprintf(
 					/* translators: 1: HTTP code, 2: message */
 					__( 'Creators API error (%1$d): %2$s', 'mmi-amazon-price-sync' ),
 					$code,
-					$json['message']
+					$msg
 				);
 			}
 			if ( ! empty( $json['errors'][0]['message'] ) ) {

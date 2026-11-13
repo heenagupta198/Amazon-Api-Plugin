@@ -15,6 +15,7 @@ class MMI_APS_Cron {
 		add_filter( 'cron_schedules', array( __CLASS__, 'add_schedules' ) );
 		add_action( self::CRON_HOOK, array( __CLASS__, 'run_auto_sync' ) );
 		add_action( self::CRON_CONTINUE_HOOK, array( __CLASS__, 'run_continue_sync' ) );
+		add_action( 'update_option_' . MMI_APS_Settings::OPTION_SYNC_ENABLED, array( __CLASS__, 'maybe_reschedule' ), 10, 0 );
 		add_action( 'update_option_' . MMI_APS_Settings::OPTION_AUTO_SYNC, array( __CLASS__, 'maybe_reschedule' ), 10, 0 );
 		add_action( 'update_option_' . MMI_APS_Settings::OPTION_SYNC_INTERVAL, array( __CLASS__, 'maybe_reschedule' ), 10, 0 );
 		add_action( 'admin_init', array( __CLASS__, 'ensure_scheduled' ) );
@@ -51,7 +52,7 @@ class MMI_APS_Cron {
 	public static function schedule(): void {
 		self::unschedule();
 
-		if ( ! MMI_APS_Settings::is_auto_sync_enabled() ) {
+		if ( ! MMI_APS_Settings::is_auto_sync_enabled() || ! MMI_APS_Settings::is_api_configured() ) {
 			return;
 		}
 
@@ -83,13 +84,13 @@ class MMI_APS_Cron {
 
 		set_transient( self::ENSURE_CHECK_TRANSIENT, 1, HOUR_IN_SECONDS );
 
-		if ( MMI_APS_Settings::is_auto_sync_enabled() && ! wp_next_scheduled( self::CRON_HOOK ) ) {
+		if ( MMI_APS_Settings::is_auto_sync_enabled() && MMI_APS_Settings::is_api_configured() && ! wp_next_scheduled( self::CRON_HOOK ) ) {
 			self::schedule();
 		}
 	}
 
 	public static function run_auto_sync(): void {
-		if ( ! MMI_APS_Settings::is_auto_sync_enabled() || '' === MMI_APS_Settings::get_api_key() ) {
+		if ( ! MMI_APS_Settings::is_auto_sync_enabled() || ! MMI_APS_Settings::is_api_configured() ) {
 			return;
 		}
 
@@ -99,7 +100,7 @@ class MMI_APS_Cron {
 	}
 
 	public static function run_continue_sync(): void {
-		if ( ! MMI_APS_Settings::is_auto_sync_enabled() || '' === MMI_APS_Settings::get_api_key() ) {
+		if ( ! MMI_APS_Settings::is_auto_sync_enabled() || ! MMI_APS_Settings::is_api_configured() ) {
 			return;
 		}
 

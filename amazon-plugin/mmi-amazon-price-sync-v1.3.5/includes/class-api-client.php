@@ -10,10 +10,18 @@ class MMI_APS_API_Client {
 	/**
 	 * Fetch product data by ASIN.
 	 *
-	 * @param string $asin Amazon ASIN.
+	 * @param string $asin  Amazon ASIN.
+	 * @param bool   $force Allow fetch when master sync is turned off (e.g. Test API).
 	 * @return array{success:bool,data?:array,message?:string}
 	 */
-	public static function fetch_product( string $asin ): array {
+	public static function fetch_product( string $asin, bool $force = false ): array {
+		if ( ! $force && ! MMI_APS_Settings::is_price_sync_enabled() ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Amazon price sync is turned OFF in WooCommerce → Amazon Price Sync. Turn it on to fetch prices, or use Test API on the settings page.', 'mmi-amazon-price-sync' ),
+			);
+		}
+
 		if ( MMI_APS_Settings::use_creators_api() ) {
 			return MMI_APS_Creators_API_Client::fetch_product( $asin );
 		}

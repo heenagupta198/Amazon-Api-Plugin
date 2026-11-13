@@ -111,6 +111,15 @@ class MMI_APS_Admin {
 		);
 		register_setting(
 			'mmi_aps_settings',
+			MMI_APS_Settings::OPTION_SYNC_ENABLED,
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => array( __CLASS__, 'sanitize_yes_no' ),
+				'default'           => 'yes',
+			)
+		);
+		register_setting(
+			'mmi_aps_settings',
 			MMI_APS_Settings::OPTION_AUTO_SYNC,
 			array(
 				'type'              => 'string',
@@ -270,6 +279,7 @@ class MMI_APS_Admin {
 		$language       = MMI_APS_Settings::get_language();
 		$sample_url     = 'https://' . $api_host . '/' . ltrim( $api_endpoint, '/' ) . '?asin=B0H8STM6G2&country=IN&autoselect_variant=true&language=' . rawurlencode( $language );
 		$wrong_host     = false !== strpos( $api_host, 'real-time-e-commerce-data' );
+		$sync_master    = MMI_APS_Settings::is_price_sync_enabled();
 		$auto_sync      = MMI_APS_Settings::is_auto_sync_enabled();
 		$sync_interval  = MMI_APS_Settings::get_sync_interval();
 		$sync_delay     = MMI_APS_Settings::get_sync_delay();
@@ -297,8 +307,33 @@ class MMI_APS_Admin {
 
 			<form method="post" action="options.php">
 				<?php settings_fields( 'mmi_aps_settings' ); ?>
+
+				<h2><?php esc_html_e( 'Master switch', 'mmi-amazon-price-sync' ); ?></h2>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Amazon price sync', 'mmi-amazon-price-sync' ); ?></th>
+						<td>
+							<input type="hidden" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_SYNC_ENABLED ); ?>" value="no" />
+							<label>
+								<input type="checkbox" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_SYNC_ENABLED ); ?>" value="yes" <?php checked( $sync_master ); ?> />
+								<strong><?php esc_html_e( 'ON — allow Amazon API price fetch & sync', 'mmi-amazon-price-sync' ); ?></strong>
+							</label>
+							<p class="description">
+								<?php esc_html_e( 'Turn OFF to stop all price API calls (manual Fetch, auto cron, Sync All). Saved prices on products stay as they are. Affiliate “Buy on Amazon” buttons are not affected.', 'mmi-amazon-price-sync' ); ?>
+							</p>
+							<?php if ( ! $sync_master ) : ?>
+								<p><span class="dashicons dashicons-warning" style="color:#d63638;"></span> <?php esc_html_e( 'Sync is currently OFF — no Amazon API requests will run until you turn this on.', 'mmi-amazon-price-sync' ); ?></p>
+							<?php endif; ?>
+						</td>
+					</tr>
+				</table>
+
 				<h2><?php esc_html_e( 'Amazon Creators API (Official)', 'mmi-amazon-price-sync' ); ?></h2>
 				<p class="description"><?php esc_html_e( 'Uses your Amazon Associates Creators API credentials. Partner Tag must match your Affiliate Tag below. Default limits: 1 request/second and 8,640 requests/day (first 30 days).', 'mmi-amazon-price-sync' ); ?></p>
+				<div class="notice notice-info inline" style="margin: 8px 0 16px; padding: 8px 12px;">
+					<p><strong><?php esc_html_e( '403 “eligibility requirements”?', 'mmi-amazon-price-sync' ); ?></strong>
+					<?php esc_html_e( 'Your Credential ID and Secret are usually correct if you see this message. Amazon blocks Creators API until your Associates account has at least 10 qualifying sales in the trailing 30 days. Use Associates Central → Reports, or temporarily use RapidAPI under Price Source.', 'mmi-amazon-price-sync' ); ?></p>
+				</div>
 				<table class="form-table" role="presentation">
 					<tr>
 						<th scope="row"><?php esc_html_e( 'Price Source', 'mmi-amazon-price-sync' ); ?></th>
@@ -670,7 +705,7 @@ class MMI_APS_Admin {
 			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mmi-amazon-price-sync' ) ) );
 		}
 
-		$result = MMI_APS_API_Client::fetch_product( 'B0H8STM6G2' );
+		$result = MMI_APS_API_Client::fetch_product( 'B0H8STM6G2', true );
 
 		if ( ! $result['success'] ) {
 			wp_send_json_error( array( 'message' => $result['message'] ) );
@@ -706,6 +741,10 @@ class MMI_APS_Admin {
 
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mmi-amazon-price-sync' ) ) );
+		}
+
+		if ( ! MMI_APS_Settings::is_price_sync_enabled() ) {
+			wp_send_json_error( array( 'message' => __( 'Amazon price sync is turned OFF on the settings page.', 'mmi-amazon-price-sync' ) ) );
 		}
 
 		if ( ! MMI_APS_Settings::is_api_configured() ) {
