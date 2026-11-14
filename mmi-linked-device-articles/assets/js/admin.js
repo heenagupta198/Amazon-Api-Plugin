@@ -36,6 +36,39 @@
 		return ids;
 	}
 
+	function currentPostId() {
+		if (window.MmiLdaAdmin && MmiLdaAdmin.postId) {
+			return String(MmiLdaAdmin.postId);
+		}
+		var field = document.getElementById('post_ID');
+		if (field && field.value) {
+			return field.value;
+		}
+		if (window.wp && wp.data && wp.data.select) {
+			try {
+				return String(wp.data.select('core/editor').getCurrentPostId() || '');
+			} catch (e) {
+				return '';
+			}
+		}
+		return '';
+	}
+
+	function persist(cleared) {
+		var postId = currentPostId();
+		if (!postId || !window.MmiLdaAdmin) {
+			return;
+		}
+		$('#mmi-lda-cleared').val(cleared ? '1' : '0');
+		$.post(MmiLdaAdmin.ajaxUrl, {
+			action: 'mmi_lda_save_links',
+			nonce: MmiLdaAdmin.nonce,
+			post_id: postId,
+			ids: selectedIds().join(','),
+			cleared: cleared ? '1' : '0'
+		});
+	}
+
 	function addToList(item) {
 		var id = String(item.id);
 		if (selectedIds().indexOf(id) !== -1) {
@@ -44,12 +77,14 @@
 
 		var $li = $('<li></li>').attr('data-id', id);
 		$li.append('<span class="mmi-lda-grip" aria-hidden="true">⋮⋮</span>');
-		$li.append($('<span class="mmi-lda-selected-label"></span>').text(item.label));
+		$li.append($('<span class="mmi-lda-selected-label"></span>').text(item.label || ('#' + id)));
 		$li.append(
 			$('<button type="button" class="button-link mmi-lda-remove" aria-label="Remove">&times;</button>')
 		);
 		$li.append($('<input type="hidden" name="mmi_lda_product_ids[]">').val(id));
 		$list.append($li);
+		$('#mmi-lda-cleared').val('0');
+		persist(false);
 		return true;
 	}
 
@@ -131,11 +166,15 @@
 	$list.sortable({
 		handle: '.mmi-lda-grip',
 		axis: 'y',
-		tolerance: 'pointer'
+		tolerance: 'pointer',
+		update: function () {
+			persist(false);
+		}
 	});
 
 	$list.on('click', '.mmi-lda-remove', function () {
 		$(this).closest('li').remove();
+		persist($list.children().length === 0);
 	});
 
 	var $brandRow = $('#mmi-lda-brand-row');
@@ -176,5 +215,6 @@
 
 	$('#mmi-lda-clear-all').on('click', function () {
 		$list.empty();
+		persist(true);
 	});
 })(jQuery);

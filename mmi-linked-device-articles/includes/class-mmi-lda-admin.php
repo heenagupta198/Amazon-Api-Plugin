@@ -10,11 +10,12 @@ class MMI_LDA_Admin {
 	public static function init(): void {
 		add_action( 'admin_notices', array( __CLASS__, 'devices_plugin_notice' ) );
 		add_action( 'add_meta_boxes', array( __CLASS__, 'register_meta_box' ), 20 );
-		add_action( 'save_post', array( __CLASS__, 'save_meta_box' ), 10, 2 );
+		add_action( 'save_post', array( __CLASS__, 'save_meta_box' ), 20, 2 );
 		add_action( 'before_delete_post', array( __CLASS__, 'before_delete_post' ), 10, 2 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 		add_action( 'wp_ajax_mmi_lda_search_products', array( __CLASS__, 'ajax_search_products' ) );
 		add_action( 'wp_ajax_mmi_lda_resolve_products', array( __CLASS__, 'ajax_resolve_products' ) );
+		add_action( 'wp_ajax_mmi_lda_save_links', array( __CLASS__, 'ajax_save_links' ) );
 	}
 
 	public static function register_meta_box(): void {
@@ -37,6 +38,8 @@ class MMI_LDA_Admin {
 	 */
 	public static function render_meta_box( WP_Post $post ): void {
 		wp_nonce_field( 'mmi_lda_save_products', 'mmi_lda_nonce' );
+		echo '<input type="hidden" name="mmi_lda_box" value="1" />';
+		echo '<input type="hidden" name="mmi_lda_cleared" id="mmi-lda-cleared" value="0" />';
 
 		$selected_ids = MMI_LDA_Sites::get_linked_product_ids( (int) $post->ID );
 		$selected     = self::hydrate_products( $selected_ids );
@@ -91,7 +94,29 @@ class MMI_LDA_Admin {
 			return array();
 		}
 
-		return MMI_LDA_Remote::resolve_product_ids( $ids );
+		$resolved = MMI_LDA_Remote::resolve_product_ids( $ids );
+		$by_id    = array();
+		foreach ( $resolved as $item ) {
+			$by_id[ (int) $item['id'] ] = $item;
+		}
+
+		$out = array();
+		foreach ( $ids as $id ) {
+			$id = (int) $id;
+			if ( $id <= 0 ) {
+				continue;
+			}
+			if ( isset( $by_id[ $id ] ) ) {
+				$out[] = $by_id[ $id ];
+				continue;
+			}
+			$out[] = array(
+				'id'    => $id,
+				'label' => sprintf( '#%d', $id ),
+			);
+		}
+
+		return $out;
 	}
 
 	/**
@@ -107,7 +132,8 @@ class MMI_LDA_Admin {
 			return;
 		}
 
-		if ( ! isset( $_POST['mmi_lda_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['mmi_lda_nonce'] ) ), 'mmi_lda_save_products' ) ) {
+		$has_nonce = isset( $_POST['mmi_lda_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['mmi_lda_nonce'] ) ), 'mmi_lda_save_products' );
+		if ( ! $has_nonce ) {
 			return;
 		}
 
@@ -119,8 +145,38 @@ class MMI_LDA_Admin {
 			return;
 		}
 
+		$cleared = isset( $_POST['mmi_lda_cleared'] ) && '1' === (string) wp_unslash( $_POST['mmi_lda_cleared'] );
+		$raw_ids = self::posted_product_ids();
+
+		self::persist_links( $post_id, $raw_ids, $cleared );
+	}
+
+	/**
+	 * @return int[]
+	 */
+	private static function posted_product_ids(): array {
+		$raw = array();
+		if ( isset( $_POST['mmi_lda_product_ids'] ) ) {
+			$raw = (array) wp_unslash( $_POST['mmi_lda_product_ids'] );
+		} elseif ( isset( $_POST['mmi_csl_product_ids'] ) ) {
+			$raw = (array) wp_unslash( $_POST['mmi_csl_product_ids'] );
+		}
+
+		return array_values( array_unique( array_filter( array_map( 'intval', $raw ) ) ) );
+	}
+
+	/**
+	 * Persist linked IDs. Never delete existing links unless the editor explicitly cleared them.
+	 *
+	 * @param int   $post_id Post ID.
+	 * @param int[] $raw_ids IDs from the editor.
+	 */
+	public static function persist_links( int $post_id, array $raw_ids, bool $cleared = false ): void {
 		$old_ids = MMI_LDA_Sites::get_linked_product_ids( $post_id );
-		$raw_ids = isset( $_POST['mmi_lda_product_ids'] ) ? (array) wp_unslash( $_POST['mmi_lda_product_ids'] ) : array();
+
+		if ( empty( $raw_ids ) && ! $cleared ) {
+			return;
+		}
 
 		MMI_LDA_Sites::save_linked_product_ids( $post_id, $raw_ids );
 		$new_ids = MMI_LDA_Sites::get_linked_product_ids( $post_id );
@@ -200,12 +256,19 @@ class MMI_LDA_Admin {
 		$brands = array();
 		$brands = MMI_LDA_Remote::get_brands();
 
+		$screen  = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		$post_id = ( $screen && isset( $screen->id ) && in_array( $screen->base, array( 'post', 'post-new' ), true ) ) ? get_the_ID() : 0;
+		if ( ! $post_id && isset( $_GET['post'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$post_id = absint( wp_unslash( $_GET['post'] ) );
+		}
+
 		wp_localize_script(
 			'mmi-lda-admin',
 			'MmiLdaAdmin',
 			array(
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( 'mmi_lda_search' ),
+				'postId'  => (int) $post_id,
 				'brands'  => $brands,
 				'i18n'    => array(
 					'placeholder'   => __( 'Search devices site: model or ID…', 'mmi-linked-device-articles' ),
@@ -267,8 +330,42 @@ class MMI_LDA_Admin {
 		}
 
 		$items = MMI_LDA_Remote::resolve_product_ids( $ids );
+		if ( empty( $items ) ) {
+			foreach ( $ids as $id ) {
+				$items[] = array(
+					'id'    => (int) $id,
+					'label' => sprintf( '#%d', (int) $id ),
+				);
+			}
+		}
 
 		wp_send_json_success( array( 'items' => $items ) );
+	}
+
+	public static function ajax_save_links(): void {
+		check_ajax_referer( 'mmi_lda_search', 'nonce' );
+
+		$post_id = isset( $_POST['post_id'] ) ? absint( wp_unslash( $_POST['post_id'] ) ) : 0;
+		if ( $post_id <= 0 || ! current_user_can( 'edit_post', $post_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Forbidden', 'mmi-linked-device-articles' ) ), 403 );
+		}
+
+		if ( ! MMI_LDA_Sites::is_news_site() ) {
+			wp_send_json_error( array( 'message' => __( 'Wrong site', 'mmi-linked-device-articles' ) ), 400 );
+		}
+
+		$cleared = isset( $_POST['cleared'] ) && '1' === (string) wp_unslash( $_POST['cleared'] );
+		$raw     = isset( $_POST['ids'] ) ? sanitize_text_field( wp_unslash( $_POST['ids'] ) ) : '';
+		preg_match_all( '/\d+/', $raw, $matches );
+		$ids = isset( $matches[0] ) ? array_map( 'intval', $matches[0] ) : array();
+
+		self::persist_links( $post_id, $ids, $cleared );
+
+		wp_send_json_success(
+			array(
+				'ids' => MMI_LDA_Sites::get_linked_product_ids( $post_id ),
+			)
+		);
 	}
 
 	public static function devices_plugin_notice(): void {
@@ -278,6 +375,12 @@ class MMI_LDA_Admin {
 
 		if ( ! MMI_LDA_Sites::is_news_site() ) {
 			return;
+		}
+
+		if ( function_exists( 'mmi_csl_init' ) ) {
+			echo '<div class="notice notice-warning"><p>';
+			esc_html_e( 'MMI Content Slider is also active on this news site. It can erase Linked Device Products when you click Update. Deactivate MMI Content Slider on the English news site only. Keep it on Devices.', 'mmi-linked-device-articles' );
+			echo '</p></div>';
 		}
 
 		if ( ! MMI_LDA_Remote::devices_api_reachable() ) {

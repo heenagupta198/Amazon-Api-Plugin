@@ -92,7 +92,12 @@ class MMI_LDA_Sites {
 			return array();
 		}
 
+		$raw = trim( stripslashes( $raw ) );
+
 		$decoded = json_decode( $raw, true );
+		if ( is_string( $decoded ) ) {
+			$decoded = json_decode( $decoded, true );
+		}
 		if ( is_array( $decoded ) ) {
 			return array_values( array_unique( array_filter( array_map( 'intval', $decoded ) ) ) );
 		}
@@ -104,14 +109,37 @@ class MMI_LDA_Sites {
 			}
 		}
 
+		if ( preg_match( '/^\d+(?:\s*,\s*\d+)*$/', $raw ) ) {
+			return array_values( array_unique( array_filter( array_map( 'intval', preg_split( '/\s*,\s*/', $raw ) ) ) ) );
+		}
+
 		return array();
+	}
+
+	/**
+	 * @return string[]
+	 */
+	public static function meta_keys(): array {
+		return array_values(
+			array_unique(
+				array(
+					MMI_LDA_META_KEY,
+					MMI_LDA_LEGACY_META_KEY,
+				)
+			)
+		);
 	}
 
 	/**
 	 * @return int[] Sanitized product IDs from post meta.
 	 */
 	public static function get_linked_product_ids( int $post_id ): array {
-		return self::parse_id_list( get_post_meta( $post_id, MMI_LDA_META_KEY, true ) );
+		$ids = array();
+		foreach ( self::meta_keys() as $key ) {
+			$ids = array_merge( $ids, self::parse_id_list( get_post_meta( $post_id, $key, true ) ) );
+		}
+
+		return array_values( array_unique( array_filter( $ids ) ) );
 	}
 
 	/**
@@ -119,12 +147,18 @@ class MMI_LDA_Sites {
 	 */
 	public static function save_linked_product_ids( int $post_id, array $product_ids ): void {
 		$product_ids = array_values( array_unique( array_filter( array_map( 'intval', $product_ids ) ) ) );
+		$encoded     = wp_json_encode( $product_ids );
+
 		if ( empty( $product_ids ) ) {
-			delete_post_meta( $post_id, MMI_LDA_META_KEY );
+			foreach ( self::meta_keys() as $key ) {
+				delete_post_meta( $post_id, $key );
+			}
 			return;
 		}
 
-		update_post_meta( $post_id, MMI_LDA_META_KEY, wp_json_encode( $product_ids ) );
+		foreach ( self::meta_keys() as $key ) {
+			update_post_meta( $post_id, $key, $encoded );
+		}
 	}
 
 	/**
@@ -172,13 +206,11 @@ class MMI_LDA_Sites {
 		global $wpdb;
 
 		$like = '%' . $wpdb->esc_like( (string) $product_id ) . '%';
-		$rows = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value LIKE %s",
-				MMI_LDA_META_KEY,
-				$like
-			)
-		);
+		$keys = self::meta_keys();
+		$in   = implode( ',', array_fill( 0, count( $keys ), '%s' ) );
+		$sql  = "SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key IN ($in) AND meta_value LIKE %s";
+		$args = array_merge( $keys, array( $like ) );
+		$rows = $wpdb->get_results( $wpdb->prepare( $sql, ...$args ) );
 
 		if ( empty( $rows ) || ! is_array( $rows ) ) {
 			return array();
@@ -199,7 +231,7 @@ class MMI_LDA_Sites {
 
 		$query = new WP_Query(
 			array(
-				'post_type'              => 'post',
+				'post_type'              => array( 'post' ),
 				'post_status'            => 'publish',
 				'post__in'               => $matched,
 				'posts_per_page'         => $limit,
@@ -208,6 +240,7 @@ class MMI_LDA_Sites {
 				'fields'                 => 'ids',
 				'ignore_sticky_posts'    => true,
 				'no_found_rows'          => true,
+				'suppress_filters'       => true,
 				'update_post_meta_cache' => false,
 				'update_post_term_cache' => false,
 			)

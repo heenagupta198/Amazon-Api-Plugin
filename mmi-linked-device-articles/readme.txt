@@ -3,31 +3,27 @@ Contributors: mymobileindia
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 License: GPLv2 or later
 
-Link English news articles to device products. Show a Related Articles carousel on the Devices product page, just above ReHub Related Products.
+Link English news articles to device products. Show Related Articles on the Devices product page, just above ReHub Related Products.
 
 == Installation (BOTH WordPress sites) ==
 
-News and Devices are separate WordPress installs. Upload this zip on **both**. Do not replace MMI Content Slider — this plugin has a different name.
+Upload the same zip on both sites. Do not replace MMI Content Slider on Devices.
 
-1. English news site: https://www.mymobileindia.com/
-   - Plugins → Add New → Upload Plugin → mmi-linked-device-articles-v1.0.0.zip → Activate.
-   - This is where **Linked Device Products** is saved on articles, and where the articles API lives.
+1. English news https://www.mymobileindia.com/ — Upload + Activate MMI Linked Device Articles 1.1.0.
+   If MMI Content Slider is also active here, deactivate it on the news site only (it can erase linked products on Update). Keep Content Slider on Devices.
+2. Devices https://www.mymobileindia.com/devices/ — Upload + Activate the same zip. Keep MMI Content Slider.
+3. Open an article, add phones in Linked Device Products. Links save immediately (you do not have to rely on Update).
+4. Open that phone on Devices. Related Articles appears just above Related Products.
 
-2. Devices site: https://www.mymobileindia.com/devices/
-   - Plugins → Add New → Upload Plugin → same zip → Activate.
-   - Keep your existing **MMI Content Slider** plugin. Do not delete it.
-   - This is where the Related Articles carousel prints above Related Products.
+If a previous update emptied the linked list, add the phones again once. After 1.1.0 they will stay saved.
 
-3. You do not need to re-link products. Existing Linked Device Products data is reused.
+== Changelog ==
 
-4. Test: open a phone product page (example iPhone 14 256GB). Related Articles should appear just above Related Products.
-
-== Notes ==
-
-* Plugin folder: `mmi-linked-device-articles` (will not overwrite `mmi-content-slider`).
-* Product IDs are from the Devices WooCommerce catalog.
-* Default URLs: news = https://www.mymobileindia.com , devices = https://www.mymobileindia.com/devices
-* Settings → MMI Linked Device Articles if you need to change those URLs.
+= 1.1.0 =
+* Stop Update from wiping Linked Device Products (Gutenberg / empty POST / old Content Slider).
+* Save links immediately via AJAX when you add, remove, or reorder.
+* Keep showing product IDs even if Devices REST labels fail.
+* Own meta key plus legacy `_mmi_linked_product_ids` so existing links still count.

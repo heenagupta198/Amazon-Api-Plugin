@@ -2,7 +2,7 @@
 /**
  * Plugin Name: MMI Linked Device Articles
  * Description: Link English news articles to device products and show a Related Articles carousel on product pages. Does not replace MMI Content Slider.
- * Version:     1.0.0
+ * Version:     1.1.0
  * Author:      MyMobileIndia
  * Text Domain: mmi-linked-device-articles
  * Requires at least: 6.0
@@ -12,11 +12,12 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'MMI_LDA_VERSION', '1.0.0' );
+define( 'MMI_LDA_VERSION', '1.1.0' );
 define( 'MMI_LDA_FILE', __FILE__ );
 define( 'MMI_LDA_PATH', plugin_dir_path( __FILE__ ) );
 define( 'MMI_LDA_URL', plugin_dir_url( __FILE__ ) );
-define( 'MMI_LDA_META_KEY', '_mmi_linked_product_ids' );
+define( 'MMI_LDA_META_KEY', '_mmi_lda_linked_product_ids' );
+define( 'MMI_LDA_LEGACY_META_KEY', '_mmi_linked_product_ids' );
 
 require_once MMI_LDA_PATH . 'includes/class-mmi-lda.php';
 

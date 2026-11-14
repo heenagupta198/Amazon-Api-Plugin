@@ -111,6 +111,17 @@ class MMI_LDA_Frontend {
 			self::print_carousel_markup( $items );
 		}
 		echo '</div>';
+		?>
+		<script>
+		(function () {
+			var mount = document.getElementById('mmi-lda-related-mount');
+			var anchor = document.querySelector('#related-section-woo-area, .related-woo-area');
+			if (mount && anchor && anchor.parentNode) {
+				anchor.parentNode.insertBefore(mount, anchor);
+			}
+		})();
+		</script>
+		<?php
 	}
 
 	/**
