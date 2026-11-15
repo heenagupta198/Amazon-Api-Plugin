@@ -39,4 +39,5 @@ In **Schema & Structured Data for WP** (or Yoast), if there is an option to **di
 ## Install `mmi-amp-performance`
 
 - Zero cron, zero options table, **one** thumbnail read per AMP post view (same as theme).
-- Activates only on `/amp/` requests.
+- Article optimizations run only on singular `/amp/` documents.
+- Home, category, search, and paged AMP URLs (`/tech-news/amp/`, `/tech-news/?amp=1`, `/how-to/page/2/amp/`) **301 once** to the same non-AMP URL with a trailing slash. Article AMP URLs are not redirected by this plugin.
