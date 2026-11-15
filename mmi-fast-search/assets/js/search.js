@@ -82,6 +82,7 @@
 
 		var root = document.createElement('div');
 		root.className = 'mmi-fs-root';
+		root.setAttribute('hidden', 'hidden');
 		root.setAttribute('role', 'dialog');
 		root.setAttribute('aria-modal', 'true');
 		root.setAttribute('aria-label', i18n.open || 'Search');
@@ -91,7 +92,7 @@
 			'<button type="button" class="mmi-fs-close" data-mmi-fs-close aria-label="' + esc(i18n.close || 'Close') + '">&times;</button>' +
 			'<form class="mmi-fs-form" action="' + esc(cfg.searchUrl || '/') + '" method="get">' +
 			'<div class="mmi-fs-input-wrap">' +
-			'<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="currentColor" stroke-width="2"/><path d="M16.5 16.5 21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>' +
+			'<span class="mmi-fs-search-ico" aria-hidden="true"></span>' +
 			'<input class="mmi-fs-input" type="search" name="s" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search" placeholder="' + esc(i18n.placeholder || '') + '" />' +
 			'</div>' +
 			'<button class="mmi-fs-submit" type="submit">Search</button>' +
@@ -294,6 +295,7 @@
 		buildUi();
 		killTagdivDropdown();
 		state.open = true;
+		state.root.removeAttribute('hidden');
 		state.root.classList.add('is-open');
 		document.body.classList.add('mmi-fs-lock');
 
@@ -311,6 +313,7 @@
 	function close() {
 		if (!state.root) return;
 		state.open = false;
+		state.root.setAttribute('hidden', 'hidden');
 		state.root.classList.remove('is-open');
 		document.body.classList.remove('mmi-fs-lock');
 		killTagdivDropdown();

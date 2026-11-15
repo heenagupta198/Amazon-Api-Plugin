@@ -2,7 +2,7 @@
 /**
  * Plugin Name: MMI Fast Frontend Search
  * Description: Ultra-light client-side search overlay. Replaces slow tagDiv header AJAX search with an instant local index (low server CPU/RAM).
- * Version:     1.1.1
+ * Version:     1.1.2
  * Author:      MyMobileIndia
  * Text Domain: mmi-fast-search
  * Requires at least: 6.0
@@ -11,7 +11,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'MMI_FS_VERSION', '1.1.1' );
+define( 'MMI_FS_VERSION', '1.1.2' );
 define( 'MMI_FS_FILE', __FILE__ );
 define( 'MMI_FS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'MMI_FS_URL', plugin_dir_url( __FILE__ ) );
