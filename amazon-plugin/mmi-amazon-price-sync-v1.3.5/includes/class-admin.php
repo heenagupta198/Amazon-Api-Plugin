@@ -388,6 +388,20 @@ class MMI_APS_Admin {
 						</td>
 					</tr>
 					<tr>
+						<th scope="row"><?php esc_html_e( 'Partner Tag (required)', 'mmi-amazon-price-sync' ); ?></th>
+						<td>
+							<?php if ( defined( 'MMI_APS_AFFILIATE_TAG' ) && MMI_APS_AFFILIATE_TAG ) : ?>
+								<code><?php echo esc_html( $affiliate_tag ); ?></code>
+								<p class="description"><?php esc_html_e( 'From wp-config.php (MMI_APS_AFFILIATE_TAG).', 'mmi-amazon-price-sync' ); ?></p>
+							<?php elseif ( '' !== $affiliate_tag ) : ?>
+								<code><?php echo esc_html( $affiliate_tag ); ?></code>
+								<p class="description"><?php esc_html_e( 'Set under Affiliate Button → Amazon Affiliate Tag below. Save the form after changes.', 'mmi-amazon-price-sync' ); ?></p>
+							<?php else : ?>
+								<p style="color:#b32d2e;"><strong><?php esc_html_e( 'Not set — scroll to “Affiliate Button”, enter your Store ID (e.g. mymobileind04-21), then Save Changes before Test API.', 'mmi-amazon-price-sync' ); ?></strong></p>
+							<?php endif; ?>
+						</td>
+					</tr>
+					<tr>
 						<th scope="row"><?php esc_html_e( 'Token Endpoint', 'mmi-amazon-price-sync' ); ?></th>
 						<td>
 							<code><?php echo esc_html( MMI_APS_Settings::get_creators_token_endpoint() ); ?></code>
