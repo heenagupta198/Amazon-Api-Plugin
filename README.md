@@ -6,11 +6,18 @@ My Mobile WordPress plugins — **direct zip download** (GitHub `main` branch). 
 
 | Plugin | Download |
 |--------|----------|
+| **MMI Mobile List** (v1.3.0) — spec cards | [**mmi-mobile-list-v1.3.0.zip**](https://github.com/heenagupta198/Amazon-Api-Plugin/raw/main/mmi-mobile-list-v1.3.0.zip) |
 | **MMI Related Articles** (v1.0.3) | [**mmi-related-articles.zip**](https://github.com/heenagupta198/Amazon-Api-Plugin/raw/main/mmi-related-articles.zip) |
 | MMI Amazon Price Sync | [mmi-amazon-price-sync-v1.4.1.zip](https://github.com/heenagupta198/Amazon-Api-Plugin/raw/main/mmi-amazon-price-sync-v1.4.1.zip) |
 | MMI Content Slider 1.7.0 | [mmi-content-slider-v1.7.0.zip](https://github.com/heenagupta198/Amazon-Api-Plugin/raw/main/mmi-content-slider-v1.7.0.zip) |
 
 **Related Articles install:** Plugins → Add New → Upload Plugin → zip → Activate. Mobile layout: **Settings → Related Articles**.
+
+---
+
+## MMI Mobile List (`mmi-mobile-list/`)
+
+91mobiles-style spec cards on PAF pages (`[mmi_mobile_list]`) and on **Best / Latest / Upcoming** plus **brand** WooCommerce archives. Admin: **Settings → MMI Mobile List** (archive toggles + download zip).
 
 ---
 

@@ -1,0 +1,22 @@
+.mmi-mll-admin .mmi-mll-download-card {
+	margin: 16px 0 24px;
+	padding: 16px 20px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-left: 4px solid #e65100;
+	max-width: 720px;
+}
+
+.mmi-mll-admin .mmi-mll-check {
+	display: inline-block;
+	margin-bottom: 6px;
+}
+
+.mmi-mll-admin .mmi-mll-code {
+	background: #1e1e1e;
+	color: #f5f5f5;
+	padding: 12px 14px;
+	border-radius: 4px;
+	max-width: 720px;
+	overflow-x: auto;
+}
