@@ -19,6 +19,8 @@ Manual related-article picker with AJAX search, date priority (7/15 days), and f
 
 Selected articles appear automatically after the article on single posts (TagDiv `td_global_after_content`, with fallbacks). No shortcode or theme file edits required.
 
+**Settings → Related Articles** — choose **2 cards** (default, with peek of the next) or **3 compact cards** on mobile.
+
 If Newspaper also shows its own "Related Articles" block, disable that module in Theme Panel → Single Post to avoid duplicates, or use the `mmi_ra_hide_theme_related_posts` filter.
 
 == Performance ==
