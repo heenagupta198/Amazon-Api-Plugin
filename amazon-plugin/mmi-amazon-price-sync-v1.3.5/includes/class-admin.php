@@ -331,6 +331,14 @@ class MMI_APS_Admin {
 
 				<h2><?php esc_html_e( 'Amazon Creators API (Official)', 'mmi-amazon-price-sync' ); ?></h2>
 				<p class="description"><?php esc_html_e( 'Uses your Amazon Associates Creators API credentials. Partner Tag must match your Affiliate Tag below. Default limits: 1 request/second and 8,640 requests/day (first 30 days).', 'mmi-amazon-price-sync' ); ?></p>
+				<?php if ( $creators_id_const || $creators_secret_const ) : ?>
+					<div class="notice notice-warning inline" style="margin: 8px 0 16px; padding: 8px 12px;">
+						<p><strong><?php esc_html_e( 'Credentials loaded from wp-config.php', 'mmi-amazon-price-sync' ); ?></strong></p>
+						<p><?php esc_html_e( 'Admin fields below are ignored until you remove MMI_APS_CREATORS_CLIENT_ID, MMI_APS_CREATORS_CLIENT_SECRET, and MMI_APS_CREATORS_VERSION from wp-config.php. After new keys from Amazon, either update wp-config with the new values or delete those lines and Save credentials here instead.', 'mmi-amazon-price-sync' ); ?></p>
+					</div>
+				<?php else : ?>
+					<p class="description"><?php esc_html_e( 'Credentials are saved in WordPress (database). Paste your Credential ID and Secret from Amazon, then click Save Changes.', 'mmi-amazon-price-sync' ); ?></p>
+				<?php endif; ?>
 				<div class="notice notice-info inline" style="margin: 8px 0 16px; padding: 8px 12px;">
 					<p><strong><?php esc_html_e( '403 “eligibility requirements”?', 'mmi-amazon-price-sync' ); ?></strong>
 					<?php esc_html_e( 'Your Credential ID and Secret are usually correct if you see this message. Amazon blocks Creators API until your Associates account has at least 10 qualifying sales in the trailing 30 days. Use Associates Central → Reports, or temporarily use RapidAPI under Price Source.', 'mmi-amazon-price-sync' ); ?></p>

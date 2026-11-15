@@ -81,6 +81,11 @@ class MMI_APS_Settings {
 		return self::use_creators_api() ? 'creators' : 'rapidapi';
 	}
 
+	public static function creators_credentials_from_wp_config(): bool {
+		return ( defined( 'MMI_APS_CREATORS_CLIENT_ID' ) && MMI_APS_CREATORS_CLIENT_ID )
+			|| ( defined( 'MMI_APS_CREATORS_CLIENT_SECRET' ) && MMI_APS_CREATORS_CLIENT_SECRET );
+	}
+
 	public static function get_creators_client_id(): string {
 		if ( defined( 'MMI_APS_CREATORS_CLIENT_ID' ) && MMI_APS_CREATORS_CLIENT_ID ) {
 			return trim( (string) MMI_APS_CREATORS_CLIENT_ID );
