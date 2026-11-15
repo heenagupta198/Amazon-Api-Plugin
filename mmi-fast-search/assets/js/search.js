@@ -15,8 +15,7 @@
 		norm: [],
 		timer: null,
 		root: null,
-		input: null,
-		observer: null
+		input: null
 	};
 
 	/** TagDiv Cloud Library + classic Newspaper selectors. */
@@ -65,32 +64,16 @@
 		}
 	}
 
+	/** Light touch: no inline styles (avoids fighting TagDiv / infinite mutation loops). */
 	function killTagdivDropdown() {
 		document.querySelectorAll(DROPDOWN_SELECTORS).forEach(function (el) {
 			el.classList.remove('tdb-drop-down-search-open', 'open', 'show');
 			el.setAttribute('aria-hidden', 'true');
-			el.style.cssText = 'display:none!important;width:0!important;max-width:0!important;visibility:hidden!important;pointer-events:none!important;';
 		});
 
 		document.querySelectorAll('.tdb-head-search-btn, .tdb-header-search-button, .tdb-header-search-button-mob').forEach(function (btn) {
 			btn.removeAttribute('data-toggle');
 			btn.setAttribute('aria-expanded', 'false');
-			if (btn.tagName === 'A') {
-				btn.setAttribute('href', '#mmi-search');
-			}
-		});
-	}
-
-	function watchTagdiv() {
-		if (state.observer || !cfg.replaceTagdiv) return;
-		killTagdivDropdown();
-		state.observer = new MutationObserver(function () {
-			killTagdivDropdown();
-		});
-		state.observer.observe(document.documentElement, {
-			subtree: true,
-			attributes: true,
-			attributeFilter: ['class', 'style']
 		});
 	}
 
@@ -352,18 +335,6 @@
 			true
 		);
 
-		/* Touch: avoid double-tap opening tagmotion dropdown on iOS. */
-		document.addEventListener(
-			'touchend',
-			function (e) {
-				var el = e.target.closest(TRIGGER_SELECTORS);
-				if (!el || el.closest('.mmi-fs-root')) return;
-				e.preventDefault();
-				killTagdivDropdown();
-				open('');
-			},
-			{ capture: true, passive: false }
-		);
 	}
 
 	function keyboard() {
@@ -381,7 +352,9 @@
 
 	function boot() {
 		buildUi();
-		watchTagdiv();
+		if (cfg.replaceTagdiv) {
+			killTagdivDropdown();
+		}
 		hijackTagdiv();
 		keyboard();
 		if (cfg.preload && cfg.indexUrl) {

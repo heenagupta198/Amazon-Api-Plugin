@@ -2,7 +2,7 @@
 Contributors: mymobileindia
 Requires at least: 6.0
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPLv2 or later
 
 Instant, lightweight search overlay for tagDiv / Newspaper theme headers.
@@ -23,7 +23,7 @@ Enabled by default (`Replace tagDiv search`):
 * Hides TagDiv Cloud Library dropdown (`.tdb-drop-down-search`, `.tdb-search-form`, `.tdb-aj-search`) — keeps the magnifying glass icon.
 * Intercepts `.tdb-head-search-btn` (your header builder search).
 * Mobile: full-screen search sheet; desktop: centered overlay.
-* MutationObserver blocks TagDiv re-opening the old dropdown.
+* v1.1.1: removed heavy MutationObserver (was freezing TagDiv “loading” on the site).
 
 Manual open: `MmiFastSearchOpen()` in browser console, or **Ctrl/Cmd + K**.
 
