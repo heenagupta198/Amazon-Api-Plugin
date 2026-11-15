@@ -1,5 +1,5 @@
 /**
- * Client-side instant search (no server round-trips while typing).
+ * Client-side instant search + full TagDiv dropdown suppression.
  */
 (function () {
 	'use strict';
@@ -15,21 +15,26 @@
 		norm: [],
 		timer: null,
 		root: null,
-		input: null
+		input: null,
+		observer: null
 	};
 
-	var TAGdiv_SELECTORS = [
-		'.td-search-icon',
-		'.td-header-search-wrap .td-icon-search',
-		'.tdb-header-search-wrap',
-		'.tdb-header-search-button',
+	/** TagDiv Cloud Library + classic Newspaper selectors. */
+	var TRIGGER_SELECTORS = [
+		'a.tdb-head-search-btn',
 		'.tdb-head-search-btn',
-		'.tdb_mobile_search',
+		'.tdb-header-search-button',
 		'.tdb-header-search-button-mob',
-		'#td-header-search-button',
-		'.header-search-wrap',
-		'.td-search-wrap .td-icon-search'
+		'.tdb_mobile_search',
+		'.td-search-icon',
+		'.td-icon-search',
+		'.tdb-search-icon',
+		'.td-header-search-wrap .td-icon-search',
+		'.tdb-header-search-wrap .tdb-search-icon',
+		'.tdb-header-search .tdb-head-search-btn'
 	].join(',');
+
+	var DROPDOWN_SELECTORS = '.tdb-drop-down-search, .td-drop-down-search';
 
 	function esc(s) {
 		return String(s)
@@ -60,6 +65,35 @@
 		}
 	}
 
+	function killTagdivDropdown() {
+		document.querySelectorAll(DROPDOWN_SELECTORS).forEach(function (el) {
+			el.classList.remove('tdb-drop-down-search-open', 'open', 'show');
+			el.setAttribute('aria-hidden', 'true');
+			el.style.cssText = 'display:none!important;width:0!important;max-width:0!important;visibility:hidden!important;pointer-events:none!important;';
+		});
+
+		document.querySelectorAll('.tdb-head-search-btn, .tdb-header-search-button, .tdb-header-search-button-mob').forEach(function (btn) {
+			btn.removeAttribute('data-toggle');
+			btn.setAttribute('aria-expanded', 'false');
+			if (btn.tagName === 'A') {
+				btn.setAttribute('href', '#mmi-search');
+			}
+		});
+	}
+
+	function watchTagdiv() {
+		if (state.observer || !cfg.replaceTagdiv) return;
+		killTagdivDropdown();
+		state.observer = new MutationObserver(function () {
+			killTagdivDropdown();
+		});
+		state.observer.observe(document.documentElement, {
+			subtree: true,
+			attributes: true,
+			attributeFilter: ['class', 'style']
+		});
+	}
+
 	function buildUi() {
 		if (state.root) return;
 
@@ -74,8 +108,8 @@
 			'<button type="button" class="mmi-fs-close" data-mmi-fs-close aria-label="' + esc(i18n.close || 'Close') + '">&times;</button>' +
 			'<form class="mmi-fs-form" action="' + esc(cfg.searchUrl || '/') + '" method="get">' +
 			'<div class="mmi-fs-input-wrap">' +
-			'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="currentColor" stroke-width="2"/><path d="M16.5 16.5 21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>' +
-			'<input class="mmi-fs-input" type="search" name="s" autocomplete="off" spellcheck="false" placeholder="' + esc(i18n.placeholder || '') + '" />' +
+			'<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="currentColor" stroke-width="2"/><path d="M16.5 16.5 21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>' +
+			'<input class="mmi-fs-input" type="search" name="s" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search" placeholder="' + esc(i18n.placeholder || '') + '" />' +
 			'</div>' +
 			'<button class="mmi-fs-submit" type="submit">Search</button>' +
 			'</form>' +
@@ -192,7 +226,6 @@
 		}
 
 		s -= Math.min(80, Math.floor((rawTitle.length || 0) / 12));
-
 		return s;
 	}
 
@@ -200,6 +233,10 @@
 		var tokens = normalize(q).split(' ').filter(Boolean);
 		if (!tokens.length) {
 			setStatus(i18n.empty || '');
+			return;
+		}
+		if (!state.loaded) {
+			setStatus(i18n.indexPending || i18n.loading || '');
 			return;
 		}
 
@@ -236,7 +273,14 @@
 	}
 
 	function loadIndex() {
-		if (state.loaded || state.loading || !cfg.indexUrl) {
+		if (state.loaded) {
+			return Promise.resolve();
+		}
+		if (!cfg.indexUrl) {
+			setStatus(i18n.indexPending || '');
+			return Promise.resolve();
+		}
+		if (state.loading) {
 			return Promise.resolve();
 		}
 		state.loading = true;
@@ -259,12 +303,13 @@
 			})
 			.catch(function () {
 				state.loading = false;
-				setStatus('Could not load search index.');
+				setStatus(i18n.indexPending || 'Could not load search index.');
 			});
 	}
 
 	function open(prefill) {
 		buildUi();
+		killTagdivDropdown();
 		state.open = true;
 		state.root.classList.add('is-open');
 		document.body.classList.add('mmi-fs-lock');
@@ -274,10 +319,9 @@
 				state.input.value = prefill;
 				searchLocal(prefill);
 			} else {
-				setStatus(i18n.empty || '');
+				setStatus(state.loaded ? i18n.empty || '' : i18n.indexPending || i18n.empty || '');
 			}
 			state.input.focus();
-			state.input.select();
 		});
 	}
 
@@ -286,6 +330,7 @@
 		state.open = false;
 		state.root.classList.remove('is-open');
 		document.body.classList.remove('mmi-fs-lock');
+		killTagdivDropdown();
 	}
 
 	function hijackTagdiv() {
@@ -294,14 +339,30 @@
 		document.addEventListener(
 			'click',
 			function (e) {
-				var el = e.target.closest(TAGdiv_SELECTORS);
+				var el = e.target.closest(TRIGGER_SELECTORS);
 				if (!el) return;
+				/* Ignore clicks inside our overlay. */
+				if (el.closest('.mmi-fs-root')) return;
 				e.preventDefault();
 				e.stopPropagation();
 				e.stopImmediatePropagation();
+				killTagdivDropdown();
 				open('');
 			},
 			true
+		);
+
+		/* Touch: avoid double-tap opening tagmotion dropdown on iOS. */
+		document.addEventListener(
+			'touchend',
+			function (e) {
+				var el = e.target.closest(TRIGGER_SELECTORS);
+				if (!el || el.closest('.mmi-fs-root')) return;
+				e.preventDefault();
+				killTagdivDropdown();
+				open('');
+			},
+			{ capture: true, passive: false }
 		);
 	}
 
@@ -320,9 +381,10 @@
 
 	function boot() {
 		buildUi();
+		watchTagdiv();
 		hijackTagdiv();
 		keyboard();
-		if (cfg.preload) {
+		if (cfg.preload && cfg.indexUrl) {
 			loadIndex();
 		}
 	}
@@ -334,4 +396,5 @@
 	}
 
 	window.MmiFastSearchOpen = open;
+	window.MmiFastSearchKillTagdiv = killTagdivDropdown;
 })();

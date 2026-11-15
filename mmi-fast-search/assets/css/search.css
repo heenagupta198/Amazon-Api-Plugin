@@ -1,9 +1,9 @@
 /**
- * MMI Fast Search — modal overlay (frontend).
+ * MMI Fast Search — responsive overlay (TagDiv header icon → full UI).
  */
 
 :root {
-	--mmi-fs-backdrop: rgba(8, 12, 24, 0.55);
+	--mmi-fs-backdrop: rgba(8, 12, 24, 0.58);
 	--mmi-fs-surface: #ffffff;
 	--mmi-fs-border: rgba(15, 23, 42, 0.1);
 	--mmi-fs-text: #0f172a;
@@ -20,7 +20,7 @@
 	display: flex;
 	align-items: flex-start;
 	justify-content: center;
-	padding: max(16px, env(safe-area-inset-top)) 16px 24px;
+	padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
 	opacity: 0;
 	visibility: hidden;
 	pointer-events: none;
@@ -38,12 +38,13 @@
 	inset: 0;
 	background: var(--mmi-fs-backdrop);
 	backdrop-filter: blur(6px);
+	-webkit-backdrop-filter: blur(6px);
 }
 
 .mmi-fs-dialog {
 	position: relative;
 	width: min(720px, 100%);
-	margin-top: clamp(32px, 12vh, 120px);
+	margin-top: clamp(32px, 10vh, 100px);
 	background: var(--mmi-fs-surface);
 	border-radius: var(--mmi-fs-radius);
 	box-shadow: var(--mmi-fs-shadow);
@@ -51,6 +52,9 @@
 	overflow: hidden;
 	transform: translateY(-8px) scale(0.98);
 	transition: transform 0.2s ease;
+	max-height: calc(100dvh - 32px);
+	display: flex;
+	flex-direction: column;
 }
 
 .mmi-fs-root.is-open .mmi-fs-dialog {
@@ -62,19 +66,23 @@
 	gap: 0;
 	border-bottom: 1px solid var(--mmi-fs-border);
 	align-items: stretch;
+	flex-shrink: 0;
 }
 
 .mmi-fs-input-wrap {
 	flex: 1;
 	display: flex;
 	align-items: center;
-	gap: 12px;
-	padding: 14px 16px;
+	gap: 10px;
+	padding: 14px 14px 14px 16px;
+	min-width: 0;
 }
 
 .mmi-fs-input-wrap svg {
 	flex-shrink: 0;
 	color: var(--mmi-fs-muted);
+	width: 20px;
+	height: 20px;
 }
 
 .mmi-fs-input {
@@ -86,6 +94,7 @@
 	color: var(--mmi-fs-text);
 	background: transparent;
 	min-width: 0;
+	-webkit-appearance: none;
 }
 
 .mmi-fs-input::placeholder {
@@ -98,9 +107,10 @@
 	color: #fff;
 	font-weight: 600;
 	font-size: 14px;
-	padding: 0 22px;
+	padding: 0 20px;
 	cursor: pointer;
 	transition: background 0.15s ease;
+	flex-shrink: 0;
 }
 
 .mmi-fs-submit:hover {
@@ -111,14 +121,14 @@
 	position: absolute;
 	top: 10px;
 	right: 10px;
-	width: 36px;
-	height: 36px;
+	width: 40px;
+	height: 40px;
 	border: 0;
 	border-radius: 999px;
 	background: #f1f5f9;
 	color: var(--mmi-fs-text);
 	cursor: pointer;
-	font-size: 20px;
+	font-size: 22px;
 	line-height: 1;
 	z-index: 2;
 }
@@ -128,9 +138,11 @@
 }
 
 .mmi-fs-body {
-	max-height: min(60vh, 480px);
+	flex: 1;
+	min-height: 0;
 	overflow: auto;
 	-webkit-overflow-scrolling: touch;
+	max-height: min(58vh, 480px);
 }
 
 .mmi-fs-status {
@@ -138,6 +150,7 @@
 	text-align: center;
 	color: var(--mmi-fs-muted);
 	font-size: 15px;
+	line-height: 1.45;
 }
 
 .mmi-fs-label {
@@ -152,8 +165,8 @@
 .mmi-fs-grid {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 4px;
-	padding: 0 8px 8px;
+	gap: 6px;
+	padding: 0 8px 10px;
 }
 
 @media (min-width: 600px) {
@@ -214,6 +227,7 @@
 	border-top: 1px solid var(--mmi-fs-border);
 	padding: 12px 16px 14px;
 	text-align: center;
+	flex-shrink: 0;
 }
 
 .mmi-fs-view-all {
@@ -229,9 +243,78 @@
 
 body.mmi-fs-lock {
 	overflow: hidden;
+	touch-action: none;
 }
 
-/* Floating trigger when tagDiv icon is hijacked (invisible overlay keeps layout) */
-.mmi-fs-hit {
-	cursor: pointer;
+/* —— Mobile: full-height sheet (TagDiv header icon stays as-is) —— */
+@media (max-width: 767px) {
+	.mmi-fs-root {
+		padding: 0;
+		align-items: stretch;
+	}
+
+	.mmi-fs-dialog {
+		margin-top: 0;
+		width: 100%;
+		max-width: none;
+		height: 100dvh;
+		max-height: 100dvh;
+		border-radius: 0;
+		border: 0;
+		box-shadow: none;
+	}
+
+	.mmi-fs-form {
+		flex-direction: column;
+		padding-top: env(safe-area-inset-top);
+	}
+
+	.mmi-fs-input-wrap {
+		padding: 16px;
+	}
+
+	.mmi-fs-input {
+		font-size: 16px; /* prevents iOS zoom on focus */
+	}
+
+	.mmi-fs-submit {
+		width: 100%;
+		padding: 14px 16px;
+		font-size: 16px;
+	}
+
+	.mmi-fs-close {
+		top: max(12px, env(safe-area-inset-top));
+		right: 12px;
+	}
+
+	.mmi-fs-body {
+		max-height: none;
+		flex: 1;
+	}
+
+	.mmi-fs-grid {
+		grid-template-columns: 1fr;
+		gap: 2px;
+		padding: 0 6px 12px;
+	}
+
+	.mmi-fs-card {
+		flex-direction: row;
+		align-items: center;
+		gap: 12px;
+		padding: 12px 10px;
+		border-radius: 10px;
+	}
+
+	.mmi-fs-thumb {
+		width: 88px;
+		flex: 0 0 88px;
+		aspect-ratio: 4 / 3;
+	}
+
+	.mmi-fs-title {
+		font-size: 15px;
+		-webkit-line-clamp: 2;
+	}
 }
