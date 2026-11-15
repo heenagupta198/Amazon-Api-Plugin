@@ -38,6 +38,7 @@
 .mmi-ra-track-viewport {
 	overflow: hidden;
 	width: 100%;
+	position: relative;
 }
 
 .mmi-ra-track {
@@ -60,9 +61,83 @@
 	}
 }
 
+/* Mobile: 2 or 3 compact cards + peek of the next (set in Settings → Related Articles) */
 @media (max-width: 767px) {
-	.mmi-ra-module {
-		width: 100%;
+	.mmi-ra-block-wrap {
+		margin: 28px 0 22px;
+	}
+
+	.mmi-ra-block-wrap .td-block-title-wrap {
+		margin-bottom: 14px;
+	}
+
+	.mmi-ra-block-wrap .mmi-ra-block-title span {
+		font-size: 12px !important;
+		padding: 6px 10px;
+	}
+
+	.mmi-ra-track {
+		gap: 10px;
+	}
+
+	.mmi-ra-carousel[data-mobile-cards='2'] .mmi-ra-module {
+		width: calc((100% - 10px) / 2.2);
+	}
+
+	.mmi-ra-carousel[data-mobile-cards='3'] .mmi-ra-module {
+		width: calc((100% - 20px) / 3.22);
+	}
+
+	.mmi-ra-module-thumb {
+		margin-bottom: 6px;
+		aspect-ratio: 16 / 11;
+	}
+
+	.mmi-ra-block-wrap .mmi-ra-module .mmi-ra-entry-title,
+	.mmi-ra-block-wrap .mmi-ra-module .mmi-ra-entry-title a {
+		font-size: 13px !important;
+		line-height: 18px !important;
+	}
+
+	.mmi-ra-block-wrap .mmi-ra-module .mmi-ra-entry-title a {
+		-webkit-line-clamp: 3;
+	}
+
+	.mmi-ra-date {
+		font-size: 10px !important;
+		line-height: 14px !important;
+	}
+
+	.mmi-ra-cat-label {
+		font-size: 8px !important;
+		padding: 3px 6px;
+	}
+
+	.mmi-ra-nav {
+		width: 30px;
+		height: 30px;
+		font-size: 14px;
+		top: 38%;
+	}
+
+	.mmi-ra-prev {
+		left: 2px;
+	}
+
+	.mmi-ra-next {
+		right: 2px;
+	}
+
+	/* Hint that more cards exist off-screen */
+	.mmi-ra-track-viewport::after {
+		content: '';
+		position: absolute;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		width: 22px;
+		pointer-events: none;
+		background: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.95));
 	}
 }
 

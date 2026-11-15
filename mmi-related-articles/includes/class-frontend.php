@@ -108,7 +108,9 @@ class MMI_RA_Frontend {
 			return '';
 		}
 
-		$count = count( $posts );
+		$count          = count( $posts );
+		$mobile_visible = MMI_RA_Settings::get_mobile_visible();
+		$show_nav       = $count > 3 || $count > $mobile_visible;
 
 		ob_start();
 		?>
@@ -118,8 +120,13 @@ class MMI_RA_Frontend {
 					<span><?php esc_html_e( 'RELATED ARTICLES', 'mmi-related-articles' ); ?></span>
 				</h4>
 			</div>
-			<div class="mmi-ra-carousel" data-mmi-ra-carousel data-count="<?php echo esc_attr( (string) $count ); ?>">
-				<?php if ( $count > 3 ) : ?>
+			<div
+				class="mmi-ra-carousel"
+				data-mmi-ra-carousel
+				data-count="<?php echo esc_attr( (string) $count ); ?>"
+				data-mobile-cards="<?php echo esc_attr( (string) $mobile_visible ); ?>"
+			>
+				<?php if ( $show_nav ) : ?>
 					<button type="button" class="mmi-ra-nav mmi-ra-prev" aria-label="<?php esc_attr_e( 'Previous', 'mmi-related-articles' ); ?>">&#10094;</button>
 				<?php endif; ?>
 				<div class="mmi-ra-track-viewport">
@@ -149,8 +156,10 @@ class MMI_RA_Frontend {
 										}
 										?>
 									</a>
-									<?php if ( $cat_name ) : ?>
-										<a href="<?php echo esc_url( get_category_link( get_the_category( $related->ID )[0]->term_id ) ); ?>" class="mmi-ra-cat-label"><?php echo esc_html( $cat_name ); ?></a>
+									<?php if ( $cat_name && $cat_link ) : ?>
+										<a href="<?php echo esc_url( $cat_link ); ?>" class="mmi-ra-cat-label"><?php echo esc_html( $cat_name ); ?></a>
+									<?php elseif ( $cat_name ) : ?>
+										<span class="mmi-ra-cat-label"><?php echo esc_html( $cat_name ); ?></span>
 									<?php endif; ?>
 								</div>
 								<div class="mmi-ra-entry-title">
@@ -163,7 +172,7 @@ class MMI_RA_Frontend {
 						<?php endforeach; ?>
 					</div>
 				</div>
-				<?php if ( $count > 3 ) : ?>
+				<?php if ( $show_nav ) : ?>
 					<button type="button" class="mmi-ra-nav mmi-ra-next" aria-label="<?php esc_attr_e( 'Next', 'mmi-related-articles' ); ?>">&#10095;</button>
 				<?php endif; ?>
 			</div>

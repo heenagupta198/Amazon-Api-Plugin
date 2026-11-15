@@ -1,6 +1,8 @@
 (function () {
 	'use strict';
 
+	var PEEK_RATIO = 0.18;
+
 	document.querySelectorAll('[data-mmi-ra-carousel]').forEach(function (root) {
 		var track = root.querySelector('.mmi-ra-track');
 		var viewport = root.querySelector('.mmi-ra-track-viewport');
@@ -11,11 +13,25 @@
 		}
 
 		var index = 0;
-		var gap = 24;
+		var gapDesktop = 24;
+		var gapMobile = 10;
+
+		function isMobile() {
+			return window.matchMedia('(max-width: 767px)').matches;
+		}
+
+		function mobileCards() {
+			var n = parseInt(root.getAttribute('data-mobile-cards'), 10);
+			return n === 3 ? 3 : 2;
+		}
+
+		function gap() {
+			return isMobile() ? gapMobile : gapDesktop;
+		}
 
 		function cardsPerView() {
-			if (window.matchMedia('(max-width: 767px)').matches) {
-				return 1;
+			if (isMobile()) {
+				return mobileCards();
 			}
 			if (window.matchMedia('(max-width: 1018px)').matches) {
 				return 2;
@@ -28,13 +44,20 @@
 			if (!card) {
 				return 0;
 			}
-			return card.getBoundingClientRect().width + gap;
+			return card.getBoundingClientRect().width + gap();
 		}
 
 		function maxIndex() {
 			var cards = track.children.length;
 			var per = cardsPerView();
 			return Math.max(0, cards - per);
+		}
+
+		function stepCount() {
+			if (isMobile()) {
+				return 1;
+			}
+			return 1;
 		}
 
 		function update() {
@@ -52,7 +75,8 @@
 		}
 
 		function step(dir) {
-			index = Math.min(Math.max(0, index + dir), maxIndex());
+			var move = stepCount() * dir;
+			index = Math.min(Math.max(0, index + move), maxIndex());
 			update();
 		}
 
@@ -79,7 +103,7 @@
 			'touchend',
 			function (e) {
 				var dx = e.changedTouches[0].clientX - startX;
-				if (Math.abs(dx) < 40) {
+				if (Math.abs(dx) < 36) {
 					return;
 				}
 				step(dx < 0 ? 1 : -1);
@@ -89,5 +113,7 @@
 
 		window.addEventListener('resize', update);
 		update();
+
+		root.setAttribute('data-peek-ratio', String(PEEK_RATIO));
 	});
 })();

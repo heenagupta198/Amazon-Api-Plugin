@@ -28,6 +28,7 @@ class MMI_RA_Plugin {
 	}
 
 	private function __construct() {
+		MMI_RA_Settings::init();
 		MMI_RA_Meta_Box::init();
 		MMI_RA_Ajax_Handler::init();
 		MMI_RA_Frontend::init();

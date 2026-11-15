@@ -3,7 +3,7 @@ Contributors: mymobile
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.0.1
+Stable tag: 1.0.3
 License: GPLv2 or later
 
 Manual related-article picker with AJAX search, date priority (7/15 days), and frontend carousel for Newspaper (TagDiv) themes.
