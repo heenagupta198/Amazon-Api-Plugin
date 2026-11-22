@@ -15,7 +15,7 @@ class AuthController extends Controller
     public function login(Request $request): JsonResponse
     {
         $credentials = $request->validate([
-            'email' => ['required', 'email:rfc,dns'],
+            'email' => ['required', 'email:rfc,filter'],
             'password' => ['required', 'string', 'max:128'],
             'device_name' => ['nullable', 'string', 'max:80'],
         ]);
