@@ -1,12 +1,14 @@
+import { fmtVolume } from '../utils/format'
+
 function formatPoints(value) {
   const n = Number(value)
   const sign = n > 0 ? '+' : ''
   return `${sign}${n.toFixed(2)}`
 }
 
-export default function ContributionTable({ title, rows, emptyLabel }) {
+export default function ContributionTable({ title, rows, emptyLabel, showVolume = true }) {
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/50 overflow-hidden">
+    <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/50">
       <div className="border-b border-slate-800 px-5 py-3">
         <h3 className="text-sm font-semibold text-slate-200">{title}</h3>
       </div>
@@ -15,6 +17,9 @@ export default function ContributionTable({ title, rows, emptyLabel }) {
           <tr>
             <th className="px-5 py-2 font-medium">Stock</th>
             <th className="px-5 py-2 font-medium text-right">Points</th>
+            {showVolume ? (
+              <th className="px-5 py-2 font-medium text-right">Volume</th>
+            ) : null}
           </tr>
         </thead>
         <tbody>
@@ -32,11 +37,16 @@ export default function ContributionTable({ title, rows, emptyLabel }) {
                 >
                   {formatPoints(row.points)}
                 </td>
+                {showVolume ? (
+                  <td className="px-5 py-2.5 text-right text-slate-400 tabular-nums">
+                    {fmtVolume(row.volume)}
+                  </td>
+                ) : null}
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan={2} className="px-5 py-6 text-center text-slate-500">
+              <td colSpan={showVolume ? 3 : 2} className="px-5 py-6 text-center text-slate-500">
                 {emptyLabel}
               </td>
             </tr>

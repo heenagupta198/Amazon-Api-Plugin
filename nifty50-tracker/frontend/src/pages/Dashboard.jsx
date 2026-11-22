@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import ContributionTable from '../components/ContributionTable'
 import StatCard from '../components/StatCard'
+import TopFivePremium from '../components/TopFivePremium'
 import { api } from '../services/api'
 
 function fmt(n, digits = 2) {
@@ -35,7 +36,7 @@ export default function Dashboard() {
 
   async function handleRefresh() {
     setRefreshing(true)
-  try {
+    try {
       await api.refresh()
       await load()
     } catch (e) {
@@ -52,12 +53,12 @@ export default function Dashboard() {
       <section className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-xl font-semibold text-white">
-            {data?.title ?? 'NIFTY 50 – LIVE ANALYSIS'}
+            {data?.brand ?? 'Yogesh Traderdomina'} · {data?.title ?? 'NIFTY 50 LIVE'}
           </h2>
           <p className="mt-1 text-sm text-slate-400">
             {summary?.is_live
               ? 'Live DhanHQ feed'
-              : 'Connect Dhan API for live quotes — showing stored / demo aggregation'}
+              : 'Connect Dhan API for live quotes + volume'}
             {summary?.as_of ? ` · Updated ${new Date(summary.as_of).toLocaleString()}` : ''}
           </p>
         </div>
@@ -65,7 +66,7 @@ export default function Dashboard() {
           type="button"
           onClick={handleRefresh}
           disabled={refreshing}
-          className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 disabled:opacity-60"
+          className="rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:from-amber-400 disabled:opacity-60"
         >
           {refreshing ? 'Refreshing…' : 'Refresh quotes'}
         </button>
@@ -81,12 +82,14 @@ export default function Dashboard() {
         <p className="text-slate-400">Loading dashboard…</p>
       ) : (
         <>
+          <TopFivePremium
+            niftyValue={summary?.nifty_value}
+            niftyChange={summary?.nifty_change}
+            totalVolume={summary?.total_volume}
+            topVolume={data?.top_volume}
+          />
+
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              label="Nifty (approx.)"
-              value={summary?.nifty_value != null ? Number(summary.nifty_value).toFixed(2) : '—'}
-              hint={summary?.nifty_change != null ? `Day ${fmt(summary.nifty_change)} pts` : null}
-            />
             <StatCard
               label="Total positive"
               value={`${fmt(summary?.total_positive)} pts`}
@@ -104,18 +107,23 @@ export default function Dashboard() {
                 Number(summary?.net_contribution) >= 0 ? 'positive' : 'negative'
               }
             />
+            <StatCard
+              label="Net Nifty move"
+              value={`${fmt(summary?.nifty_change)} pts`}
+              tone={Number(summary?.nifty_change) >= 0 ? 'positive' : 'negative'}
+            />
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
             <ContributionTable
-              title="Top positive contributors"
+              title="Top 5 positive contributors"
               rows={data?.top_positive}
-              emptyLabel="Import constituents and refresh quotes"
+              emptyLabel="Refresh after Dhan import"
             />
             <ContributionTable
-              title="Top negative contributors"
+              title="Top 5 negative contributors"
               rows={data?.top_negative}
-              emptyLabel="Import constituents and refresh quotes"
+              emptyLabel="Refresh after Dhan import"
             />
           </div>
 
@@ -123,9 +131,6 @@ export default function Dashboard() {
             <span className="text-slate-300">Advancers / decliners:</span>{' '}
             <span className="text-emerald-400">{summary?.advancers ?? 0}</span> /{' '}
             <span className="text-rose-400">{summary?.decliners ?? 0}</span>
-            {' · '}
-            <span className="text-slate-300">Dhan configured:</span>{' '}
-            {data?.dhan_configured ? 'Yes' : 'No'}
           </div>
         </>
       )}

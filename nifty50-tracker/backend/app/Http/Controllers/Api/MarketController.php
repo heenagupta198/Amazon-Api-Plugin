@@ -30,7 +30,7 @@ class MarketController extends Controller
             ->where('is_active', true)
             ->where('net_contribution', '>', 0)
             ->orderByDesc('net_contribution')
-            ->limit(10)
+            ->limit(5)
             ->get();
 
         return response()->json(['data' => $rows]);
@@ -42,7 +42,7 @@ class MarketController extends Controller
             ->where('is_active', true)
             ->where('net_contribution', '<', 0)
             ->orderBy('net_contribution')
-            ->limit(10)
+            ->limit(5)
             ->get();
 
         return response()->json(['data' => $rows]);

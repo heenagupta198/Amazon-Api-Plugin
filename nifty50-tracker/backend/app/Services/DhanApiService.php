@@ -66,6 +66,19 @@ class DhanApiService
     }
 
     /**
+     * Full quote incl. volume and depth (Dhan Data API).
+     *
+     * @param  array<int|string, int|string>  $securityIds
+     * @return array<string, mixed>
+     */
+    public function marketQuote(array $securityIds, string $segment = 'NSE_EQ'): array
+    {
+        $payload = [$segment => array_values(array_map('intval', $securityIds))];
+
+        return $this->post('/marketfeed/quote', $payload);
+    }
+
+    /**
      * @param  array<string, array<int, int>>  $segments
      * @return array<string, mixed>
      */

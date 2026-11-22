@@ -11,6 +11,7 @@ class IndexSnapshot extends Model
         'nifty_value',
         'nifty_previous_close',
         'nifty_change',
+        'total_volume',
         'total_positive',
         'total_negative',
         'net_contribution',

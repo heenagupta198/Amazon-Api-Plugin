@@ -17,6 +17,7 @@ class Stock extends Model
         'ltp',
         'change_amount',
         'change_percent',
+        'volume',
         'positive_points',
         'negative_points',
         'net_contribution',
