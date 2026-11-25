@@ -6,6 +6,7 @@ import Admin from './pages/Admin'
 import AllStocks from './pages/AllStocks'
 import Dashboard from './pages/Dashboard'
 import Login from './pages/Login'
+import NiftyPulse from './pages/NiftyPulse'
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
               <Route path="/" element={<Dashboard />} />
+              <Route path="/nifty-pulse" element={<NiftyPulse />} />
               <Route path="/stocks" element={<AllStocks />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="*" element={<Navigate to="/" replace />} />

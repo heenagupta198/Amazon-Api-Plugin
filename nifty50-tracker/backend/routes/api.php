@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DhanController;
 use App\Http\Controllers\Api\MarketController;
+use App\Http\Controllers\Api\ModulesController;
 use App\Http\Controllers\Api\SubscriberController;
 use Illuminate\Support\Facades\Route;
 
@@ -20,6 +21,12 @@ Route::middleware(['auth:sanctum', 'premium'])->group(function () {
         Route::get('/losers', [MarketController::class, 'losers']);
         Route::get('/breadth', [MarketController::class, 'breadth']);
         Route::post('/refresh', [MarketController::class, 'refresh'])->middleware('throttle:10,1');
+    });
+
+    Route::prefix('modules')->group(function () {
+        Route::get('/nifty50', [ModulesController::class, 'nifty50']);
+        Route::post('/nifty50/refresh', [ModulesController::class, 'refresh'])
+            ->middleware('throttle:2,1');
     });
 
     Route::middleware('admin')->group(function () {

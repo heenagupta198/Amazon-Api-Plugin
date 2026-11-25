@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 
 const links = [
   { to: '/', label: 'Dashboard' },
+  { to: '/nifty-pulse', label: 'NiftyPulse' },
   { to: '/stocks', label: 'All 50 Stocks' },
   { to: '/admin', label: 'Admin', adminOnly: true },
 ]

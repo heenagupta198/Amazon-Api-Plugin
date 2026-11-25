@@ -18,6 +18,8 @@ class Stock extends Model
         'change_amount',
         'change_percent',
         'volume',
+        'avg_volume_20d',
+        'unusual_volume_ratio',
         'positive_points',
         'negative_points',
         'net_contribution',
