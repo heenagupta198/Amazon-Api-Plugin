@@ -1,0 +1,82 @@
+.mmi-marketplace-pricing {
+	margin: 1rem 0 1.25rem;
+	padding: 1rem 1.1rem;
+	border: 1px solid #e2e4e7;
+	border-radius: 8px;
+	background: #fafafa;
+}
+
+.mmi-marketplace-pricing__status {
+	margin-bottom: 0.75rem;
+	font-size: 0.95rem;
+}
+
+.mmi-marketplace-pricing__status-value {
+	font-weight: 600;
+}
+
+.mmi-marketplace-pricing__hint {
+	margin: 0 0 0.75rem;
+	color: #646970;
+	font-size: 0.9rem;
+}
+
+.mmi-marketplace-pricing__platforms {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.mmi-marketplace-pricing__row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	padding: 0.65rem 0.75rem;
+	border-radius: 6px;
+	background: #fff;
+	border: 1px solid #ececec;
+}
+
+.mmi-marketplace-pricing__store-name {
+	font-weight: 600;
+	margin-right: 0.5rem;
+}
+
+.mmi-marketplace-pricing__availability {
+	font-size: 0.85rem;
+	color: #50575e;
+}
+
+.mmi-marketplace-pricing__availability--in_stock,
+.mmi-marketplace-pricing__availability--available {
+	color: #007017;
+}
+
+.mmi-marketplace-pricing__availability--out_of_stock,
+.mmi-marketplace-pricing__availability--unavailable {
+	color: #b32d2e;
+}
+
+.mmi-marketplace-pricing__price-area {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.65rem;
+}
+
+.mmi-marketplace-pricing__price {
+	font-size: 1.15rem;
+	font-weight: 700;
+	text-decoration: none;
+}
+
+.mmi-marketplace-pricing__stale {
+	color: #646970;
+	font-size: 0.9rem;
+}
+
+.mmi-marketplace-pricing__buy {
+	white-space: nowrap;
+}

@@ -86,4 +86,56 @@
 				$spinner.removeClass('is-active');
 			});
 	});
+
+	function setFlipkartMessage($scope, text, type) {
+		$scope.find('.mmi-aps-flipkart-fetch-message')
+			.removeClass('mmi-aps-fetch-message--success mmi-aps-fetch-message--error')
+			.addClass(type ? 'mmi-aps-fetch-message--' + type : '')
+			.text(text || '');
+	}
+
+	$(document).on('click', '.mmi-aps-fetch-flipkart-price', function () {
+		var $btn = $(this);
+		var $scope = $btn.closest('.options_group');
+		var productId = $btn.data('product-id');
+		var url = ($('#mmi_flipkart_product_url').val() || '').trim();
+		var $spinner = $btn.siblings('.mmi-aps-flipkart-fetch-spinner');
+
+		if (!url) {
+			setFlipkartMessage($scope, mmiApsAdmin.i18n.noFlipkartUrl || 'Please enter a Flipkart product URL first.', 'error');
+			return;
+		}
+
+		$btn.prop('disabled', true);
+		$spinner.addClass('is-active');
+		setFlipkartMessage($scope, mmiApsAdmin.i18n.fetchingFlipkart || 'Fetching from Flipkart…', '');
+
+		$.post(mmiApsAdmin.ajaxUrl, {
+			action: 'mmi_aps_fetch_flipkart_price',
+			nonce: mmiApsAdmin.nonce,
+			product_id: productId,
+			flipkart_url: url
+		})
+			.done(function (response) {
+				if (response.success) {
+					$scope.find('.mmi-aps-flipkart-display-price').text(response.data.price_formatted || '—');
+					$scope.find('.mmi-aps-flipkart-display-original-price').text(response.data.original_formatted || '—');
+					$scope.find('.mmi-aps-flipkart-display-last-updated').text(response.data.last_updated || '—');
+					$scope.find('.mmi-aps-flipkart-display-status')
+						.removeClass('mmi-aps-flipkart-display-status--in_stock mmi-aps-flipkart-display-status--out_of_stock mmi-aps-flipkart-display-status--unavailable')
+						.addClass('mmi-aps-flipkart-display-status--' + (response.data.availability || 'unavailable'))
+						.text(response.data.availability_label || '');
+					setFlipkartMessage($scope, response.data.message, 'success');
+				} else {
+					setFlipkartMessage($scope, (response.data && response.data.message) || mmiApsAdmin.i18n.error, 'error');
+				}
+			})
+			.fail(function () {
+				setFlipkartMessage($scope, mmiApsAdmin.i18n.error, 'error');
+			})
+			.always(function () {
+				$btn.prop('disabled', false);
+				$spinner.removeClass('is-active');
+			});
+	});
 })(jQuery);

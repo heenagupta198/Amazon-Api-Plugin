@@ -49,3 +49,18 @@ Ya copy-paste ye URL:
 ```
 https://github.com/heenagupta198/Amazon-Api-Plugin/raw/main/mmi-related-articles.zip
 ```
+
+---
+
+## MMI Amazon Price Sync — **v2.1.0** (Amazon + Flipkart dynamic pricing)
+
+| | |
+|---|---|
+| **Version** | 2.1.0 |
+| **Direct download** | [**mmi-amazon-price-sync-v2.1.0.zip**](https://github.com/heenagupta198/Amazon-Api-Plugin/raw/main/mmi-amazon-price-sync-v2.1.0.zip) |
+
+Flipkart live price sync tab **Flipkart affiliate account approve** hone ke baad enable karo: **WooCommerce → Settings → Marketplace Pricing**.
+
+```
+https://github.com/heenagupta198/Amazon-Api-Plugin/raw/main/mmi-amazon-price-sync-v2.1.0.zip
+```

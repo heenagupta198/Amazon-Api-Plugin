@@ -13,7 +13,7 @@ class MMI_APS_WC_Settings_Amazon_Price extends WC_Settings_Page {
 
 	public function __construct() {
 		$this->id    = 'mmi_amazon_price_sync';
-		$this->label = __( 'Amazon Price Sync', 'mmi-amazon-price-sync' );
+		$this->label = __( 'Marketplace Pricing', 'mmi-amazon-price-sync' );
 
 		parent::__construct();
 	}
@@ -97,6 +97,70 @@ class MMI_APS_WC_Settings_Amazon_Price extends WC_Settings_Page {
 				array(
 					'type' => 'sectionend',
 					'id'   => 'mmi_aps_howto',
+				),
+				array(
+					'title' => __( 'Flipkart Affiliate API', 'mmi-amazon-price-sync' ),
+					'type'  => 'title',
+					'desc'  => __( 'Enable after Flipkart approves your affiliate account. Until then, save Flipkart product URLs on each variant so Buy links are ready when you turn the API on.', 'mmi-amazon-price-sync' ),
+					'id'    => 'mmi_aps_flipkart_options',
+				),
+				array(
+					'title'   => __( 'Flipkart API enabled', 'mmi-amazon-price-sync' ),
+					'desc'    => __( 'Turn on when Affiliate ID and Token are active', 'mmi-amazon-price-sync' ),
+					'id'      => MMI_APS_Settings::OPTION_FLIPKART_ENABLED,
+					'type'    => 'checkbox',
+					'default' => 'no',
+				),
+				array(
+					'title'    => __( 'Flipkart Affiliate ID', 'mmi-amazon-price-sync' ),
+					'id'       => MMI_APS_Settings::OPTION_FLIPKART_AFFILIATE_ID,
+					'type'     => 'text',
+					'default'  => '',
+					'desc_tip' => true,
+				),
+				array(
+					'title'    => __( 'Flipkart Affiliate Token', 'mmi-amazon-price-sync' ),
+					'id'       => MMI_APS_Settings::OPTION_FLIPKART_TOKEN,
+					'type'     => 'password',
+					'default'  => '',
+					'desc_tip' => true,
+				),
+				array(
+					'title'    => __( 'Flipkart button text', 'mmi-amazon-price-sync' ),
+					'id'       => MMI_APS_Settings::OPTION_FLIPKART_BTN_TEXT,
+					'type'     => 'text',
+					'default'  => __( 'Buy on Flipkart', 'mmi-amazon-price-sync' ),
+				),
+				array(
+					'type' => 'sectionend',
+					'id'   => 'mmi_aps_flipkart_options',
+				),
+				array(
+					'title' => __( 'Storefront display', 'mmi-amazon-price-sync' ),
+					'type'  => 'title',
+					'id'    => 'mmi_aps_marketplace_options',
+				),
+				array(
+					'title'   => __( 'Show platform-wise pricing', 'mmi-amazon-price-sync' ),
+					'id'      => MMI_APS_Settings::OPTION_MARKETPLACE_DISPLAY,
+					'type'    => 'checkbox',
+					'default' => 'yes',
+				),
+				array(
+					'title'             => __( 'Max price age (hours)', 'mmi-amazon-price-sync' ),
+					'desc'              => __( 'Prices older than this are hidden until the next sync.', 'mmi-amazon-price-sync' ),
+					'id'                => MMI_APS_Settings::OPTION_PRICE_MAX_AGE_HOURS,
+					'type'              => 'number',
+					'default'           => 36,
+					'custom_attributes' => array(
+						'min'  => 6,
+						'max'  => 168,
+						'step' => 1,
+					),
+				),
+				array(
+					'type' => 'sectionend',
+					'id'   => 'mmi_aps_marketplace_options',
 				),
 			)
 		);

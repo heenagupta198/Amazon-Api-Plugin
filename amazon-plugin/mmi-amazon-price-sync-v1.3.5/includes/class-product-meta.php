@@ -67,8 +67,29 @@ class MMI_APS_Product_Meta {
 		$delivery         = get_post_meta( $product_id, MMI_APS_Plugin::META_DELIVERY, true );
 		$availability     = self::get_availability_status( $product_id );
 
+		$sale_status = (string) get_post_meta( $product_id, MMI_APS_Plugin::META_SALE_STATUS, true );
+
 		if ( 'panel' === $context ) {
 			echo '<div class="options_group">';
+			woocommerce_wp_select(
+				array(
+					'id'      => 'mmi_sale_status',
+					'label'   => __( 'Sale status', 'mmi-amazon-price-sync' ),
+					'value'   => $sale_status,
+					'options' => array_merge(
+						array( '' => __( 'Auto (launch date + stock)', 'mmi-amazon-price-sync' ) ),
+						array_combine(
+							MMI_APS_Marketplace_Status::STATUSES,
+							array_map(
+								static function ( $status ) {
+									return MMI_APS_Marketplace_Status::get_label( $status );
+								},
+								MMI_APS_Marketplace_Status::STATUSES
+							)
+						)
+					),
+				)
+			);
 			woocommerce_wp_text_input(
 				array(
 					'id'          => 'mmi_amazon_asin',
@@ -151,6 +172,13 @@ class MMI_APS_Product_Meta {
 
 		if ( ! current_user_can( 'edit_post', $product_id ) ) {
 			return;
+		}
+
+		if ( isset( $_POST['mmi_sale_status'] ) ) {
+			$status = sanitize_text_field( wp_unslash( (string) $_POST['mmi_sale_status'] ) );
+			if ( '' === $status || in_array( $status, MMI_APS_Marketplace_Status::STATUSES, true ) ) {
+				update_post_meta( $product_id, MMI_APS_Plugin::META_SALE_STATUS, $status );
+			}
 		}
 
 		$asin = self::get_submitted_asin();
@@ -238,10 +266,12 @@ class MMI_APS_Product_Meta {
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( 'mmi_aps_fetch_price' ),
 				'i18n'    => array(
-					'fetching'  => __( 'Fetching price from Amazon…', 'mmi-amazon-price-sync' ),
-					'success'   => __( 'Price updated successfully.', 'mmi-amazon-price-sync' ),
-					'noAsin'    => __( 'Please enter an Amazon ASIN first.', 'mmi-amazon-price-sync' ),
-					'error'     => __( 'Failed to fetch price.', 'mmi-amazon-price-sync' ),
+					'fetching'          => __( 'Fetching price from Amazon…', 'mmi-amazon-price-sync' ),
+					'fetchingFlipkart'  => __( 'Fetching price from Flipkart…', 'mmi-amazon-price-sync' ),
+					'success'           => __( 'Price updated successfully.', 'mmi-amazon-price-sync' ),
+					'noAsin'            => __( 'Please enter an Amazon ASIN first.', 'mmi-amazon-price-sync' ),
+					'noFlipkartUrl'     => __( 'Please enter a Flipkart product URL first.', 'mmi-amazon-price-sync' ),
+					'error'             => __( 'Failed to fetch price.', 'mmi-amazon-price-sync' ),
 				),
 			)
 		);
@@ -353,6 +383,10 @@ class MMI_APS_Product_Meta {
 			return null;
 		}
 
+		if ( ! self::is_amazon_price_fresh( $product_id ) ) {
+			return null;
+		}
+
 		if ( array_key_exists( $product_id, self::$price_cache ) ) {
 			return self::$price_cache[ $product_id ];
 		}
@@ -408,6 +442,19 @@ class MMI_APS_Product_Meta {
 	public static function get_availability_label( string $status ): string {
 		return 'unavailable' === $status
 			? __( 'Currently Unavailable', 'mmi-amazon-price-sync' )
-			: __( 'Available', 'mmi-amazon-price-sync' );
+			: __( 'In Stock', 'mmi-amazon-price-sync' );
+	}
+
+	/**
+	 * @param int $product_id Product ID.
+	 */
+	public static function is_amazon_price_fresh( int $product_id ): bool {
+		$updated = (int) get_post_meta( $product_id, MMI_APS_Plugin::META_LAST_UPDATED, true );
+		if ( $updated <= 0 ) {
+			return false;
+		}
+
+		$max_age = MMI_APS_Settings::get_price_max_age_seconds();
+		return ( time() - $updated ) <= $max_age;
 	}
 }
