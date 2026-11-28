@@ -27,15 +27,18 @@ class MMI_APS_Variation_Marketplace {
 		$flipkart_url = MMI_APS_Flipkart_Product_Meta::get_product_url( $variation_id );
 		$sale_status  = (string) get_post_meta( $variation_id, MMI_APS_Plugin::META_SALE_STATUS, true );
 		?>
-		<div class="form-row form-row-full mmi-aps-variation-marketplace">
+		<div class="form-row form-row-full mmi-aps-variation-marketplace" data-variation-id="<?php echo esc_attr( (string) $variation_id ); ?>">
 			<p class="form-field form-row form-row-first">
 				<label><?php esc_html_e( 'Amazon ASIN (variant)', 'mmi-amazon-price-sync' ); ?></label>
-				<input type="text" class="short" name="mmi_amazon_asin_var[<?php echo esc_attr( (string) $loop ); ?>]" value="<?php echo esc_attr( $asin ); ?>" maxlength="10" placeholder="B0XXXXXXXX" />
+				<input type="text" class="short mmi-aps-var-asin" name="mmi_amazon_asin_var[<?php echo esc_attr( (string) $loop ); ?>]" value="<?php echo esc_attr( $asin ); ?>" maxlength="10" placeholder="B0XXXXXXXX" />
+				<button type="button" class="button button-small mmi-aps-var-fetch-amazon" data-variation-id="<?php echo esc_attr( (string) $variation_id ); ?>"><?php esc_html_e( 'Fetch Amazon', 'mmi-amazon-price-sync' ); ?></button>
 			</p>
 			<p class="form-field form-row form-row-last">
 				<label><?php esc_html_e( 'Flipkart URL (variant)', 'mmi-amazon-price-sync' ); ?></label>
-				<input type="url" class="short" name="mmi_flipkart_url_var[<?php echo esc_attr( (string) $loop ); ?>]" value="<?php echo esc_attr( $flipkart_url ); ?>" placeholder="https://www.flipkart.com/..." />
+				<input type="url" class="short mmi-aps-var-flipkart-url" name="mmi_flipkart_url_var[<?php echo esc_attr( (string) $loop ); ?>]" value="<?php echo esc_attr( $flipkart_url ); ?>" placeholder="https://www.flipkart.com/..." />
+				<button type="button" class="button button-small mmi-aps-var-fetch-flipkart" data-variation-id="<?php echo esc_attr( (string) $variation_id ); ?>"><?php esc_html_e( 'Fetch Flipkart', 'mmi-amazon-price-sync' ); ?></button>
 			</p>
+			<p class="mmi-aps-var-fetch-msg" style="margin:4px 0 8px;"></p>
 			<p class="form-field form-row form-row-full">
 				<label><?php esc_html_e( 'Sale status override', 'mmi-amazon-price-sync' ); ?></label>
 				<select name="mmi_sale_status_var[<?php echo esc_attr( (string) $loop ); ?>]">

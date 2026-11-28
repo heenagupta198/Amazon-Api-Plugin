@@ -210,14 +210,19 @@ class MMI_APS_Flipkart_Product_Meta {
 	 * @param int $product_id Product ID.
 	 */
 	public static function get_flipkart_price( int $product_id ): ?float {
-		if ( ! self::is_price_fresh( $product_id ) ) {
-			return null;
-		}
-
 		if ( in_array( self::get_availability_status( $product_id ), array( 'unavailable', 'out_of_stock' ), true ) ) {
 			return null;
 		}
 
+		return self::get_stored_flipkart_price( $product_id );
+	}
+
+	/**
+	 * Raw stored Flipkart price (ignores freshness) for price tables.
+	 *
+	 * @param int $product_id Product or variation ID.
+	 */
+	public static function get_stored_flipkart_price( int $product_id ): ?float {
 		$price = get_post_meta( $product_id, MMI_APS_Plugin::META_FLIPKART_PRICE, true );
 		if ( '' === $price || null === $price ) {
 			return null;

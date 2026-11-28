@@ -141,10 +141,17 @@ class MMI_APS_WC_Settings_Amazon_Price extends WC_Settings_Page {
 					'id'    => 'mmi_aps_marketplace_options',
 				),
 				array(
-					'title'   => __( 'Show platform-wise pricing', 'mmi-amazon-price-sync' ),
-					'id'      => MMI_APS_Settings::OPTION_MARKETPLACE_DISPLAY,
+					'title'   => __( '91mobiles-style prices table on product page', 'mmi-amazon-price-sync' ),
+					'desc'    => __( 'Shows all variants with Amazon / Flipkart rows. Or use shortcode [mmi_phone_prices] on the PRICES tab.', 'mmi-amazon-price-sync' ),
+					'id'      => MMI_APS_Settings::OPTION_PRICES_TABLE_ON_PRODUCT,
 					'type'    => 'checkbox',
-					'default' => 'yes',
+					'default' => 'no',
+				),
+				array(
+					'title'   => __( 'Compact marketplace box (above price)', 'mmi-amazon-price-sync' ),
+					'id'      => MMI_APS_Settings::OPTION_COMPACT_MARKETPLACE,
+					'type'    => 'checkbox',
+					'default' => 'no',
 				),
 				array(
 					'title'             => __( 'Max price age (hours)', 'mmi-amazon-price-sync' ),

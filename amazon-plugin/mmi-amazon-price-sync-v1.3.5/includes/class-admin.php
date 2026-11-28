@@ -147,6 +147,57 @@ class MMI_APS_Admin {
 				'sanitize_callback' => array( __CLASS__, 'sanitize_cron_batch_size' ),
 			)
 		);
+		foreach (
+			array(
+				MMI_APS_Settings::OPTION_FLIPKART_ENABLED,
+				MMI_APS_Settings::OPTION_PRICES_TABLE_ON_PRODUCT,
+				MMI_APS_Settings::OPTION_COMPACT_MARKETPLACE,
+				MMI_APS_Settings::OPTION_MARKETPLACE_DISPLAY,
+			) as $fk_yes_no
+		) {
+			register_setting(
+				'mmi_aps_settings',
+				$fk_yes_no,
+				array(
+					'type'              => 'string',
+					'sanitize_callback' => array( __CLASS__, 'sanitize_yes_no' ),
+				)
+			);
+		}
+		register_setting(
+			'mmi_aps_settings',
+			MMI_APS_Settings::OPTION_FLIPKART_AFFILIATE_ID,
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+			)
+		);
+		register_setting(
+			'mmi_aps_settings',
+			MMI_APS_Settings::OPTION_FLIPKART_TOKEN,
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+			)
+		);
+		register_setting(
+			'mmi_aps_settings',
+			MMI_APS_Settings::OPTION_FLIPKART_BTN_TEXT,
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+			)
+		);
+		register_setting(
+			'mmi_aps_settings',
+			MMI_APS_Settings::OPTION_PRICE_MAX_AGE_HOURS,
+			array(
+				'type'              => 'integer',
+				'sanitize_callback' => static function ( $v ) {
+					return max( 6, min( 168, (int) $v ) );
+				},
+			)
+		);
 		add_action( 'wp_ajax_mmi_aps_test_api', array( __CLASS__, 'ajax_test_api' ) );
 		add_action( 'wp_ajax_mmi_aps_sync_batch', array( __CLASS__, 'ajax_sync_batch' ) );
 	}
@@ -362,6 +413,57 @@ class MMI_APS_Admin {
 						</td>
 					</tr>
 				</table>
+
+				<h2><?php esc_html_e( 'Flipkart Affiliate API', 'mmi-amazon-price-sync' ); ?></h2>
+				<?php
+				$fk_pending  = MMI_APS_Flipkart_API_Client::get_pending_message();
+				$fk_enabled  = MMI_APS_Settings::is_flipkart_api_enabled();
+				$fk_affid    = MMI_APS_Settings::get_flipkart_affiliate_id();
+				$fk_token    = MMI_APS_Settings::get_flipkart_affiliate_token();
+				$fk_btn      = (string) get_option( MMI_APS_Settings::OPTION_FLIPKART_BTN_TEXT, '' );
+				?>
+				<?php if ( '' !== $fk_pending && ! MMI_APS_Flipkart_API_Client::is_configured() ) : ?>
+					<div class="notice notice-warning inline"><p><?php echo esc_html( $fk_pending ); ?></p></div>
+				<?php endif; ?>
+				<p><?php esc_html_e( 'Save Flipkart product URLs on each variant now. When Flipkart approves your affiliate account, enable the API here for automatic price sync.', 'mmi-amazon-price-sync' ); ?></p>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Flipkart API enabled', 'mmi-amazon-price-sync' ); ?></th>
+						<td>
+							<input type="hidden" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_FLIPKART_ENABLED ); ?>" value="no" />
+							<label>
+								<input type="checkbox" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_FLIPKART_ENABLED ); ?>" value="yes" <?php checked( $fk_enabled ); ?> />
+								<?php esc_html_e( 'Enable Flipkart Affiliate Product API', 'mmi-amazon-price-sync' ); ?>
+							</label>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Flipkart Affiliate ID', 'mmi-amazon-price-sync' ); ?></th>
+						<td>
+							<input type="text" class="regular-text" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_FLIPKART_AFFILIATE_ID ); ?>" value="<?php echo esc_attr( $fk_affid ); ?>" placeholder="youraffid" />
+							<p class="description"><?php esc_html_e( 'Fk-Affiliate-Id from Flipkart Affiliate dashboard.', 'mmi-amazon-price-sync' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Flipkart Affiliate Token', 'mmi-amazon-price-sync' ); ?></th>
+						<td>
+							<input type="password" class="regular-text" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_FLIPKART_TOKEN ); ?>" value="<?php echo esc_attr( $fk_token ); ?>" autocomplete="off" />
+							<p class="description"><?php esc_html_e( 'Fk-Affiliate-Token — available after account approval.', 'mmi-amazon-price-sync' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Flipkart button text', 'mmi-amazon-price-sync' ); ?></th>
+						<td>
+							<input type="text" class="regular-text" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_FLIPKART_BTN_TEXT ); ?>" value="<?php echo esc_attr( $fk_btn ); ?>" placeholder="<?php esc_attr_e( 'Go To Store', 'mmi-amazon-price-sync' ); ?>" />
+						</td>
+					</tr>
+				</table>
+				<p class="description"><code>define( 'MMI_APS_FLIPKART_AFFILIATE_ID', '...' );</code> / <code>MMI_APS_FLIPKART_AFFILIATE_TOKEN</code> <?php esc_html_e( 'in wp-config.php override these fields.', 'mmi-amazon-price-sync' ); ?></p>
+
+				<h2><?php esc_html_e( 'PRICES tab (91mobiles layout)', 'mmi-amazon-price-sync' ); ?></h2>
+				<p><?php esc_html_e( 'Add this shortcode on your product PRICES tab or page builder:', 'mmi-amazon-price-sync' ); ?></p>
+				<p><code>[mmi_phone_prices]</code> <?php esc_html_e( 'or', 'mmi-amazon-price-sync' ); ?> <code>[mmi_phone_prices id="123"]</code></p>
+
 				<?php if ( $affiliate_on && $affiliate_tag ) : ?>
 					<p class="description">
 						<?php

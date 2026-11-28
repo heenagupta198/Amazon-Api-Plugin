@@ -383,10 +383,15 @@ class MMI_APS_Product_Meta {
 			return null;
 		}
 
-		if ( ! self::is_amazon_price_fresh( $product_id ) ) {
-			return null;
-		}
+		return self::get_stored_amazon_price( $product_id );
+	}
 
+	/**
+	 * Stored Amazon price for storefront / dropdown — does not check freshness.
+	 *
+	 * @param int $product_id Product or variation ID.
+	 */
+	public static function get_stored_amazon_price( int $product_id ): ?float {
 		if ( array_key_exists( $product_id, self::$price_cache ) ) {
 			return self::$price_cache[ $product_id ];
 		}

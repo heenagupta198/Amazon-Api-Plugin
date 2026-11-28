@@ -274,13 +274,12 @@ class MMI_APS_Marketplace_Frontend {
 		$amazon_asin = MMI_APS_Product_Meta::get_asin( $product_id );
 		if ( '' !== $amazon_asin ) {
 			$amazon_available = ! MMI_APS_Product_Meta::is_unavailable( $product_id );
-			$amazon_price     = MMI_APS_Product_Meta::get_amazon_price( $product_id );
-			$amazon_fresh     = self::is_amazon_meta_fresh( $product_id );
+			$amazon_price = MMI_APS_Product_Meta::get_stored_amazon_price( $product_id );
 
 			$platforms['amazon'] = array(
 				'configured'        => true,
 				'price'             => $amazon_price,
-				'show_price'        => $amazon_fresh && null !== $amazon_price && $amazon_available,
+				'show_price'        => null !== $amazon_price && $amazon_available,
 				'availability'      => $amazon_available ? 'available' : 'unavailable',
 				'availability_label' => $amazon_available
 					? __( 'In Stock', 'mmi-amazon-price-sync' )
@@ -292,13 +291,12 @@ class MMI_APS_Marketplace_Frontend {
 		$flipkart_url = MMI_APS_Flipkart_Product_Meta::get_product_url( $product_id );
 		if ( '' !== $flipkart_url ) {
 			$fk_status = MMI_APS_Flipkart_Product_Meta::get_availability_status( $product_id );
-			$fk_price  = MMI_APS_Flipkart_Product_Meta::get_flipkart_price( $product_id );
-			$fk_fresh  = MMI_APS_Flipkart_Product_Meta::is_price_fresh( $product_id );
+			$fk_price = MMI_APS_Flipkart_Product_Meta::get_stored_flipkart_price( $product_id );
 
 			$platforms['flipkart'] = array(
 				'configured'         => true,
 				'price'              => $fk_price,
-				'show_price'         => $fk_fresh && null !== $fk_price && 'in_stock' === $fk_status,
+				'show_price'         => null !== $fk_price && 'in_stock' === $fk_status,
 				'availability'       => $fk_status,
 				'availability_label' => MMI_APS_Flipkart_Product_Meta::get_availability_label( $fk_status ),
 				'buy_url'            => MMI_APS_Flipkart_Product_Meta::get_affiliate_url( $product_id ),

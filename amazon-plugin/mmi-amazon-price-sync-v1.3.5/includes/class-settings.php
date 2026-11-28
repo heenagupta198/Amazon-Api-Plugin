@@ -27,7 +27,9 @@ class MMI_APS_Settings {
 	public const OPTION_FLIPKART_TOKEN         = 'mmi_aps_flipkart_affiliate_token';
 	public const OPTION_MARKETPLACE_DISPLAY    = 'mmi_aps_marketplace_display';
 	public const OPTION_PRICE_MAX_AGE_HOURS    = 'mmi_aps_price_max_age_hours';
-	public const OPTION_FLIPKART_BTN_TEXT      = 'mmi_aps_flipkart_button_text';
+	public const OPTION_FLIPKART_BTN_TEXT        = 'mmi_aps_flipkart_button_text';
+	public const OPTION_PRICES_TABLE_ON_PRODUCT  = 'mmi_aps_prices_table_on_product';
+	public const OPTION_COMPACT_MARKETPLACE      = 'mmi_aps_compact_marketplace';
 
 	public const DEFAULT_HOST     = 'real-time-amazon-data.p.rapidapi.com';
 	public const DEFAULT_ENDPOINT = '/product-details';
@@ -165,7 +167,11 @@ class MMI_APS_Settings {
 	}
 
 	public static function is_marketplace_display_enabled(): bool {
-		return 'yes' === get_option( self::OPTION_MARKETPLACE_DISPLAY, 'yes' );
+		return 'yes' === get_option( self::OPTION_COMPACT_MARKETPLACE, 'no' );
+	}
+
+	public static function show_prices_table_on_product(): bool {
+		return 'yes' === get_option( self::OPTION_PRICES_TABLE_ON_PRODUCT, 'no' );
 	}
 
 	public static function get_price_max_age_hours(): int {

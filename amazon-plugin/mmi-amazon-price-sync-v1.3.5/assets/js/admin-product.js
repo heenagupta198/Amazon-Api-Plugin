@@ -138,4 +138,76 @@
 				$spinner.removeClass('is-active');
 			});
 	});
+
+	$(document).on('click', '.mmi-aps-var-fetch-amazon', function () {
+		var $btn = $(this);
+		var $wrap = $btn.closest('.mmi-aps-variation-marketplace');
+		var variationId = $btn.data('variation-id');
+		var asin = ($wrap.find('.mmi-aps-var-asin').val() || '').trim().toUpperCase();
+		var $msg = $wrap.find('.mmi-aps-var-fetch-msg');
+
+		if (!asin) {
+			$msg.text(mmiApsAdmin.i18n.noAsin).css('color', '#b32d2e');
+			return;
+		}
+
+		$btn.prop('disabled', true);
+		$msg.text(mmiApsAdmin.i18n.fetching).css('color', '');
+
+		$.post(mmiApsAdmin.ajaxUrl, {
+			action: 'mmi_aps_fetch_price',
+			nonce: mmiApsAdmin.nonce,
+			product_id: variationId,
+			asin: asin
+		})
+			.done(function (response) {
+				if (response.success) {
+					$msg.text(response.data.message || mmiApsAdmin.i18n.success).css('color', '#007017');
+				} else {
+					$msg.text((response.data && response.data.message) || mmiApsAdmin.i18n.error).css('color', '#b32d2e');
+				}
+			})
+			.fail(function () {
+				$msg.text(mmiApsAdmin.i18n.error).css('color', '#b32d2e');
+			})
+			.always(function () {
+				$btn.prop('disabled', false);
+			});
+	});
+
+	$(document).on('click', '.mmi-aps-var-fetch-flipkart', function () {
+		var $btn = $(this);
+		var $wrap = $btn.closest('.mmi-aps-variation-marketplace');
+		var variationId = $btn.data('variation-id');
+		var url = ($wrap.find('.mmi-aps-var-flipkart-url').val() || '').trim();
+		var $msg = $wrap.find('.mmi-aps-var-fetch-msg');
+
+		if (!url) {
+			$msg.text(mmiApsAdmin.i18n.noFlipkartUrl).css('color', '#b32d2e');
+			return;
+		}
+
+		$btn.prop('disabled', true);
+		$msg.text(mmiApsAdmin.i18n.fetchingFlipkart).css('color', '');
+
+		$.post(mmiApsAdmin.ajaxUrl, {
+			action: 'mmi_aps_fetch_flipkart_price',
+			nonce: mmiApsAdmin.nonce,
+			product_id: variationId,
+			flipkart_url: url
+		})
+			.done(function (response) {
+				if (response.success) {
+					$msg.text(response.data.message).css('color', '#007017');
+				} else {
+					$msg.text((response.data && response.data.message) || mmiApsAdmin.i18n.error).css('color', '#b32d2e');
+				}
+			})
+			.fail(function () {
+				$msg.text(mmiApsAdmin.i18n.error).css('color', '#b32d2e');
+			})
+			.always(function () {
+				$btn.prop('disabled', false);
+			});
+	});
 })(jQuery);
