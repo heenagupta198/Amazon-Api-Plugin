@@ -1,6 +1,6 @@
 <?php
 /**
- * Per-variation Amazon ASIN and Flipkart URL fields.
+ * Per-variation Amazon ASIN fields.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -23,31 +23,31 @@ class MMI_APS_Variation_Marketplace {
 			return;
 		}
 
-		$asin         = MMI_APS_Product_Meta::get_asin( $variation_id );
-		$flipkart_url = MMI_APS_Flipkart_Product_Meta::get_product_url( $variation_id );
-		$sale_status  = (string) get_post_meta( $variation_id, MMI_APS_Plugin::META_SALE_STATUS, true );
+		$asin        = MMI_APS_Product_Meta::get_asin( $variation_id );
+		$stock       = MMI_APS_Product_Meta::get_availability_status( $variation_id );
+		$price       = MMI_APS_Product_Meta::get_stored_amazon_price( $variation_id );
 		?>
 		<div class="form-row form-row-full mmi-aps-variation-marketplace" data-variation-id="<?php echo esc_attr( (string) $variation_id ); ?>">
-			<p class="form-field form-row form-row-first">
+			<p class="form-field form-row form-row-full">
 				<label><?php esc_html_e( 'Amazon ASIN (variant)', 'mmi-amazon-price-sync' ); ?></label>
 				<input type="text" class="short mmi-aps-var-asin" name="mmi_amazon_asin_var[<?php echo esc_attr( (string) $loop ); ?>]" value="<?php echo esc_attr( $asin ); ?>" maxlength="10" placeholder="B0XXXXXXXX" />
 				<button type="button" class="button button-small mmi-aps-var-fetch-amazon" data-variation-id="<?php echo esc_attr( (string) $variation_id ); ?>"><?php esc_html_e( 'Fetch Amazon', 'mmi-amazon-price-sync' ); ?></button>
 			</p>
-			<p class="form-field form-row form-row-last">
-				<label><?php esc_html_e( 'Flipkart URL (variant)', 'mmi-amazon-price-sync' ); ?></label>
-				<input type="url" class="short mmi-aps-var-flipkart-url" name="mmi_flipkart_url_var[<?php echo esc_attr( (string) $loop ); ?>]" value="<?php echo esc_attr( $flipkart_url ); ?>" placeholder="https://www.flipkart.com/..." />
-				<button type="button" class="button button-small mmi-aps-var-fetch-flipkart" data-variation-id="<?php echo esc_attr( (string) $variation_id ); ?>"><?php esc_html_e( 'Fetch Flipkart', 'mmi-amazon-price-sync' ); ?></button>
-			</p>
 			<p class="mmi-aps-var-fetch-msg" style="margin:4px 0 8px;"></p>
-			<p class="form-field form-row form-row-full">
-				<label><?php esc_html_e( 'Sale status override', 'mmi-amazon-price-sync' ); ?></label>
-				<select name="mmi_sale_status_var[<?php echo esc_attr( (string) $loop ); ?>]">
-					<option value=""><?php esc_html_e( 'Auto (from launch date + stock)', 'mmi-amazon-price-sync' ); ?></option>
-					<?php foreach ( MMI_APS_Marketplace_Status::STATUSES as $status ) : ?>
-						<option value="<?php echo esc_attr( $status ); ?>" <?php selected( $sale_status, $status ); ?>><?php echo esc_html( MMI_APS_Marketplace_Status::get_label( $status ) ); ?></option>
-					<?php endforeach; ?>
-				</select>
-			</p>
+			<?php if ( '' !== $asin ) : ?>
+				<p class="description">
+					<?php
+					echo esc_html(
+						sprintf(
+							/* translators: 1: stock label, 2: price */
+							__( 'Amazon: %1$s — %2$s', 'mmi-amazon-price-sync' ),
+							MMI_APS_Product_Meta::get_availability_label( $stock ),
+							$price ? MMI_APS_Product_Meta::format_inr( $price ) : '—'
+						)
+					);
+					?>
+				</p>
+			<?php endif; ?>
 		</div>
 		<?php
 	}
@@ -65,18 +65,6 @@ class MMI_APS_Variation_Marketplace {
 			$asin = strtoupper( sanitize_text_field( wp_unslash( (string) $_POST['mmi_amazon_asin_var'][ $loop ] ) ) );
 			if ( '' === $asin || preg_match( '/^[A-Z0-9]{10}$/', $asin ) ) {
 				update_post_meta( $variation_id, MMI_APS_Plugin::META_ASIN, $asin );
-			}
-		}
-
-		if ( isset( $_POST['mmi_flipkart_url_var'][ $loop ] ) ) {
-			$url = esc_url_raw( wp_unslash( (string) $_POST['mmi_flipkart_url_var'][ $loop ] ) );
-			update_post_meta( $variation_id, MMI_APS_Plugin::META_FLIPKART_URL, $url );
-		}
-
-		if ( isset( $_POST['mmi_sale_status_var'][ $loop ] ) ) {
-			$status = sanitize_text_field( wp_unslash( (string) $_POST['mmi_sale_status_var'][ $loop ] ) );
-			if ( '' === $status || in_array( $status, MMI_APS_Marketplace_Status::STATUSES, true ) ) {
-				update_post_meta( $variation_id, MMI_APS_Plugin::META_SALE_STATUS, $status );
 			}
 		}
 	}

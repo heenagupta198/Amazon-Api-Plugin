@@ -1,6 +1,6 @@
 <?php
 /**
- * 91mobiles-style PRICES tab — variant cards with Amazon / Flipkart rows.
+ * 91mobiles-style PRICES tab — variant cards with Amazon rows.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -187,11 +187,6 @@ class MMI_APS_Prices_Table {
 			$rows['amazon'] = self::build_amazon_row( $product_id );
 		}
 
-		$flipkart_url = MMI_APS_Flipkart_Product_Meta::get_product_url( $product_id );
-		if ( '' !== $flipkart_url ) {
-			$rows['flipkart'] = self::build_flipkart_row( $product_id );
-		}
-
 		return $rows;
 	}
 
@@ -200,9 +195,9 @@ class MMI_APS_Prices_Table {
 	 * @return array<string,mixed>
 	 */
 	private static function build_amazon_row( int $product_id ): array {
-		$available = ! MMI_APS_Product_Meta::is_unavailable( $product_id );
-		$price     = MMI_APS_Product_Meta::get_stored_amazon_price( $product_id );
-		$buy_url   = MMI_APS_Affiliate::get_affiliate_url( $product_id );
+		$status  = MMI_APS_Product_Meta::get_availability_status( $product_id );
+		$price   = MMI_APS_Product_Meta::get_stored_amazon_price( $product_id );
+		$buy_url = MMI_APS_Affiliate::get_affiliate_url( $product_id );
 
 		return array(
 			'name'          => 'Amazon',
@@ -210,30 +205,9 @@ class MMI_APS_Prices_Table {
 			'price_html'    => null !== $price ? MMI_APS_Product_Meta::format_inr( $price ) : '',
 			'buy_url'       => $buy_url,
 			'buy_label'     => MMI_APS_Settings::get_affiliate_button_text() ?: __( 'Go To Store', 'mmi-amazon-price-sync' ),
-			'availability'  => $available ? 'in_stock' : 'unavailable',
-			'show_price'    => $available && null !== $price,
-			'is_stale'      => $price && ! MMI_APS_Product_Meta::is_amazon_price_fresh( $product_id ),
-		);
-	}
-
-	/**
-	 * @param int $product_id Variation or product ID.
-	 * @return array<string,mixed>
-	 */
-	private static function build_flipkart_row( int $product_id ): array {
-		$status  = MMI_APS_Flipkart_Product_Meta::get_availability_status( $product_id );
-		$price   = MMI_APS_Flipkart_Product_Meta::get_stored_flipkart_price( $product_id );
-		$buy_url = MMI_APS_Flipkart_Product_Meta::get_affiliate_url( $product_id );
-
-		return array(
-			'name'         => 'Flipkart',
-			'price'        => $price,
-			'price_html'   => null !== $price ? MMI_APS_Product_Meta::format_inr( $price ) : '',
-			'buy_url'      => $buy_url,
-			'buy_label'    => MMI_APS_Settings::get_flipkart_button_text(),
-			'availability' => $status,
-			'show_price'   => 'in_stock' === $status && null !== $price,
-			'is_stale'     => $price && ! MMI_APS_Flipkart_Product_Meta::is_price_fresh( $product_id ),
+			'availability'  => $status,
+			'show_price'    => null !== $price && 'unavailable' !== $status,
+			'status_label'  => MMI_APS_Product_Meta::get_availability_label( $status ),
 		);
 	}
 
@@ -252,8 +226,11 @@ class MMI_APS_Prices_Table {
 			<div class="mmi-91-prices__price-wrap">
 				<?php if ( ! empty( $row['show_price'] ) && ! empty( $row['price_html'] ) ) : ?>
 					<span class="mmi-91-prices__price"><?php echo esc_html( (string) $row['price_html'] ); ?></span>
-				<?php elseif ( 'unavailable' === ( $row['availability'] ?? '' ) || 'out_of_stock' === ( $row['availability'] ?? '' ) ) : ?>
-					<span class="mmi-91-prices__status"><?php esc_html_e( 'Currently Unavailable', 'mmi-amazon-price-sync' ); ?></span>
+					<?php if ( 'out_of_stock' === ( $row['availability'] ?? '' ) ) : ?>
+						<span class="mmi-91-prices__status mmi-91-prices__status--oos"><?php echo esc_html( (string) ( $row['status_label'] ?? '' ) ); ?></span>
+					<?php endif; ?>
+				<?php elseif ( ! empty( $row['status_label'] ) ) : ?>
+					<span class="mmi-91-prices__status"><?php echo esc_html( (string) $row['status_label'] ); ?></span>
 				<?php else : ?>
 					<span class="mmi-91-prices__status"><?php esc_html_e( 'Price updating…', 'mmi-amazon-price-sync' ); ?></span>
 				<?php endif; ?>

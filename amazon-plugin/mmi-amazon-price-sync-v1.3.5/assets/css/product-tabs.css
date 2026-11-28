@@ -1,0 +1,66 @@
+/* 91mobiles-style tab chrome (WooCommerce tabs) */
+.woocommerce div.product .woocommerce-tabs ul.tabs li.mmi_prices_tab a,
+.woocommerce-Tabs-panel--mmi_prices {
+	font-weight: 600;
+}
+
+.woocommerce div.product .woocommerce-tabs ul.tabs li.mmi_prices_tab.active a {
+	color: #f8892f;
+	border-bottom-color: #f8892f;
+}
+
+.mmi-91-teaser {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	margin: 0.5rem 0 1rem;
+	padding: 1rem 1.1rem;
+	border: 1px solid #e8e8e8;
+	border-radius: 8px;
+	background: #fff;
+}
+
+.mmi-91-teaser__price {
+	font-size: 1.65rem;
+	font-weight: 800;
+	color: #111;
+	margin-right: 0.35rem;
+}
+
+.mmi-91-teaser__status {
+	font-size: 0.95rem;
+	color: #666;
+}
+
+.mmi-91-teaser__status--in-stock {
+	color: #2e7d32;
+}
+
+.mmi-91-teaser__status--out-of-stock {
+	color: #b32d2e;
+}
+
+.mmi-91-teaser__stores {
+	margin: 0.35rem 0 0;
+	font-size: 0.9rem;
+	color: #777;
+	width: 100%;
+}
+
+.mmi-91-teaser__see-prices {
+	display: inline-block;
+	padding: 0.65rem 1.4rem;
+	background: #f8892f;
+	color: #fff !important;
+	font-weight: 700;
+	border-radius: 6px;
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+.mmi-91-teaser__see-prices:hover {
+	background: #e67a22;
+	color: #fff !important;
+}

@@ -34,7 +34,7 @@ class MMI_APS_Sync {
 			);
 		}
 
-		$result = MMI_APS_API_Client::fetch_product( $asin );
+		$result = MMI_APS_Amazon_API::fetch_product( $asin );
 		if ( ! $result['success'] ) {
 			return array(
 				'success'    => false,
@@ -45,55 +45,6 @@ class MMI_APS_Sync {
 
 		MMI_APS_Product_Meta::save_amazon_data( $product_id, $asin, $result['data'] );
 		self::invalidate_product_count_cache();
-
-		$flipkart_url = MMI_APS_Flipkart_Product_Meta::get_product_url( $product_id );
-		if ( '' !== $flipkart_url && MMI_APS_Flipkart_API_Client::is_configured() ) {
-			self::sync_flipkart_product( $product_id, $flipkart_url );
-		}
-
-		return array(
-			'success'    => true,
-			'product_id' => $product_id,
-			'data'       => $result['data'],
-		);
-	}
-
-	/**
-	 * Sync one product's Flipkart listing.
-	 *
-	 * @param int         $product_id  Product or variation ID.
-	 * @param string|null $product_url Optional URL override.
-	 * @return array{success:bool,message?:string,data?:array,product_id?:int}
-	 */
-	public static function sync_flipkart_product( int $product_id, ?string $product_url = null ): array {
-		$product_url = null !== $product_url ? esc_url_raw( trim( $product_url ) ) : MMI_APS_Flipkart_Product_Meta::get_product_url( $product_id );
-
-		if ( '' === $product_url ) {
-			return array(
-				'success'    => false,
-				'product_id' => $product_id,
-				'message'    => __( 'Flipkart product URL is missing.', 'mmi-amazon-price-sync' ),
-			);
-		}
-
-		if ( ! MMI_APS_Flipkart_API_Client::is_configured() ) {
-			return array(
-				'success'    => false,
-				'product_id' => $product_id,
-				'message'    => MMI_APS_Flipkart_API_Client::get_pending_message(),
-			);
-		}
-
-		$result = MMI_APS_Flipkart_API_Client::fetch_product( $product_url );
-		if ( ! $result['success'] ) {
-			return array(
-				'success'    => false,
-				'product_id' => $product_id,
-				'message'    => $result['message'] ?? __( 'Flipkart sync failed.', 'mmi-amazon-price-sync' ),
-			);
-		}
-
-		MMI_APS_Flipkart_Product_Meta::save_flipkart_data( $product_id, $product_url, $result['data'] );
 
 		return array(
 			'success'    => true,

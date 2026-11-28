@@ -151,11 +151,13 @@ class MMI_APS_Frontend {
 		}
 
 		$product_id = $product->get_id();
-		if ( '' === MMI_APS_Product_Meta::get_asin( $product_id ) || ! MMI_APS_Product_Meta::is_unavailable( $product_id ) ) {
+		if ( '' === MMI_APS_Product_Meta::get_asin( $product_id ) || 'in_stock' === MMI_APS_Product_Meta::get_availability_status( $product_id ) ) {
 			return $html;
 		}
 
-		return '<span class="mmi-aps-unavailable">' . esc_html__( 'Currently Unavailable', 'mmi-amazon-price-sync' ) . '</span>';
+		$label = MMI_APS_Product_Meta::get_availability_label( MMI_APS_Product_Meta::get_availability_status( $product->get_id() ) );
+
+		return '<span class="mmi-aps-unavailable">' . esc_html( $label ) . '</span>';
 	}
 
 	/**

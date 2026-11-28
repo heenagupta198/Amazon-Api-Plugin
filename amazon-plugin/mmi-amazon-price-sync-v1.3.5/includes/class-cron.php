@@ -89,7 +89,7 @@ class MMI_APS_Cron {
 	}
 
 	public static function run_auto_sync(): void {
-		if ( ! MMI_APS_Settings::is_auto_sync_enabled() || '' === MMI_APS_Settings::get_api_key() ) {
+		if ( ! MMI_APS_Settings::is_auto_sync_enabled() || ! MMI_APS_Settings::is_api_configured() ) {
 			return;
 		}
 
@@ -99,7 +99,7 @@ class MMI_APS_Cron {
 	}
 
 	public static function run_continue_sync(): void {
-		if ( ! MMI_APS_Settings::is_auto_sync_enabled() || '' === MMI_APS_Settings::get_api_key() ) {
+		if ( ! MMI_APS_Settings::is_auto_sync_enabled() || ! MMI_APS_Settings::is_api_configured() ) {
 			return;
 		}
 

@@ -41,8 +41,8 @@ final class MMI_APS_Plugin {
 		MMI_APS_Product_Meta::init();
 		MMI_APS_Frontend::init();
 		MMI_APS_Affiliate::maybe_init();
-		MMI_APS_Flipkart_Product_Meta::init();
-		MMI_APS_Marketplace_Frontend::init();
+		MMI_APS_Product_Tabs::init();
+		MMI_APS_Price_Teaser::init();
 		MMI_APS_Prices_Table::init();
 		MMI_APS_Variation_Marketplace::init();
 	}

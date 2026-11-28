@@ -13,7 +13,7 @@ class MMI_APS_WC_Settings_Amazon_Price extends WC_Settings_Page {
 
 	public function __construct() {
 		$this->id    = 'mmi_amazon_price_sync';
-		$this->label = __( 'Marketplace Pricing', 'mmi-amazon-price-sync' );
+		$this->label = __( 'Amazon Price Sync', 'mmi-amazon-price-sync' );
 
 		parent::__construct();
 	}
@@ -26,10 +26,20 @@ class MMI_APS_WC_Settings_Amazon_Price extends WC_Settings_Page {
 
 		$settings = array(
 			array(
-				'title' => __( 'RapidAPI Configuration', 'mmi-amazon-price-sync' ),
+				'title' => __( 'Amazon price API', 'mmi-amazon-price-sync' ),
 				'type'  => 'title',
-				'desc'  => __( 'Connect to your RapidAPI Amazon India product endpoint. Each product only needs an ASIN — the plugin fetches the live price.', 'mmi-amazon-price-sync' ),
+				'desc'  => __( 'Choose RapidAPI or Amazon Creators API — the saved provider is used for all sync.', 'mmi-amazon-price-sync' ),
 				'id'    => 'mmi_aps_api_options',
+			),
+			array(
+				'title'   => __( 'Price API provider', 'mmi-amazon-price-sync' ),
+				'id'      => MMI_APS_Settings::OPTION_API_PROVIDER,
+				'type'    => 'select',
+				'default' => 'rapidapi',
+				'options' => array(
+					'rapidapi' => __( 'RapidAPI', 'mmi-amazon-price-sync' ),
+					'creators' => __( 'Amazon Creators API', 'mmi-amazon-price-sync' ),
+				),
 			),
 		);
 
@@ -99,75 +109,35 @@ class MMI_APS_WC_Settings_Amazon_Price extends WC_Settings_Page {
 					'id'   => 'mmi_aps_howto',
 				),
 				array(
-					'title' => __( 'Flipkart Affiliate API', 'mmi-amazon-price-sync' ),
+					'title' => __( 'Amazon Creators API', 'mmi-amazon-price-sync' ),
 					'type'  => 'title',
-					'desc'  => __( 'Enable after Flipkart approves your affiliate account. Until then, save Flipkart product URLs on each variant so Buy links are ready when you turn the API on.', 'mmi-amazon-price-sync' ),
-					'id'    => 'mmi_aps_flipkart_options',
+					'id'    => 'mmi_aps_creators_options',
 				),
 				array(
-					'title'   => __( 'Flipkart API enabled', 'mmi-amazon-price-sync' ),
-					'desc'    => __( 'Turn on when Affiliate ID and Token are active', 'mmi-amazon-price-sync' ),
-					'id'      => MMI_APS_Settings::OPTION_FLIPKART_ENABLED,
-					'type'    => 'checkbox',
-					'default' => 'no',
+					'title' => __( 'Credential ID', 'mmi-amazon-price-sync' ),
+					'id'    => MMI_APS_Settings::OPTION_CREATORS_CLIENT_ID,
+					'type'  => 'text',
 				),
 				array(
-					'title'    => __( 'Flipkart Affiliate ID', 'mmi-amazon-price-sync' ),
-					'id'       => MMI_APS_Settings::OPTION_FLIPKART_AFFILIATE_ID,
-					'type'     => 'text',
-					'default'  => '',
-					'desc_tip' => true,
+					'title' => __( 'Credential Secret', 'mmi-amazon-price-sync' ),
+					'id'    => MMI_APS_Settings::OPTION_CREATORS_CLIENT_SECRET,
+					'type'  => 'password',
 				),
 				array(
-					'title'    => __( 'Flipkart Affiliate Token', 'mmi-amazon-price-sync' ),
-					'id'       => MMI_APS_Settings::OPTION_FLIPKART_TOKEN,
-					'type'     => 'password',
-					'default'  => '',
-					'desc_tip' => true,
+					'title'   => __( 'API version', 'mmi-amazon-price-sync' ),
+					'id'      => MMI_APS_Settings::OPTION_CREATORS_VERSION,
+					'type'    => 'text',
+					'default' => MMI_APS_Settings::DEFAULT_CREATORS_VERSION,
 				),
 				array(
-					'title'    => __( 'Flipkart button text', 'mmi-amazon-price-sync' ),
-					'id'       => MMI_APS_Settings::OPTION_FLIPKART_BTN_TEXT,
-					'type'     => 'text',
-					'default'  => __( 'Buy on Flipkart', 'mmi-amazon-price-sync' ),
+					'title'   => __( 'Marketplace', 'mmi-amazon-price-sync' ),
+					'id'      => MMI_APS_Settings::OPTION_MARKETPLACE,
+					'type'    => 'text',
+					'default' => MMI_APS_Settings::DEFAULT_MARKETPLACE,
 				),
 				array(
 					'type' => 'sectionend',
-					'id'   => 'mmi_aps_flipkart_options',
-				),
-				array(
-					'title' => __( 'Storefront display', 'mmi-amazon-price-sync' ),
-					'type'  => 'title',
-					'id'    => 'mmi_aps_marketplace_options',
-				),
-				array(
-					'title'   => __( '91mobiles-style prices table on product page', 'mmi-amazon-price-sync' ),
-					'desc'    => __( 'Shows all variants with Amazon / Flipkart rows. Or use shortcode [mmi_phone_prices] on the PRICES tab.', 'mmi-amazon-price-sync' ),
-					'id'      => MMI_APS_Settings::OPTION_PRICES_TABLE_ON_PRODUCT,
-					'type'    => 'checkbox',
-					'default' => 'no',
-				),
-				array(
-					'title'   => __( 'Compact marketplace box (above price)', 'mmi-amazon-price-sync' ),
-					'id'      => MMI_APS_Settings::OPTION_COMPACT_MARKETPLACE,
-					'type'    => 'checkbox',
-					'default' => 'no',
-				),
-				array(
-					'title'             => __( 'Max price age (hours)', 'mmi-amazon-price-sync' ),
-					'desc'              => __( 'Prices older than this are hidden until the next sync.', 'mmi-amazon-price-sync' ),
-					'id'                => MMI_APS_Settings::OPTION_PRICE_MAX_AGE_HOURS,
-					'type'              => 'number',
-					'default'           => 36,
-					'custom_attributes' => array(
-						'min'  => 6,
-						'max'  => 168,
-						'step' => 1,
-					),
-				),
-				array(
-					'type' => 'sectionend',
-					'id'   => 'mmi_aps_marketplace_options',
+					'id'   => 'mmi_aps_creators_options',
 				),
 			)
 		);

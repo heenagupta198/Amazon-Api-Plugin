@@ -7,6 +7,11 @@ defined( 'ABSPATH' ) || exit;
 
 class MMI_APS_Settings {
 
+	public const OPTION_API_PROVIDER         = 'mmi_aps_api_provider';
+	public const OPTION_CREATORS_CLIENT_ID   = 'mmi_aps_creators_client_id';
+	public const OPTION_CREATORS_CLIENT_SECRET = 'mmi_aps_creators_client_secret';
+	public const OPTION_CREATORS_VERSION     = 'mmi_aps_creators_version';
+	public const OPTION_MARKETPLACE          = 'mmi_aps_marketplace';
 	public const OPTION_API_KEY      = 'mmi_aps_rapidapi_key';
 	public const OPTION_API_HOST     = 'mmi_aps_rapidapi_host';
 	public const OPTION_API_ENDPOINT = 'mmi_aps_api_endpoint';
@@ -31,8 +36,10 @@ class MMI_APS_Settings {
 	public const OPTION_PRICES_TABLE_ON_PRODUCT  = 'mmi_aps_prices_table_on_product';
 	public const OPTION_COMPACT_MARKETPLACE      = 'mmi_aps_compact_marketplace';
 
-	public const DEFAULT_HOST     = 'real-time-amazon-data.p.rapidapi.com';
-	public const DEFAULT_ENDPOINT = '/product-details';
+	public const DEFAULT_HOST             = 'real-time-amazon-data.p.rapidapi.com';
+	public const DEFAULT_ENDPOINT         = '/product-details';
+	public const DEFAULT_MARKETPLACE      = 'www.amazon.in';
+	public const DEFAULT_CREATORS_VERSION = '3.2';
 
 	public static function init(): void {
 		add_filter( 'woocommerce_get_settings_pages', array( __CLASS__, 'add_settings_page' ) );
@@ -67,6 +74,51 @@ class MMI_APS_Settings {
 		require_once MMI_APS_PATH . 'includes/class-wc-settings-amazon-price.php';
 		$settings[] = new MMI_APS_WC_Settings_Amazon_Price();
 		return $settings;
+	}
+
+	public static function get_api_provider(): string {
+		$provider = sanitize_key( (string) get_option( self::OPTION_API_PROVIDER, 'rapidapi' ) );
+		return in_array( $provider, array( 'rapidapi', 'creators' ), true ) ? $provider : 'rapidapi';
+	}
+
+	public static function use_creators_api(): bool {
+		return 'creators' === self::get_api_provider();
+	}
+
+	public static function is_api_configured(): bool {
+		if ( self::use_creators_api() ) {
+			return '' !== self::get_creators_client_id()
+				&& '' !== self::get_creators_client_secret()
+				&& '' !== self::get_affiliate_tag();
+		}
+
+		return '' !== self::get_api_key();
+	}
+
+	public static function get_creators_client_id(): string {
+		if ( defined( 'MMI_APS_CREATORS_CLIENT_ID' ) && MMI_APS_CREATORS_CLIENT_ID ) {
+			return trim( (string) MMI_APS_CREATORS_CLIENT_ID );
+		}
+
+		return trim( (string) get_option( self::OPTION_CREATORS_CLIENT_ID, '' ) );
+	}
+
+	public static function get_creators_client_secret(): string {
+		if ( defined( 'MMI_APS_CREATORS_CLIENT_SECRET' ) && MMI_APS_CREATORS_CLIENT_SECRET ) {
+			return trim( (string) MMI_APS_CREATORS_CLIENT_SECRET );
+		}
+
+		return trim( (string) get_option( self::OPTION_CREATORS_CLIENT_SECRET, '' ) );
+	}
+
+	public static function get_creators_version(): string {
+		$version = trim( (string) get_option( self::OPTION_CREATORS_VERSION, self::DEFAULT_CREATORS_VERSION ) );
+		return $version ?: self::DEFAULT_CREATORS_VERSION;
+	}
+
+	public static function get_marketplace(): string {
+		$marketplace = trim( (string) get_option( self::OPTION_MARKETPLACE, self::DEFAULT_MARKETPLACE ) );
+		return $marketplace ?: self::DEFAULT_MARKETPLACE;
 	}
 
 	/**

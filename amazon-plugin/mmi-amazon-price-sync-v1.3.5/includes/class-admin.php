@@ -147,26 +147,20 @@ class MMI_APS_Admin {
 				'sanitize_callback' => array( __CLASS__, 'sanitize_cron_batch_size' ),
 			)
 		);
-		foreach (
-			array(
-				MMI_APS_Settings::OPTION_FLIPKART_ENABLED,
-				MMI_APS_Settings::OPTION_PRICES_TABLE_ON_PRODUCT,
-				MMI_APS_Settings::OPTION_COMPACT_MARKETPLACE,
-				MMI_APS_Settings::OPTION_MARKETPLACE_DISPLAY,
-			) as $fk_yes_no
-		) {
-			register_setting(
-				'mmi_aps_settings',
-				$fk_yes_no,
-				array(
-					'type'              => 'string',
-					'sanitize_callback' => array( __CLASS__, 'sanitize_yes_no' ),
-				)
-			);
-		}
 		register_setting(
 			'mmi_aps_settings',
-			MMI_APS_Settings::OPTION_FLIPKART_AFFILIATE_ID,
+			MMI_APS_Settings::OPTION_API_PROVIDER,
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => static function ( $v ) {
+					$v = sanitize_key( (string) $v );
+					return in_array( $v, array( 'rapidapi', 'creators' ), true ) ? $v : 'rapidapi';
+				},
+			)
+		);
+		register_setting(
+			'mmi_aps_settings',
+			MMI_APS_Settings::OPTION_CREATORS_CLIENT_ID,
 			array(
 				'type'              => 'string',
 				'sanitize_callback' => 'sanitize_text_field',
@@ -174,7 +168,7 @@ class MMI_APS_Admin {
 		);
 		register_setting(
 			'mmi_aps_settings',
-			MMI_APS_Settings::OPTION_FLIPKART_TOKEN,
+			MMI_APS_Settings::OPTION_CREATORS_CLIENT_SECRET,
 			array(
 				'type'              => 'string',
 				'sanitize_callback' => 'sanitize_text_field',
@@ -182,7 +176,15 @@ class MMI_APS_Admin {
 		);
 		register_setting(
 			'mmi_aps_settings',
-			MMI_APS_Settings::OPTION_FLIPKART_BTN_TEXT,
+			MMI_APS_Settings::OPTION_CREATORS_VERSION,
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+			)
+		);
+		register_setting(
+			'mmi_aps_settings',
+			MMI_APS_Settings::OPTION_MARKETPLACE,
 			array(
 				'type'              => 'string',
 				'sanitize_callback' => 'sanitize_text_field',
@@ -253,11 +255,24 @@ class MMI_APS_Admin {
 		$affiliate_tag  = MMI_APS_Settings::get_affiliate_tag();
 		$affiliate_text = (string) get_option( MMI_APS_Settings::OPTION_AFFILIATE_BTN_TEXT, '' );
 		$affiliate_shop = MMI_APS_Settings::show_affiliate_on_shop();
-		$affiliate_disc = MMI_APS_Settings::show_affiliate_disclosure();
+		$affiliate_disc     = MMI_APS_Settings::show_affiliate_disclosure();
+		$api_provider       = MMI_APS_Settings::get_api_provider();
+		$creators_id        = MMI_APS_Settings::get_creators_client_id();
+		$creators_secret    = MMI_APS_Settings::get_creators_client_secret();
+		$creators_version   = MMI_APS_Settings::get_creators_version();
+		$creators_market    = MMI_APS_Settings::get_marketplace();
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Amazon Price Sync', 'mmi-amazon-price-sync' ); ?></h1>
-			<p><?php esc_html_e( 'Connect WooCommerce products to Amazon India prices via RapidAPI. Add an ASIN on each product, then click Fetch Price.', 'mmi-amazon-price-sync' ); ?></p>
+			<p>
+				<?php
+				printf(
+					/* translators: %s: active API name */
+					esc_html__( 'Active price source: %s. Add an ASIN on each product or variant, then Fetch Amazon.', 'mmi-amazon-price-sync' ),
+					esc_html( MMI_APS_Amazon_API::get_active_provider_label() )
+				);
+				?>
+			</p>
 
 			<?php if ( $wrong_host ) : ?>
 				<div class="notice notice-error"><p>
@@ -267,6 +282,20 @@ class MMI_APS_Admin {
 
 			<form method="post" action="options.php">
 				<?php settings_fields( 'mmi_aps_settings' ); ?>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Price API provider', 'mmi-amazon-price-sync' ); ?></th>
+						<td>
+							<select name="<?php echo esc_attr( MMI_APS_Settings::OPTION_API_PROVIDER ); ?>">
+								<option value="rapidapi" <?php selected( $api_provider, 'rapidapi' ); ?>><?php esc_html_e( 'RapidAPI (paid)', 'mmi-amazon-price-sync' ); ?></option>
+								<option value="creators" <?php selected( $api_provider, 'creators' ); ?>><?php esc_html_e( 'Amazon Creators API (official)', 'mmi-amazon-price-sync' ); ?></option>
+							</select>
+							<p class="description"><?php esc_html_e( 'Whichever you save here is used for Fetch Amazon and auto sync.', 'mmi-amazon-price-sync' ); ?></p>
+						</td>
+					</tr>
+				</table>
+
+				<h2><?php esc_html_e( 'RapidAPI', 'mmi-amazon-price-sync' ); ?></h2>
 				<table class="form-table" role="presentation">
 					<tr>
 						<th scope="row"><?php esc_html_e( 'RapidAPI Key', 'mmi-amazon-price-sync' ); ?></th>
@@ -307,6 +336,35 @@ class MMI_APS_Admin {
 						</td>
 					</tr>
 				</table>
+
+				<h2><?php esc_html_e( 'Amazon Creators API', 'mmi-amazon-price-sync' ); ?></h2>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Credential ID', 'mmi-amazon-price-sync' ); ?></th>
+						<td>
+							<input type="text" class="regular-text" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_CREATORS_CLIENT_ID ); ?>" value="<?php echo esc_attr( $creators_id ); ?>" autocomplete="off" />
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Credential Secret', 'mmi-amazon-price-sync' ); ?></th>
+						<td>
+							<input type="password" class="regular-text" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_CREATORS_CLIENT_SECRET ); ?>" value="<?php echo esc_attr( $creators_secret ); ?>" autocomplete="off" />
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'API version', 'mmi-amazon-price-sync' ); ?></th>
+						<td>
+							<input type="text" class="small-text" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_CREATORS_VERSION ); ?>" value="<?php echo esc_attr( $creators_version ); ?>" />
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Marketplace', 'mmi-amazon-price-sync' ); ?></th>
+						<td>
+							<input type="text" class="regular-text" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_MARKETPLACE ); ?>" value="<?php echo esc_attr( $creators_market ); ?>" placeholder="www.amazon.in" />
+						</td>
+					</tr>
+				</table>
+				<p class="description"><?php esc_html_e( 'Creators API also requires Amazon Affiliate Tag below. OAuth uses India marketplace headers.', 'mmi-amazon-price-sync' ); ?></p>
 
 				<h2><?php esc_html_e( 'Auto Sync', 'mmi-amazon-price-sync' ); ?></h2>
 				<p><?php esc_html_e( 'Automatically update prices for all products that have an Amazon ASIN.', 'mmi-amazon-price-sync' ); ?></p>
@@ -414,55 +472,8 @@ class MMI_APS_Admin {
 					</tr>
 				</table>
 
-				<h2><?php esc_html_e( 'Flipkart Affiliate API', 'mmi-amazon-price-sync' ); ?></h2>
-				<?php
-				$fk_pending  = MMI_APS_Flipkart_API_Client::get_pending_message();
-				$fk_enabled  = MMI_APS_Settings::is_flipkart_api_enabled();
-				$fk_affid    = MMI_APS_Settings::get_flipkart_affiliate_id();
-				$fk_token    = MMI_APS_Settings::get_flipkart_affiliate_token();
-				$fk_btn      = (string) get_option( MMI_APS_Settings::OPTION_FLIPKART_BTN_TEXT, '' );
-				?>
-				<?php if ( '' !== $fk_pending && ! MMI_APS_Flipkart_API_Client::is_configured() ) : ?>
-					<div class="notice notice-warning inline"><p><?php echo esc_html( $fk_pending ); ?></p></div>
-				<?php endif; ?>
-				<p><?php esc_html_e( 'Save Flipkart product URLs on each variant now. When Flipkart approves your affiliate account, enable the API here for automatic price sync.', 'mmi-amazon-price-sync' ); ?></p>
-				<table class="form-table" role="presentation">
-					<tr>
-						<th scope="row"><?php esc_html_e( 'Flipkart API enabled', 'mmi-amazon-price-sync' ); ?></th>
-						<td>
-							<input type="hidden" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_FLIPKART_ENABLED ); ?>" value="no" />
-							<label>
-								<input type="checkbox" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_FLIPKART_ENABLED ); ?>" value="yes" <?php checked( $fk_enabled ); ?> />
-								<?php esc_html_e( 'Enable Flipkart Affiliate Product API', 'mmi-amazon-price-sync' ); ?>
-							</label>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><?php esc_html_e( 'Flipkart Affiliate ID', 'mmi-amazon-price-sync' ); ?></th>
-						<td>
-							<input type="text" class="regular-text" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_FLIPKART_AFFILIATE_ID ); ?>" value="<?php echo esc_attr( $fk_affid ); ?>" placeholder="youraffid" />
-							<p class="description"><?php esc_html_e( 'Fk-Affiliate-Id from Flipkart Affiliate dashboard.', 'mmi-amazon-price-sync' ); ?></p>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><?php esc_html_e( 'Flipkart Affiliate Token', 'mmi-amazon-price-sync' ); ?></th>
-						<td>
-							<input type="password" class="regular-text" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_FLIPKART_TOKEN ); ?>" value="<?php echo esc_attr( $fk_token ); ?>" autocomplete="off" />
-							<p class="description"><?php esc_html_e( 'Fk-Affiliate-Token — available after account approval.', 'mmi-amazon-price-sync' ); ?></p>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><?php esc_html_e( 'Flipkart button text', 'mmi-amazon-price-sync' ); ?></th>
-						<td>
-							<input type="text" class="regular-text" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_FLIPKART_BTN_TEXT ); ?>" value="<?php echo esc_attr( $fk_btn ); ?>" placeholder="<?php esc_attr_e( 'Go To Store', 'mmi-amazon-price-sync' ); ?>" />
-						</td>
-					</tr>
-				</table>
-				<p class="description"><code>define( 'MMI_APS_FLIPKART_AFFILIATE_ID', '...' );</code> / <code>MMI_APS_FLIPKART_AFFILIATE_TOKEN</code> <?php esc_html_e( 'in wp-config.php override these fields.', 'mmi-amazon-price-sync' ); ?></p>
-
-				<h2><?php esc_html_e( 'PRICES tab (91mobiles layout)', 'mmi-amazon-price-sync' ); ?></h2>
-				<p><?php esc_html_e( 'Add this shortcode on your product PRICES tab or page builder:', 'mmi-amazon-price-sync' ); ?></p>
-				<p><code>[mmi_phone_prices]</code> <?php esc_html_e( 'or', 'mmi-amazon-price-sync' ); ?> <code>[mmi_phone_prices id="123"]</code></p>
+				<h2><?php esc_html_e( 'Storefront (91mobiles)', 'mmi-amazon-price-sync' ); ?></h2>
+				<p><?php esc_html_e( 'The plugin adds a WooCommerce PRICES tab and a See Prices button. Flipkart will be added later.', 'mmi-amazon-price-sync' ); ?></p>
 
 				<?php if ( $affiliate_on && $affiliate_tag ) : ?>
 					<p class="description">
@@ -636,7 +647,7 @@ class MMI_APS_Admin {
 			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mmi-amazon-price-sync' ) ) );
 		}
 
-		$result = MMI_APS_API_Client::fetch_product( 'B0H8STM6G2' );
+		$result = MMI_APS_Amazon_API::fetch_product( 'B0H8STM6G2' );
 
 		if ( ! $result['success'] ) {
 			wp_send_json_error( array( 'message' => $result['message'] ) );

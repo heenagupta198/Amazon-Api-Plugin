@@ -297,18 +297,20 @@ class MMI_APS_Product_Meta {
 			wp_send_json_error( array( 'message' => $result['message'] ) );
 		}
 
-		$data = $result['data'];
-		$available = ! empty( $data['available'] );
+		$data  = $result['data'];
+		$stock = self::resolve_stock_status( $data );
 
 		wp_send_json_success(
 			array(
-				'message'            => $available
+				'message'            => 'in_stock' === $stock
 					? __( 'Price fetched and saved.', 'mmi-amazon-price-sync' )
-					: __( 'Product saved as Currently Unavailable on Amazon.', 'mmi-amazon-price-sync' ),
+					: ( 'out_of_stock' === $stock
+						? __( 'Saved as Out of Stock on Amazon.', 'mmi-amazon-price-sync' )
+						: __( 'Product saved as Currently Unavailable on Amazon.', 'mmi-amazon-price-sync' ) ),
 				'asin'               => $asin,
-				'available'          => $available,
-				'availability'       => $available ? 'available' : 'unavailable',
-				'availability_label' => self::get_availability_label( $available ? 'available' : 'unavailable' ),
+				'available'          => 'in_stock' === $stock,
+				'availability'       => $stock,
+				'availability_label' => self::get_availability_label( $stock ),
 				'price'              => $data['price'],
 				'price_formatted'    => $data['price'] ? self::format_inr( (float) $data['price'] ) : '—',
 				'original_price'     => $data['original_price'],
@@ -328,12 +330,12 @@ class MMI_APS_Product_Meta {
 	 * @param array<string,mixed>   $data       Parsed API data.
 	 */
 	public static function save_amazon_data( int $product_id, string $asin, array $data ): void {
-		$available = ! empty( $data['available'] );
+		$stock = self::resolve_stock_status( $data );
 
 		update_post_meta( $product_id, MMI_APS_Plugin::META_ASIN, $asin );
-		update_post_meta( $product_id, MMI_APS_Plugin::META_AVAILABILITY, $available ? 'available' : 'unavailable' );
-		update_post_meta( $product_id, MMI_APS_Plugin::META_PRICE, $available && ! empty( $data['price'] ) ? $data['price'] : '' );
-		update_post_meta( $product_id, MMI_APS_Plugin::META_ORIGINAL_PRICE, $available && ! empty( $data['original_price'] ) ? $data['original_price'] : '' );
+		update_post_meta( $product_id, MMI_APS_Plugin::META_AVAILABILITY, $stock );
+		update_post_meta( $product_id, MMI_APS_Plugin::META_PRICE, ! empty( $data['price'] ) ? $data['price'] : '' );
+		update_post_meta( $product_id, MMI_APS_Plugin::META_ORIGINAL_PRICE, ! empty( $data['original_price'] ) ? $data['original_price'] : '' );
 		update_post_meta( $product_id, MMI_APS_Plugin::META_TITLE, $data['title'] ?? '' );
 		update_post_meta( $product_id, MMI_APS_Plugin::META_CURRENCY, $data['currency'] ?? 'INR' );
 		update_post_meta( $product_id, MMI_APS_Plugin::META_DELIVERY, $data['delivery'] ?? '' );
@@ -379,7 +381,7 @@ class MMI_APS_Product_Meta {
 	 * @param int $product_id Product ID.
 	 */
 	public static function get_amazon_price( int $product_id ): ?float {
-		if ( self::is_unavailable( $product_id ) ) {
+		if ( 'unavailable' === self::get_availability_status( $product_id ) ) {
 			return null;
 		}
 
@@ -429,25 +431,73 @@ class MMI_APS_Product_Meta {
 	/**
 	 * @param int $product_id Product ID.
 	 */
+	/**
+	 * @param array<string,mixed> $data API payload.
+	 */
+	public static function resolve_stock_status( array $data ): string {
+		if ( ! empty( $data['available'] ) && ! empty( $data['price'] ) ) {
+			return 'in_stock';
+		}
+
+		if ( ! empty( $data['available'] ) ) {
+			return 'in_stock';
+		}
+
+		$text = strtolower( (string) ( $data['availability_text'] ?? '' ) );
+		if ( false !== strpos( $text, 'out of stock' ) ) {
+			return 'out_of_stock';
+		}
+
+		if ( ! empty( $data['price'] ) ) {
+			return 'out_of_stock';
+		}
+
+		return 'unavailable';
+	}
+
+	/**
+	 * @param int $product_id Product ID.
+	 */
 	public static function get_availability_status( int $product_id ): string {
 		$status = (string) get_post_meta( $product_id, MMI_APS_Plugin::META_AVAILABILITY, true );
-		return 'unavailable' === $status ? 'unavailable' : 'available';
+
+		if ( in_array( $status, array( 'in_stock', 'out_of_stock', 'unavailable' ), true ) ) {
+			return $status;
+		}
+
+		if ( 'available' === $status ) {
+			return 'in_stock';
+		}
+
+		return 'unavailable';
+	}
+
+	/**
+	 * @param int $product_id Product ID.
+	 */
+	public static function is_in_stock( int $product_id ): bool {
+		return 'in_stock' === self::get_availability_status( $product_id );
 	}
 
 	/**
 	 * @param int $product_id Product ID.
 	 */
 	public static function is_unavailable( int $product_id ): bool {
-		return 'unavailable' === self::get_availability_status( $product_id );
+		return in_array( self::get_availability_status( $product_id ), array( 'unavailable', 'out_of_stock' ), true );
 	}
 
 	/**
-	 * @param string $status available|unavailable
+	 * @param string $status in_stock|out_of_stock|unavailable
 	 */
 	public static function get_availability_label( string $status ): string {
-		return 'unavailable' === $status
-			? __( 'Currently Unavailable', 'mmi-amazon-price-sync' )
-			: __( 'In Stock', 'mmi-amazon-price-sync' );
+		if ( 'out_of_stock' === $status ) {
+			return __( 'Out of Stock', 'mmi-amazon-price-sync' );
+		}
+		if ( 'unavailable' === $status ) {
+			return __( 'Currently Unavailable', 'mmi-amazon-price-sync' );
+		}
+
+		return __( 'In Stock', 'mmi-amazon-price-sync' );
 	}
 
 	/**
