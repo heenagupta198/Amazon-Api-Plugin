@@ -30,8 +30,9 @@ class MarketFeedService
         }
 
         $ids = $stocks->pluck('security_id')->map(fn ($id) => (int) $id)->all();
-        $response = $this->dhan->marketOhlc($ids, 'NSE_EQ');
+        $response = $this->dhan->marketQuote($ids, 'NSE_EQ');
         $segmentData = $response['data']['NSE_EQ'] ?? [];
+        $totalVolume = 0;
 
         $niftyQuote = $this->fetchNiftyQuote();
         $indexRef = $niftyQuote['previous_close'] ?? $niftyQuote['ltp'] ?? 26000;
@@ -58,6 +59,8 @@ class MarketFeedService
             $stock->previous_close = $prevClose;
             $stock->change_amount = $changeAmount;
             $stock->change_percent = $changePercent;
+            $stock->volume = isset($quote['volume']) ? (int) $quote['volume'] : $stock->volume;
+            $totalVolume += (int) ($stock->volume ?? 0);
             $stock->quotes_updated_at = now();
             $this->contribution->applyToStock($stock, (float) $indexRef);
             $stock->save();
@@ -76,6 +79,7 @@ class MarketFeedService
                 'nifty_change' => isset($niftyQuote['ltp'], $niftyQuote['previous_close'])
                     ? round($niftyQuote['ltp'] - $niftyQuote['previous_close'], 2)
                     : null,
+                'total_volume' => $totalVolume > 0 ? $totalVolume : null,
                 'total_positive' => $summary['total_positive'],
                 'total_negative' => $summary['total_negative'],
                 'net_contribution' => $summary['net_contribution'],
@@ -135,13 +139,20 @@ class MarketFeedService
 
         $positive = $stocks->filter(fn (Stock $s) => (float) $s->net_contribution > 0)
             ->sortByDesc('net_contribution')
-            ->take(10)
+            ->take(5)
             ->values();
 
         $negative = $stocks->filter(fn (Stock $s) => (float) $s->net_contribution < 0)
             ->sortBy('net_contribution')
-            ->take(10)
+            ->take(5)
             ->values();
+
+        $topVolume = $stocks->filter(fn (Stock $s) => (int) ($s->volume ?? 0) > 0)
+            ->sortByDesc('volume')
+            ->take(5)
+            ->values();
+
+        $totalVolume = (int) $stocks->sum(fn (Stock $s) => (int) ($s->volume ?? 0));
 
         $summary = $snapshot ? [
             'total_positive' => (float) $snapshot->total_positive,
@@ -154,13 +165,16 @@ class MarketFeedService
             'nifty_change' => $snapshot->nifty_change !== null ? (float) $snapshot->nifty_change : null,
             'is_live' => (bool) $snapshot->is_live,
             'as_of' => optional($stocks->max('quotes_updated_at'))?->toIso8601String(),
-        ] : $this->demoSummary($stocks);
+            'total_volume' => $snapshot->total_volume !== null ? (int) $snapshot->total_volume : ($totalVolume ?: null),
+        ] : $this->demoSummary($stocks, $totalVolume);
 
         return [
+            'brand' => config('traderdomina.name'),
             'title' => 'NIFTY 50 – LIVE ANALYSIS',
             'summary' => $summary,
             'top_positive' => $positive->map(fn (Stock $s) => $this->stockRow($s))->all(),
             'top_negative' => $negative->map(fn (Stock $s) => $this->stockRow($s))->all(),
+            'top_volume' => $topVolume->map(fn (Stock $s) => $this->stockRow($s))->all(),
             'dhan_configured' => $this->dhan->isConfigured(),
         ];
     }
@@ -177,6 +191,7 @@ class MarketFeedService
             'change_percent' => $stock->change_percent !== null ? (float) $stock->change_percent : null,
             'weightage' => $stock->weightage !== null ? (float) $stock->weightage : null,
             'ltp' => $stock->ltp !== null ? (float) $stock->ltp : null,
+            'volume' => $stock->volume !== null ? (int) $stock->volume : null,
         ];
     }
 
@@ -184,7 +199,7 @@ class MarketFeedService
      * @param  Collection<int, Stock>  $stocks
      * @return array<string, mixed>
      */
-    private function demoSummary(Collection $stocks): array
+    private function demoSummary(Collection $stocks, int $totalVolume = 0): array
     {
         if ($stocks->isEmpty()) {
             return [
@@ -198,6 +213,7 @@ class MarketFeedService
                 'nifty_change' => null,
                 'is_live' => false,
                 'as_of' => null,
+                'total_volume' => null,
             ];
         }
 
@@ -208,6 +224,7 @@ class MarketFeedService
             'nifty_change' => $calc['net_contribution'],
             'is_live' => false,
             'as_of' => null,
+            'total_volume' => $totalVolume ?: null,
         ]);
     }
 }

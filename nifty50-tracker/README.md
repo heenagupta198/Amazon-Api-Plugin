@@ -1,6 +1,9 @@
-# Nifty 50 Contribution Tracker
+# Yogesh Traderdomina
 
-Production-oriented stack for breaking **Nifty 50** daily / intraday index movement into **stock-wise point contribution**, powered by **DhanHQ** market data.
+**Premium** Nifty 50 contribution tracker — subscription-only access (no public dashboard).  
+Powered by **DhanHQ** live quotes and volume.
+
+Deploy: **[DEPLOY-XAMPP-CPANEL.md](./DEPLOY-XAMPP-CPANEL.md)** (XAMPP + cPanel step-by-step).
 
 ## Stack
 

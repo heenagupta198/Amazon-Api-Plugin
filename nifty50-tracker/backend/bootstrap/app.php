@@ -16,6 +16,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(prepend: [
             \Illuminate\Http\Middleware\HandleCors::class,
         ]);
+        $middleware->alias([
+            'premium' => \App\Http\Middleware\EnsurePremiumSubscriber::class,
+            'admin' => \App\Http\Middleware\EnsureAdmin::class,
+        ]);
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+        $middleware->throttleApi();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

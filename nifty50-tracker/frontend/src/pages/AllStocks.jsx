@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../services/api'
+import { fmtVolume } from '../utils/format'
 
 export default function AllStocks() {
   const [rows, setRows] = useState([])
@@ -37,6 +38,7 @@ export default function AllStocks() {
               <th className="px-4 py-3">LTP</th>
               <th className="px-4 py-3">% Chg</th>
               <th className="px-4 py-3">Weight %</th>
+              <th className="px-4 py-3 text-right">Volume</th>
               <th className="px-4 py-3 text-right">Net pts</th>
             </tr>
           </thead>
@@ -47,6 +49,7 @@ export default function AllStocks() {
                 <td className="px-4 py-2 tabular-nums">{s.ltp ?? '—'}</td>
                 <td className="px-4 py-2 tabular-nums">{s.change_percent ?? '—'}</td>
                 <td className="px-4 py-2 tabular-nums">{s.weightage ?? '—'}</td>
+                <td className="px-4 py-2 text-right tabular-nums">{fmtVolume(s.volume)}</td>
                 <td className="px-4 py-2 text-right tabular-nums">{s.net_contribution ?? '—'}</td>
               </tr>
             ))}
