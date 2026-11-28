@@ -226,7 +226,8 @@ class MMI_APS_Prices_Table {
 			if ( empty( $vals ) ) {
 				continue;
 			}
-			$val = is_string( $vals[0] ) ? $vals[0] : (string) $vals[0];
+			$raw = $vals[0];
+			$val = self::resolve_attribute_term_name( $name, $raw );
 			if ( in_array( $name, $ram_keys, true ) || substr( $name, -3 ) === 'ram' ) {
 				$ram = $val;
 			}
@@ -362,12 +363,16 @@ class MMI_APS_Prices_Table {
 			$parts[] = self::format_capacity_part( $storage );
 		}
 
+		$parts = array_filter( $parts );
 		if ( ! empty( $parts ) ) {
 			return implode( ' + ', $parts );
 		}
 
 		if ( '' !== $size ) {
-			return self::normalize_combined_size_label( $size );
+			$size_label = self::normalize_combined_size_label( $size );
+			if ( '' !== $size_label ) {
+				return $size_label;
+			}
 		}
 
 		$formatted = wc_get_formatted_variation( $variation, true, false );
@@ -385,11 +390,70 @@ class MMI_APS_Prices_Table {
 	private static function read_variation_attr( WC_Product_Variation $variation, array $keys ): string {
 		foreach ( $keys as $key ) {
 			$val = trim( (string) $variation->get_attribute( $key ) );
+			if ( '' === $val ) {
+				$attrs = $variation->get_attributes();
+				$tax   = self::attribute_key_to_taxonomy( $key );
+				if ( isset( $attrs[ $tax ] ) ) {
+					$val = trim( (string) $attrs[ $tax ] );
+				}
+			}
 			if ( '' !== $val ) {
-				return $val;
+				$resolved = self::resolve_attribute_term_name( self::attribute_key_to_taxonomy( $key ), $val );
+				if ( '' !== $resolved ) {
+					return $resolved;
+				}
 			}
 		}
 		return '';
+	}
+
+	/**
+	 * Turn WooCommerce term IDs / slugs into readable labels (e.g. 11514 → "4 GB RAM").
+	 *
+	 * @param string     $attribute_name Attribute or taxonomy name.
+	 * @param string|int $raw            Slug, name, or term ID.
+	 */
+	private static function resolve_attribute_term_name( string $attribute_name, $raw ): string {
+		$value = trim( is_scalar( $raw ) ? (string) $raw : '' );
+		if ( '' === $value ) {
+			return '';
+		}
+
+		$taxonomy = self::attribute_key_to_taxonomy( $attribute_name );
+
+		if ( taxonomy_exists( $taxonomy ) ) {
+			$term = null;
+			if ( ctype_digit( $value ) ) {
+				$term = get_term( (int) $value, $taxonomy );
+			}
+			if ( ( ! $term || is_wp_error( $term ) ) ) {
+				$term = get_term_by( 'slug', $value, $taxonomy );
+			}
+			if ( ( ! $term || is_wp_error( $term ) ) ) {
+				$term = get_term_by( 'name', $value, $taxonomy );
+			}
+			if ( $term && ! is_wp_error( $term ) ) {
+				return $term->name;
+			}
+		}
+
+		// Never surface bare numeric term IDs in the storefront.
+		if ( ctype_digit( $value ) && (int) $value > 32 ) {
+			return '';
+		}
+
+		return $value;
+	}
+
+	private static function attribute_key_to_taxonomy( string $key ): string {
+		if ( 0 === strpos( $key, 'attribute_' ) ) {
+			$key = substr( $key, 10 );
+		}
+		if ( 0 === strpos( $key, 'pa_' ) ) {
+			return $key;
+		}
+
+		return wc_sanitize_taxonomy_name( $key );
 	}
 
 	private static function normalize_combined_size_label( string $value ): string {
@@ -422,6 +486,10 @@ class MMI_APS_Prices_Table {
 		$value = trim( preg_replace( '/\b(RAM|Storage|INTERNAL MEMORY|INTERNAL-MEMORY|ROM)\b/i', '', $value ) ?? $value );
 		$value = preg_replace( '/\s+/', ' ', $value ) ?? $value;
 
+		if ( ctype_digit( $value ) ) {
+			return '';
+		}
+
 		if ( preg_match( '/^(\d+)\s*(GB|TB)$/i', $value, $m ) ) {
 			return $m[1] . ' ' . strtoupper( $m[2] );
 		}
@@ -431,8 +499,12 @@ class MMI_APS_Prices_Table {
 		if ( preg_match( '/(\d+)\s*(GB|TB)/i', $value, $m ) ) {
 			return $m[1] . ' ' . strtoupper( $m[2] );
 		}
+		// Slugs like "4-gb" or "128gb-internal".
+		if ( preg_match( '/(\d+)[\s_-]*(gb|tb)/i', $value, $m ) ) {
+			return $m[1] . ' ' . strtoupper( $m[2] );
+		}
 
-		return $value;
+		return '';
 	}
 
 	/**
