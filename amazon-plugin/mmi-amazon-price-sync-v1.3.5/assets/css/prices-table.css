@@ -92,6 +92,18 @@
 	white-space: nowrap;
 }
 
+.mmi-91-prices__variant-prefix {
+	flex-shrink: 0;
+	font-weight: 600;
+	color: #444;
+	margin-right: 0.35rem;
+}
+
+.mmi-91-prices__variant-inline .mmi-91-prices__variant-prefix,
+.mmi-91-prices__variant .mmi-91-prices__variant-prefix {
+	margin-right: 0.4rem;
+}
+
 .mmi-91-prices__row:last-child {
 	border-bottom: none;
 }

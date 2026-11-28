@@ -127,7 +127,7 @@ class MMI_APS_Prices_Table {
 						<?php if ( $variant_in_head ) : ?>
 							<div class="mmi-91-prices__variant">
 								<span class="mmi-91-prices__variant-icon" aria-hidden="true"></span>
-								<span class="mmi-91-prices__variant-label"><?php echo esc_html( $variant_label ); ?></span>
+								<?php echo self::render_variant_inline_markup( $variant_label ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 							</div>
 						<?php endif; ?>
 						<div class="mmi-91-prices__rows">
@@ -182,7 +182,7 @@ class MMI_APS_Prices_Table {
 				}
 
 				$items[] = array(
-					'variant_label' => $label,
+					'variant_label' => self::finalize_variant_label( $label ),
 					'platforms'     => $platforms,
 				);
 			}
@@ -190,7 +190,7 @@ class MMI_APS_Prices_Table {
 			$platforms = self::platform_rows_for_id( $product->get_id() );
 			if ( ! empty( $platforms ) ) {
 				$items[] = array(
-					'variant_label' => self::get_product_listing_label( $product ),
+					'variant_label' => self::finalize_variant_label( self::get_product_listing_label( $product ) ),
 					'platforms'     => $platforms,
 				);
 			}
@@ -330,10 +330,10 @@ class MMI_APS_Prices_Table {
 				<span class="mmi-91-prices__logo mmi-91-prices__logo--<?php echo esc_attr( $platform_key ); ?>" aria-hidden="true"></span>
 				<span class="mmi-91-prices__store-name"><?php echo esc_html( (string) $row['name'] ); ?></span>
 			</div>
-			<?php if ( '' !== $variant_label ) : ?>
+			<?php if ( '' !== $variant_label && self::is_valid_variant_label( $variant_label ) ) : ?>
 				<div class="mmi-91-prices__variant-inline">
 					<span class="mmi-91-prices__variant-icon" aria-hidden="true"></span>
-					<span class="mmi-91-prices__variant-label"><?php echo esc_html( $variant_label ); ?></span>
+					<?php echo self::render_variant_inline_markup( $variant_label ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 				</div>
 			<?php endif; ?>
 			<div class="mmi-91-prices__price-wrap">
@@ -426,10 +426,6 @@ class MMI_APS_Prices_Table {
 	 * One attribute value holds full config, e.g. "12 GB RAM + 256 GB" (no separate Storage attribute).
 	 */
 	private static function is_combined_capacity_string( string $value ): bool {
-		if ( false !== strpos( $value, '+' ) ) {
-			return true;
-		}
-
 		return count( self::extract_capacity_parts( $value ) ) >= 2;
 	}
 
@@ -439,20 +435,50 @@ class MMI_APS_Prices_Table {
 	private static function label_from_capacity_string( string $value ): string {
 		$parts = self::extract_capacity_parts( $value );
 		if ( count( $parts ) >= 2 ) {
-			return implode( ' + ', $parts );
+			return self::finalize_variant_label( implode( ' + ', $parts ) );
 		}
 		if ( 1 === count( $parts ) ) {
-			return $parts[0];
+			return self::finalize_variant_label( $parts[0] );
 		}
 
-		return self::normalize_combined_size_label( $value );
+		$normalized = self::normalize_combined_size_label( $value );
+		return self::is_valid_variant_label( $normalized ) ? $normalized : '';
 	}
 
 	private static function finalize_variant_label( string $label ): string {
 		$label = trim( preg_replace( '/\s*\+\s*$/', '', $label ) ?? $label );
 		$label = trim( preg_replace( '/\s{2,}/', ' ', $label ) ?? $label );
 
-		return $label;
+		return self::is_valid_variant_label( $label ) ? $label : '';
+	}
+
+	private static function is_valid_variant_label( string $label ): bool {
+		$label = trim( $label );
+		if ( '' === $label ) {
+			return false;
+		}
+		if ( preg_match( '/^[\s\+]+$/', $label ) ) {
+			return false;
+		}
+
+		return (bool) preg_match( '/\d+\s*(GB|TB)/i', $label );
+	}
+
+	/**
+	 * PFA: "Storage" + 12 GB + 256 GB
+	 */
+	private static function render_variant_inline_markup( string $label ): string {
+		$label = self::finalize_variant_label( $label );
+		if ( '' === $label ) {
+			return '';
+		}
+
+		ob_start();
+		?>
+		<span class="mmi-91-prices__variant-prefix"><?php esc_html_e( 'Storage', 'mmi-amazon-price-sync' ); ?></span>
+		<span class="mmi-91-prices__variant-label"><?php echo esc_html( $label ); ?></span>
+		<?php
+		return (string) ob_get_clean();
 	}
 
 	/**
@@ -538,17 +564,28 @@ class MMI_APS_Prices_Table {
 		$value = preg_replace( '/\s*,\s*/', ' + ', $value ) ?? $value;
 		$value = preg_replace( '/\s+/', ' ', $value ) ?? $value;
 
-		$chunks = preg_split( '/\s+\+\s+/', $value ) ?: array();
+		$chunks = preg_split( '/\s*\+\s*/', $value ) ?: array();
 		$parts  = array();
 		foreach ( $chunks as $chunk ) {
 			$chunk = trim( (string) $chunk );
 			if ( '' === $chunk ) {
 				continue;
 			}
-			$parts[] = self::format_capacity_part( $chunk );
+			$part = self::format_capacity_part( $chunk );
+			if ( '' !== $part ) {
+				$parts[] = $part;
+			}
 		}
 
-		return ! empty( $parts ) ? implode( ' + ', $parts ) : trim( $value );
+		$parts = array_values( array_unique( $parts ) );
+		if ( count( $parts ) >= 2 ) {
+			return implode( ' + ', $parts );
+		}
+		if ( 1 === count( $parts ) ) {
+			return $parts[0];
+		}
+
+		return '';
 	}
 
 	/**
