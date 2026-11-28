@@ -246,11 +246,15 @@ class MMI_APS_Prices_Table {
 		if ( ! empty( $storage ) ) {
 			$parts[] = self::format_capacity_part( (string) $storage );
 		}
+		$parts = array_values( array_filter( $parts ) );
 		if ( ! empty( $parts ) ) {
 			return implode( ' + ', $parts );
 		}
 		if ( ! empty( $size ) ) {
-			return self::normalize_combined_size_label( (string) $size );
+			$size_label = self::normalize_combined_size_label( (string) $size );
+			if ( '' !== $size_label ) {
+				return $size_label;
+			}
 		}
 
 		$from_title = self::extract_capacity_parts( $product->get_name() );
