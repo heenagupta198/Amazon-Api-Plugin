@@ -118,16 +118,24 @@ class MMI_APS_Prices_Table {
 			</h3>
 			<div class="mmi-91-prices__cards">
 				<?php foreach ( $items as $item ) : ?>
+					<?php
+					$variant_label   = (string) ( $item['variant_label'] ?? '' );
+					$platform_count  = count( $item['platforms'] );
+					$variant_in_head = '' !== $variant_label && $platform_count > 1;
+					?>
 					<div class="mmi-91-prices__card">
-						<?php if ( ! empty( $item['variant_label'] ) ) : ?>
+						<?php if ( $variant_in_head ) : ?>
 							<div class="mmi-91-prices__variant">
 								<span class="mmi-91-prices__variant-icon" aria-hidden="true"></span>
-								<span class="mmi-91-prices__variant-label"><?php echo esc_html( $item['variant_label'] ); ?></span>
+								<span class="mmi-91-prices__variant-label"><?php echo esc_html( $variant_label ); ?></span>
 							</div>
 						<?php endif; ?>
 						<div class="mmi-91-prices__rows">
 							<?php foreach ( $item['platforms'] as $platform_key => $row ) : ?>
-								<?php echo self::render_store_row( $platform_key, $row ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+								<?php
+								$row_variant = $variant_in_head ? '' : $variant_label;
+								echo self::render_store_row( $platform_key, $row, $row_variant ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+								?>
 							<?php endforeach; ?>
 						</div>
 					</div>
@@ -168,8 +176,13 @@ class MMI_APS_Prices_Table {
 					continue;
 				}
 
+				$label = self::get_variation_label( $variation );
+				if ( '' === $label ) {
+					$label = self::get_product_listing_label( $variation );
+				}
+
 				$items[] = array(
-					'variant_label' => self::get_variation_label( $variation ),
+					'variant_label' => $label,
 					'platforms'     => $platforms,
 				);
 			}
@@ -177,13 +190,74 @@ class MMI_APS_Prices_Table {
 			$platforms = self::platform_rows_for_id( $product->get_id() );
 			if ( ! empty( $platforms ) ) {
 				$items[] = array(
-					'variant_label' => '',
+					'variant_label' => self::get_product_listing_label( $product ),
 					'platforms'     => $platforms,
 				);
 			}
 		}
 
 		return $items;
+	}
+
+	/**
+	 * Variant label for simple products (title / attributes), e.g. "4 GB + 128 GB".
+	 *
+	 * @param WC_Product $product Product.
+	 */
+	public static function get_product_listing_label( WC_Product $product ): string {
+		if ( $product instanceof WC_Product_Variation ) {
+			return self::get_variation_label( $product );
+		}
+
+		$ram_keys     = array( 'pa_ram', 'ram' );
+		$storage_keys = array( 'pa_internal-memory', 'pa_storage', 'pa_memory', 'storage', 'internal-memory' );
+		$size_keys    = array( 'pa_size', 'size' );
+
+		$ram     = '';
+		$storage = '';
+		$size    = '';
+
+		foreach ( $product->get_attributes() as $attribute ) {
+			if ( ! $attribute instanceof WC_Product_Attribute ) {
+				continue;
+			}
+			$name = $attribute->get_name();
+			$vals = $attribute->get_options();
+			if ( empty( $vals ) ) {
+				continue;
+			}
+			$val = is_string( $vals[0] ) ? $vals[0] : (string) $vals[0];
+			if ( in_array( $name, $ram_keys, true ) || substr( $name, -3 ) === 'ram' ) {
+				$ram = $val;
+			}
+			if ( in_array( $name, $storage_keys, true ) || false !== strpos( $name, 'memory' ) || false !== strpos( $name, 'storage' ) ) {
+				$storage = $val;
+			}
+			if ( in_array( $name, $size_keys, true ) ) {
+				$size = $val;
+			}
+		}
+
+		$parts = array();
+		if ( ! empty( $ram ) ) {
+			$parts[] = self::format_capacity_part( (string) $ram );
+		}
+		if ( ! empty( $storage ) ) {
+			$parts[] = self::format_capacity_part( (string) $storage );
+		}
+		if ( ! empty( $parts ) ) {
+			return implode( ' + ', $parts );
+		}
+		if ( ! empty( $size ) ) {
+			return self::normalize_combined_size_label( (string) $size );
+		}
+
+		$from_title = self::extract_capacity_parts( $product->get_name() );
+		if ( ! empty( $from_title ) ) {
+			return implode( ' + ', $from_title );
+		}
+
+		return '';
 	}
 
 	/**
@@ -223,17 +297,24 @@ class MMI_APS_Prices_Table {
 	}
 
 	/**
-	 * @param string               $platform_key amazon|flipkart.
-	 * @param array<string,mixed>  $row          Row data.
+	 * @param string               $platform_key  amazon|flipkart.
+	 * @param array<string,mixed>  $row           Row data.
+	 * @param string               $variant_label Variant (91mobiles: logo → variant → price → Go To Store).
 	 */
-	private static function render_store_row( string $platform_key, array $row ): string {
+	private static function render_store_row( string $platform_key, array $row, string $variant_label = '' ): string {
 		ob_start();
 		?>
-		<div class="mmi-91-prices__row mmi-91-prices__row--<?php echo esc_attr( $platform_key ); ?>">
+		<div class="mmi-91-prices__row mmi-91-prices__row--<?php echo esc_attr( $platform_key ); ?><?php echo '' !== $variant_label ? ' mmi-91-prices__row--has-variant' : ''; ?>">
 			<div class="mmi-91-prices__store">
 				<span class="mmi-91-prices__logo mmi-91-prices__logo--<?php echo esc_attr( $platform_key ); ?>" aria-hidden="true"></span>
 				<span class="mmi-91-prices__store-name"><?php echo esc_html( (string) $row['name'] ); ?></span>
 			</div>
+			<?php if ( '' !== $variant_label ) : ?>
+				<div class="mmi-91-prices__variant-inline">
+					<span class="mmi-91-prices__variant-icon" aria-hidden="true"></span>
+					<span class="mmi-91-prices__variant-label"><?php echo esc_html( $variant_label ); ?></span>
+				</div>
+			<?php endif; ?>
 			<div class="mmi-91-prices__price-wrap">
 				<?php if ( ! empty( $row['show_price'] ) && ! empty( $row['price_html'] ) ) : ?>
 					<span class="mmi-91-prices__price"><?php echo esc_html( (string) $row['price_html'] ); ?></span>

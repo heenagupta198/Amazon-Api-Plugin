@@ -65,11 +65,31 @@
 
 .mmi-91-prices__row {
 	display: grid;
-	grid-template-columns: 1fr auto auto;
+	grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto auto;
 	align-items: center;
-	gap: 0.75rem 1rem;
+	gap: 0.65rem 1rem;
 	padding: 0.85rem 1rem;
 	border-bottom: 1px solid #f5f5f5;
+}
+
+.mmi-91-prices__row:not(.mmi-91-prices__row--has-variant) {
+	grid-template-columns: minmax(0, auto) auto auto;
+}
+
+.mmi-91-prices__variant-inline {
+	display: flex;
+	align-items: center;
+	gap: 0.45rem;
+	font-weight: 600;
+	font-size: 0.95rem;
+	color: #222;
+	min-width: 0;
+}
+
+.mmi-91-prices__variant-inline .mmi-91-prices__variant-label {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .mmi-91-prices__row:last-child {
@@ -136,14 +156,24 @@
 }
 
 @media (max-width: 520px) {
-	.mmi-91-prices__row {
+	.mmi-91-prices__row.mmi-91-prices__row--has-variant {
+		grid-template-columns: 1fr auto;
+		grid-template-rows: auto auto auto;
+	}
+
+	.mmi-91-prices__row.mmi-91-prices__row--has-variant .mmi-91-prices__variant-inline {
+		grid-column: 1 / -1;
+	}
+
+	.mmi-91-prices__row:not(.mmi-91-prices__row--has-variant) {
 		grid-template-columns: 1fr auto;
 		grid-template-rows: auto auto;
 	}
 
-	.mmi-91-prices__go {
+	.mmi-91-prices__go,
+	.mmi-91-prices__oos {
 		grid-column: 2;
-		grid-row: 1 / span 2;
+		grid-row: 1;
 		align-self: center;
 	}
 }
