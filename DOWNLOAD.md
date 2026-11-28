@@ -52,6 +52,15 @@ https://github.com/heenagupta198/Amazon-Api-Plugin/raw/main/mmi-related-articles
 
 ---
 
+## MMI Amazon Price Sync — **v2.2.0** (91mobiles PRICES + variant Amazon)
+
+| | |
+|---|---|
+| **Version** | 2.2.0 |
+| **Direct download** | [**mmi-amazon-price-sync-v2.2.0.zip**](https://github.com/heenagupta198/Amazon-Api-Plugin/raw/cursor/dynamic-marketplace-pricing-b8ea/mmi-amazon-price-sync-v2.2.0.zip) |
+
+PRICES tab shortcode: `[mmi_phone_prices]`
+
 ## MMI Amazon Price Sync — **v2.1.0** (Amazon + Flipkart dynamic pricing)
 
 | | |
