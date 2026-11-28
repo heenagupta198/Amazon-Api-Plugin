@@ -209,6 +209,22 @@ class MMI_APS_Prices_Table {
 			return self::get_variation_label( $product );
 		}
 
+		foreach ( $product->get_attributes() as $attribute ) {
+			if ( ! $attribute instanceof WC_Product_Attribute ) {
+				continue;
+			}
+			$name = $attribute->get_name();
+			foreach ( $attribute->get_options() as $raw ) {
+				$val = self::resolve_attribute_term_name( $name, $raw );
+				if ( '' !== $val && self::is_combined_capacity_string( $val ) ) {
+					$label = self::label_from_capacity_string( $val );
+					if ( '' !== $label ) {
+						return $label;
+					}
+				}
+			}
+		}
+
 		$ram_keys     = array( 'pa_ram', 'ram' );
 		$storage_keys = array( 'pa_internal-memory', 'pa_storage', 'pa_memory', 'storage', 'internal-memory' );
 		$size_keys    = array( 'pa_size', 'size' );
@@ -352,12 +368,31 @@ class MMI_APS_Prices_Table {
 	 * @param WC_Product_Variation $variation Variation.
 	 */
 	public static function get_variation_label( WC_Product_Variation $variation ): string {
+		foreach ( $variation->get_attributes() as $taxonomy => $slug ) {
+			$resolved = self::resolve_attribute_term_name( (string) $taxonomy, $slug );
+			if ( '' !== $resolved && self::is_combined_capacity_string( $resolved ) ) {
+				$label = self::label_from_capacity_string( $resolved );
+				if ( '' !== $label ) {
+					return self::finalize_variant_label( $label );
+				}
+			}
+		}
+
 		$ram = self::read_variation_attr( $variation, array( 'pa_ram', 'ram', 'attribute_pa_ram', 'attribute_ram' ) );
 		$storage = self::read_variation_attr(
 			$variation,
 			array( 'pa_internal-memory', 'pa_storage', 'pa_memory', 'storage', 'internal-memory', 'attribute_pa_internal-memory', 'attribute_pa_storage' )
 		);
 		$size = self::read_variation_attr( $variation, array( 'pa_size', 'size', 'attribute_pa_size', 'attribute_size' ) );
+
+		foreach ( array( $ram, $size ) as $combined_candidate ) {
+			if ( '' !== $combined_candidate && self::is_combined_capacity_string( $combined_candidate ) ) {
+				$label = self::label_from_capacity_string( $combined_candidate );
+				if ( '' !== $label ) {
+					return self::finalize_variant_label( $label );
+				}
+			}
+		}
 
 		$parts = array();
 		if ( '' !== $ram ) {
@@ -367,24 +402,57 @@ class MMI_APS_Prices_Table {
 			$parts[] = self::format_capacity_part( $storage );
 		}
 
-		$parts = array_filter( $parts );
+		$parts = array_values( array_filter( $parts ) );
 		if ( ! empty( $parts ) ) {
-			return implode( ' + ', $parts );
+			return self::finalize_variant_label( implode( ' + ', $parts ) );
 		}
 
 		if ( '' !== $size ) {
 			$size_label = self::normalize_combined_size_label( $size );
 			if ( '' !== $size_label ) {
-				return $size_label;
+				return self::finalize_variant_label( $size_label );
 			}
 		}
 
 		$formatted = wc_get_formatted_variation( $variation, true, false );
 		if ( is_string( $formatted ) && '' !== $formatted ) {
-			return self::normalize_combined_size_label( wp_strip_all_tags( $formatted ) );
+			return self::finalize_variant_label( self::normalize_combined_size_label( wp_strip_all_tags( $formatted ) ) );
 		}
 
 		return '';
+	}
+
+	/**
+	 * One attribute value holds full config, e.g. "12 GB RAM + 256 GB" (no separate Storage attribute).
+	 */
+	private static function is_combined_capacity_string( string $value ): bool {
+		if ( false !== strpos( $value, '+' ) ) {
+			return true;
+		}
+
+		return count( self::extract_capacity_parts( $value ) ) >= 2;
+	}
+
+	/**
+	 * @return string e.g. "12 GB + 256 GB"
+	 */
+	private static function label_from_capacity_string( string $value ): string {
+		$parts = self::extract_capacity_parts( $value );
+		if ( count( $parts ) >= 2 ) {
+			return implode( ' + ', $parts );
+		}
+		if ( 1 === count( $parts ) ) {
+			return $parts[0];
+		}
+
+		return self::normalize_combined_size_label( $value );
+	}
+
+	private static function finalize_variant_label( string $label ): string {
+		$label = trim( preg_replace( '/\s*\+\s*$/', '', $label ) ?? $label );
+		$label = trim( preg_replace( '/\s{2,}/', ' ', $label ) ?? $label );
+
+		return $label;
 	}
 
 	/**
