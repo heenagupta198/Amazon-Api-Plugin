@@ -21,7 +21,13 @@ class MMI_APS_Settings {
 	public const OPTION_AFFILIATE_BTN_TEXT  = 'mmi_aps_affiliate_button_text';
 	public const OPTION_AFFILIATE_SHOP      = 'mmi_aps_affiliate_show_shop';
 	public const OPTION_AFFILIATE_DISCLOSURE = 'mmi_aps_affiliate_disclosure';
-	public const OPTION_CRON_BATCH_SIZE      = 'mmi_aps_cron_batch_size';
+	public const OPTION_CRON_BATCH_SIZE        = 'mmi_aps_cron_batch_size';
+	public const OPTION_FLIPKART_ENABLED       = 'mmi_aps_flipkart_api_enabled';
+	public const OPTION_FLIPKART_AFFILIATE_ID  = 'mmi_aps_flipkart_affiliate_id';
+	public const OPTION_FLIPKART_TOKEN         = 'mmi_aps_flipkart_affiliate_token';
+	public const OPTION_MARKETPLACE_DISPLAY    = 'mmi_aps_marketplace_display';
+	public const OPTION_PRICE_MAX_AGE_HOURS    = 'mmi_aps_price_max_age_hours';
+	public const OPTION_FLIPKART_BTN_TEXT      = 'mmi_aps_flipkart_button_text';
 
 	public const DEFAULT_HOST     = 'real-time-amazon-data.p.rapidapi.com';
 	public const DEFAULT_ENDPOINT = '/product-details';
@@ -136,6 +142,44 @@ class MMI_APS_Settings {
 	public static function get_cron_batch_size(): int {
 		$size = (int) get_option( self::OPTION_CRON_BATCH_SIZE, 15 );
 		return max( 5, min( 50, $size ) );
+	}
+
+	public static function is_flipkart_api_enabled(): bool {
+		return 'yes' === get_option( self::OPTION_FLIPKART_ENABLED, 'no' );
+	}
+
+	public static function get_flipkart_affiliate_id(): string {
+		if ( defined( 'MMI_APS_FLIPKART_AFFILIATE_ID' ) && MMI_APS_FLIPKART_AFFILIATE_ID ) {
+			return trim( (string) MMI_APS_FLIPKART_AFFILIATE_ID );
+		}
+
+		return trim( (string) get_option( self::OPTION_FLIPKART_AFFILIATE_ID, '' ) );
+	}
+
+	public static function get_flipkart_affiliate_token(): string {
+		if ( defined( 'MMI_APS_FLIPKART_AFFILIATE_TOKEN' ) && MMI_APS_FLIPKART_AFFILIATE_TOKEN ) {
+			return trim( (string) MMI_APS_FLIPKART_AFFILIATE_TOKEN );
+		}
+
+		return trim( (string) get_option( self::OPTION_FLIPKART_TOKEN, '' ) );
+	}
+
+	public static function is_marketplace_display_enabled(): bool {
+		return 'yes' === get_option( self::OPTION_MARKETPLACE_DISPLAY, 'yes' );
+	}
+
+	public static function get_price_max_age_hours(): int {
+		$hours = (int) get_option( self::OPTION_PRICE_MAX_AGE_HOURS, 36 );
+		return max( 6, min( 168, $hours ) );
+	}
+
+	public static function get_price_max_age_seconds(): int {
+		return self::get_price_max_age_hours() * HOUR_IN_SECONDS;
+	}
+
+	public static function get_flipkart_button_text(): string {
+		$text = trim( (string) get_option( self::OPTION_FLIPKART_BTN_TEXT, '' ) );
+		return $text ?: __( 'Buy on Flipkart', 'mmi-amazon-price-sync' );
 	}
 
 	/**

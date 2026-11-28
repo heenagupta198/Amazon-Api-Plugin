@@ -2,8 +2,8 @@
 /**
  * Plugin Name: MMI Amazon Price Sync
  * Plugin URI:  https://github.com/yogesh/comapre-Plugin
- * Description: Sync WooCommerce product prices from Amazon India via RapidAPI using ASIN.
- * Version:     1.4.1
+ * Description: Dynamic Amazon & Flipkart pricing, availability, variant buy links, and sale status for MyMobile product pages.
+ * Version:     2.1.0
  * Author:      Yogesh
  * Text Domain: mmi-amazon-price-sync
  * Requires at least: 6.0
@@ -13,7 +13,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'MMI_APS_VERSION', '1.4.1' );
+define( 'MMI_APS_VERSION', '2.1.0' );
 define( 'MMI_APS_FILE', __FILE__ );
 define( 'MMI_APS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'MMI_APS_URL', plugin_dir_url( __FILE__ ) );
@@ -26,6 +26,11 @@ require_once MMI_APS_PATH . 'includes/class-admin.php';
 require_once MMI_APS_PATH . 'includes/class-product-meta.php';
 require_once MMI_APS_PATH . 'includes/class-frontend.php';
 require_once MMI_APS_PATH . 'includes/class-affiliate.php';
+require_once MMI_APS_PATH . 'includes/class-flipkart-api-client.php';
+require_once MMI_APS_PATH . 'includes/class-flipkart-product-meta.php';
+require_once MMI_APS_PATH . 'includes/class-marketplace-status.php';
+require_once MMI_APS_PATH . 'includes/class-marketplace-frontend.php';
+require_once MMI_APS_PATH . 'includes/class-variation-marketplace.php';
 require_once MMI_APS_PATH . 'includes/class-plugin.php';
 
 /**
