@@ -157,10 +157,11 @@ class MMI_APS_WC_Settings_Amazon_Price extends WC_Settings_Page {
 					'default' => 'yes',
 				),
 				array(
-					'title'   => __( 'Show INFO tab', 'mmi-amazon-price-sync' ),
+					'title'   => __( 'Show extra SPECS tab (attributes)', 'mmi-amazon-price-sync' ),
+					'desc'    => __( 'WooCommerce “Additional information” tab. Main SPECS tab stays on description.', 'mmi-amazon-price-sync' ),
 					'id'      => MMI_APS_Settings::OPTION_SHOW_INFO_TAB,
 					'type'    => 'checkbox',
-					'default' => 'yes',
+					'default' => 'no',
 				),
 				array(
 					'title'   => __( 'Show See Prices button', 'mmi-amazon-price-sync' ),

@@ -259,7 +259,7 @@ class MMI_APS_Settings {
 	}
 
 	public static function show_info_tab(): bool {
-		return 'yes' === get_option( self::OPTION_SHOW_INFO_TAB, 'yes' );
+		return 'yes' === get_option( self::OPTION_SHOW_INFO_TAB, 'no' );
 	}
 
 	public static function show_see_prices_teaser(): bool {

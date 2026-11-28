@@ -275,10 +275,10 @@ class MMI_APS_Prices_Table {
 
 		$parts = array();
 		if ( '' !== $ram ) {
-			$parts[] = self::format_ram_label( $ram );
+			$parts[] = self::format_capacity_part( $ram );
 		}
 		if ( '' !== $storage ) {
-			$parts[] = self::format_storage_label( $storage );
+			$parts[] = self::format_capacity_part( $storage );
 		}
 
 		if ( ! empty( $parts ) ) {
@@ -290,7 +290,11 @@ class MMI_APS_Prices_Table {
 		}
 
 		$formatted = wc_get_formatted_variation( $variation, true, false );
-		return is_string( $formatted ) ? wp_strip_all_tags( $formatted ) : '';
+		if ( is_string( $formatted ) && '' !== $formatted ) {
+			return self::normalize_combined_size_label( wp_strip_all_tags( $formatted ) );
+		}
+
+		return '';
 	}
 
 	/**
@@ -308,30 +312,62 @@ class MMI_APS_Prices_Table {
 	}
 
 	private static function normalize_combined_size_label( string $value ): string {
+		$parsed = self::extract_capacity_parts( $value );
+		if ( ! empty( $parsed ) ) {
+			return implode( ' + ', $parsed );
+		}
+
 		$value = preg_replace( '/\s*\/\s*/', ' + ', $value ) ?? $value;
 		$value = preg_replace( '/\s*,\s*/', ' + ', $value ) ?? $value;
+		$value = preg_replace( '/\s+/', ' ', $value ) ?? $value;
 
-		if ( preg_match( '/ram/i', $value ) || preg_match( '/storage/i', $value ) ) {
-			return $value;
+		$chunks = preg_split( '/\s+\+\s+/', $value ) ?: array();
+		$parts  = array();
+		foreach ( $chunks as $chunk ) {
+			$chunk = trim( (string) $chunk );
+			if ( '' === $chunk ) {
+				continue;
+			}
+			$parts[] = self::format_capacity_part( $chunk );
+		}
+
+		return ! empty( $parts ) ? implode( ' + ', $parts ) : trim( $value );
+	}
+
+	/**
+	 * 91mobiles style: "12 GB", "256 GB" (space before GB/TB).
+	 */
+	public static function format_capacity_part( string $value ): string {
+		$value = trim( preg_replace( '/\b(RAM|Storage|INTERNAL MEMORY|INTERNAL-MEMORY|ROM)\b/i', '', $value ) ?? $value );
+		$value = preg_replace( '/\s+/', ' ', $value ) ?? $value;
+
+		if ( preg_match( '/^(\d+)\s*(GB|TB)$/i', $value, $m ) ) {
+			return $m[1] . ' ' . strtoupper( $m[2] );
+		}
+		if ( preg_match( '/^(\d+)(GB|TB)$/i', $value, $m ) ) {
+			return $m[1] . ' ' . strtoupper( $m[2] );
+		}
+		if ( preg_match( '/(\d+)\s*(GB|TB)/i', $value, $m ) ) {
+			return $m[1] . ' ' . strtoupper( $m[2] );
 		}
 
 		return $value;
 	}
 
-	private static function format_ram_label( string $value ): string {
-		if ( preg_match( '/ram/i', $value ) ) {
-			return $value;
+	/**
+	 * @return string[]
+	 */
+	private static function extract_capacity_parts( string $value ): array {
+		if ( ! preg_match_all( '/(\d+)\s*(GB|TB)/i', $value, $matches, PREG_SET_ORDER ) ) {
+			return array();
 		}
 
-		return $value . ' ' . __( 'RAM', 'mmi-amazon-price-sync' );
-	}
-
-	private static function format_storage_label( string $value ): string {
-		if ( preg_match( '/storage/i', $value ) ) {
-			return $value;
+		$parts = array();
+		foreach ( $matches as $m ) {
+			$parts[] = $m[1] . ' ' . strtoupper( $m[2] );
 		}
 
-		return $value . ' ' . __( 'Storage', 'mmi-amazon-price-sync' );
+		return $parts;
 	}
 
 	/**

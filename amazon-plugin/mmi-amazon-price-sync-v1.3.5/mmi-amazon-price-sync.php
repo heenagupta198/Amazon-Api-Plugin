@@ -3,7 +3,7 @@
  * Plugin Name: MMI Amazon Price Sync
  * Plugin URI:  https://github.com/yogesh/comapre-Plugin
  * Description: Amazon India dynamic pricing — RapidAPI or Creators API, 91mobiles PRICES tab, variant stock status.
- * Version:     2.3.2
+ * Version:     2.3.3
  * Author:      Yogesh
  * Text Domain: mmi-amazon-price-sync
  * Requires at least: 6.0

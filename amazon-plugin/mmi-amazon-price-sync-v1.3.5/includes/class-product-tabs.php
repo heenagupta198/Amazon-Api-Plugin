@@ -53,10 +53,21 @@ class MMI_APS_Product_Tabs {
 			$tabs['description']['title'] = __( 'SPECS', 'mmi-amazon-price-sync' );
 		}
 
+		// INFO tab → SPECS (91mobiles: first tab is specs, not "INFO").
 		if ( ! MMI_APS_Settings::show_info_tab() ) {
 			unset( $tabs['additional_information'] );
 		} elseif ( isset( $tabs['additional_information']['title'] ) ) {
-			$tabs['additional_information']['title'] = __( 'INFO', 'mmi-amazon-price-sync' );
+			$tabs['additional_information']['title'] = __( 'SPECS', 'mmi-amazon-price-sync' );
+		}
+
+		foreach ( $tabs as $key => $tab ) {
+			if ( ! isset( $tab['title'] ) || ! is_string( $tab['title'] ) ) {
+				continue;
+			}
+			$normalized = strtoupper( trim( html_entity_decode( wp_strip_all_tags( $tab['title'] ), ENT_QUOTES, 'UTF-8' ) ) );
+			if ( 'INFO' === $normalized && 'description' !== $key ) {
+				$tabs[ $key ]['title'] = __( 'SPECS', 'mmi-amazon-price-sync' );
+			}
 		}
 
 		return apply_filters( 'mmi_aps_product_tabs', $tabs );
