@@ -139,6 +139,38 @@
 			});
 	});
 
+	$(document).on('click', '.mmi-aps-fetch-all-variants', function () {
+		var $btn = $(this);
+		var productId = $btn.data('product-id');
+		var $spinner = $btn.siblings('.mmi-aps-fetch-all-spinner');
+		var $msg = $btn.siblings('.mmi-aps-fetch-all-message');
+
+		$btn.prop('disabled', true);
+		$spinner.addClass('is-active');
+		$msg.text(mmiApsAdmin.i18n.fetching).css('color', '');
+
+		$.post(mmiApsAdmin.ajaxUrl, {
+			action: 'mmi_aps_fetch_all_variations',
+			nonce: mmiApsAdmin.nonce,
+			product_id: productId
+		})
+			.done(function (response) {
+				if (response.success) {
+					$msg.text(response.data.message || mmiApsAdmin.i18n.success).css('color', '#007017');
+					window.location.reload();
+				} else {
+					$msg.text((response.data && response.data.message) || mmiApsAdmin.i18n.error).css('color', '#b32d2e');
+				}
+			})
+			.fail(function () {
+				$msg.text(mmiApsAdmin.i18n.error).css('color', '#b32d2e');
+			})
+			.always(function () {
+				$btn.prop('disabled', false);
+				$spinner.removeClass('is-active');
+			});
+	});
+
 	$(document).on('click', '.mmi-aps-var-fetch-amazon', function () {
 		var $btn = $(this);
 		var $wrap = $btn.closest('.mmi-aps-variation-marketplace');

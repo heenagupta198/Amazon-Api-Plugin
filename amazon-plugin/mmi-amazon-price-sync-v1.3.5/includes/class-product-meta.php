@@ -24,6 +24,7 @@ class MMI_APS_Product_Meta {
 
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_assets' ) );
 		add_action( 'wp_ajax_mmi_aps_fetch_price', array( __CLASS__, 'ajax_fetch_price' ) );
+		add_action( 'wp_ajax_mmi_aps_fetch_all_variations', array( __CLASS__, 'ajax_fetch_all_variations' ) );
 	}
 
 	/**
@@ -154,8 +155,142 @@ class MMI_APS_Product_Meta {
 				<?php esc_html_e( 'Amazon prices are stored as product meta. The storefront displays the Amazon price automatically without overwriting your WooCommerce regular price.', 'mmi-amazon-price-sync' ); ?>
 			</p>
 			<?php
+			$wc_product = wc_get_product( $product_id );
+			if ( $wc_product && $wc_product->is_type( 'variable' ) ) {
+				self::render_variable_variant_panel( $wc_product );
+			}
 			echo '</div>';
 		endif;
+	}
+
+	/**
+	 * Variant list + bulk fetch for variable products.
+	 *
+	 * @param WC_Product_Variable $product Parent product.
+	 */
+	public static function render_variable_variant_panel( WC_Product_Variable $product ): void {
+		$parent_id = $product->get_id();
+		$rows      = array();
+		foreach ( $product->get_children() as $variation_id ) {
+			$variation = wc_get_product( (int) $variation_id );
+			if ( ! $variation instanceof WC_Product_Variation ) {
+				continue;
+			}
+			$vid    = $variation->get_id();
+			$asin   = self::get_asin( $vid );
+			$price  = self::get_stored_amazon_price( $vid );
+			$status = self::get_availability_status( $vid );
+			$rows[] = array(
+				'id'     => $vid,
+				'label'  => MMI_APS_Prices_Table::get_variation_label( $variation ),
+				'asin'   => $asin,
+				'price'  => $price,
+				'status' => $status,
+			);
+		}
+
+		if ( empty( $rows ) ) {
+			return;
+		}
+		?>
+		<div class="options_group mmi-aps-variable-variants">
+			<p class="form-field">
+				<label><?php esc_html_e( 'Variant Amazon prices', 'mmi-amazon-price-sync' ); ?></label>
+				<span class="description"><?php esc_html_e( 'Each RAM/storage variant needs its own ASIN. PRICES tab lists one card per variant (91mobiles style).', 'mmi-amazon-price-sync' ); ?></span>
+			</p>
+			<table class="widefat striped mmi-aps-variant-table">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Variant', 'mmi-amazon-price-sync' ); ?></th>
+						<th><?php esc_html_e( 'ASIN', 'mmi-amazon-price-sync' ); ?></th>
+						<th><?php esc_html_e( 'Price', 'mmi-amazon-price-sync' ); ?></th>
+						<th><?php esc_html_e( 'Stock', 'mmi-amazon-price-sync' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ( $rows as $row ) : ?>
+						<tr>
+							<td><?php echo esc_html( $row['label'] ?: '#' . $row['id'] ); ?></td>
+							<td><?php echo esc_html( $row['asin'] ?: '—' ); ?></td>
+							<td><?php echo null !== $row['price'] ? esc_html( self::format_inr( $row['price'] ) ) : '—'; ?></td>
+							<td><?php echo esc_html( self::get_availability_label( $row['status'] ) ); ?></td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+			<p class="form-field mmi-aps-actions">
+				<label>&nbsp;</label>
+				<button type="button" class="button button-secondary mmi-aps-fetch-all-variants" data-product-id="<?php echo esc_attr( (string) $parent_id ); ?>">
+					<?php esc_html_e( 'Fetch all variants with ASIN', 'mmi-amazon-price-sync' ); ?>
+				</button>
+				<span class="spinner mmi-aps-fetch-all-spinner" style="float:none;margin:0 8px;"></span>
+				<span class="mmi-aps-fetch-all-message"></span>
+			</p>
+		</div>
+		<?php
+	}
+
+	public static function ajax_fetch_all_variations(): void {
+		check_ajax_referer( 'mmi_aps_fetch_price', 'nonce' );
+
+		$parent_id = isset( $_POST['product_id'] ) ? absint( $_POST['product_id'] ) : 0;
+		if ( ! $parent_id || ! current_user_can( 'edit_post', $parent_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mmi-amazon-price-sync' ) ) );
+		}
+
+		$product = wc_get_product( $parent_id );
+		if ( ! $product || ! $product->is_type( 'variable' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Not a variable product.', 'mmi-amazon-price-sync' ) ) );
+		}
+
+		$synced  = 0;
+		$failed  = 0;
+		$skipped = 0;
+		$errors  = array();
+
+		foreach ( $product->get_children() as $variation_id ) {
+			$variation_id = (int) $variation_id;
+			$asin         = self::get_asin( $variation_id );
+			if ( '' === $asin ) {
+				++$skipped;
+				continue;
+			}
+			if ( ! current_user_can( 'edit_post', $variation_id ) ) {
+				++$failed;
+				continue;
+			}
+			$result = MMI_APS_Sync::sync_product( $variation_id, $asin );
+			if ( $result['success'] ) {
+				++$synced;
+			} else {
+				++$failed;
+				$errors[] = $result['message'] ?? __( 'Unknown error', 'mmi-amazon-price-sync' );
+			}
+		}
+
+		if ( 0 === $synced && 0 === $failed ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'No variation has an ASIN. Add ASIN on each variant under the Variations tab.', 'mmi-amazon-price-sync' ),
+				)
+			);
+		}
+
+		wp_send_json_success(
+			array(
+				'message' => sprintf(
+					/* translators: 1: synced count, 2: failed count, 3: skipped count */
+					__( 'Synced %1$d variant(s). Failed: %2$d. Skipped (no ASIN): %3$d.', 'mmi-amazon-price-sync' ),
+					$synced,
+					$failed,
+					$skipped
+				),
+				'synced'  => $synced,
+				'failed'  => $failed,
+				'skipped' => $skipped,
+				'errors'  => $errors,
+			)
+		);
 	}
 
 	/**

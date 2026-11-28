@@ -103,7 +103,7 @@ class MMI_APS_Prices_Table {
 
 		$items = self::collect_price_items( $product );
 		if ( empty( $items ) ) {
-			return '';
+			return self::render_variants_setup_notice( $product );
 		}
 
 		self::enqueue_assets();
@@ -215,7 +215,7 @@ class MMI_APS_Prices_Table {
 			'price'         => $price,
 			'price_html'    => null !== $price ? MMI_APS_Product_Meta::format_inr( $price ) : '',
 			'buy_url'       => $buy_url,
-			'buy_label'     => MMI_APS_Settings::get_affiliate_button_text() ?: __( 'Go To Store', 'mmi-amazon-price-sync' ),
+			'buy_label'     => __( 'Go To Store', 'mmi-amazon-price-sync' ),
 			'availability'  => $status,
 			'show_price'    => null !== $price,
 			'status_label'  => MMI_APS_Product_Meta::get_availability_label( $status ),
@@ -266,18 +266,12 @@ class MMI_APS_Prices_Table {
 	 * @param WC_Product_Variation $variation Variation.
 	 */
 	public static function get_variation_label( WC_Product_Variation $variation ): string {
-		$ram = trim( (string) $variation->get_attribute( 'pa_ram' ) );
-		if ( '' === $ram ) {
-			$ram = trim( (string) $variation->get_attribute( 'ram' ) );
-		}
-
-		$storage = trim( (string) $variation->get_attribute( 'pa_internal-memory' ) );
-		if ( '' === $storage ) {
-			$storage = trim( (string) $variation->get_attribute( 'pa_storage' ) );
-		}
-		if ( '' === $storage ) {
-			$storage = trim( (string) $variation->get_attribute( 'storage' ) );
-		}
+		$ram = self::read_variation_attr( $variation, array( 'pa_ram', 'ram', 'attribute_pa_ram', 'attribute_ram' ) );
+		$storage = self::read_variation_attr(
+			$variation,
+			array( 'pa_internal-memory', 'pa_storage', 'pa_memory', 'storage', 'internal-memory', 'attribute_pa_internal-memory', 'attribute_pa_storage' )
+		);
+		$size = self::read_variation_attr( $variation, array( 'pa_size', 'size', 'attribute_pa_size', 'attribute_size' ) );
 
 		$parts = array();
 		if ( '' !== $ram ) {
@@ -291,8 +285,37 @@ class MMI_APS_Prices_Table {
 			return implode( ' + ', $parts );
 		}
 
+		if ( '' !== $size ) {
+			return self::normalize_combined_size_label( $size );
+		}
+
 		$formatted = wc_get_formatted_variation( $variation, true, false );
 		return is_string( $formatted ) ? wp_strip_all_tags( $formatted ) : '';
+	}
+
+	/**
+	 * @param WC_Product_Variation $variation Variation.
+	 * @param string[]             $keys      Attribute slugs.
+	 */
+	private static function read_variation_attr( WC_Product_Variation $variation, array $keys ): string {
+		foreach ( $keys as $key ) {
+			$val = trim( (string) $variation->get_attribute( $key ) );
+			if ( '' !== $val ) {
+				return $val;
+			}
+		}
+		return '';
+	}
+
+	private static function normalize_combined_size_label( string $value ): string {
+		$value = preg_replace( '/\s*\/\s*/', ' + ', $value ) ?? $value;
+		$value = preg_replace( '/\s*,\s*/', ' + ', $value ) ?? $value;
+
+		if ( preg_match( '/ram/i', $value ) || preg_match( '/storage/i', $value ) ) {
+			return $value;
+		}
+
+		return $value;
 	}
 
 	private static function format_ram_label( string $value ): string {
@@ -328,6 +351,39 @@ class MMI_APS_Prices_Table {
 		$sto_b = (int) preg_replace( '/\D+/', '', $b->get_attribute( 'pa_internal-memory' ) . $b->get_attribute( 'pa_storage' ) );
 
 		return $sto_a <=> $sto_b;
+	}
+
+	/**
+	 * Help text when variable product has no per-variant ASIN prices yet.
+	 *
+	 * @param WC_Product $product Product.
+	 */
+	private static function render_variants_setup_notice( WC_Product $product ): string {
+		if ( ! $product->is_type( 'variable' ) ) {
+			return '';
+		}
+
+		if ( count( $product->get_children() ) <= 0 ) {
+			return '';
+		}
+
+		$title = sprintf(
+			/* translators: %s: product name */
+			__( '%s Price In India', 'mmi-amazon-price-sync' ),
+			$product->get_name()
+		);
+
+		ob_start();
+		?>
+		<div class="mmi-91-prices mmi-91-prices--setup-notice">
+			<h2 class="mmi-91-prices__title"><?php echo esc_html( $title ); ?></h2>
+			<p><?php esc_html_e( 'Each RAM and storage variant needs its own Amazon ASIN. Once synced, every option appears here with its price and Go To Store link — like 91mobiles.', 'mmi-amazon-price-sync' ); ?></p>
+			<?php if ( current_user_can( 'edit_products' ) ) : ?>
+				<p><em><?php esc_html_e( 'Admin: Variations tab → enter ASIN per variant → Fetch Amazon (or Fetch all variants on Amazon Price tab).', 'mmi-amazon-price-sync' ); ?></em></p>
+			<?php endif; ?>
+		</div>
+		<?php
+		return (string) ob_get_clean();
 	}
 
 	private static function is_eligible_page(): bool {

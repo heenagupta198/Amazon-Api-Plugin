@@ -69,6 +69,10 @@ class MMI_APS_Affiliate {
 			return $html;
 		}
 
+		if ( $product->is_type( 'variable' ) && self::variable_has_variant_asins( $product ) ) {
+			return $html;
+		}
+
 		$product_id = $product->get_id();
 		if ( isset( self::$rendered_products[ $product_id ] ) ) {
 			return $html;
@@ -131,6 +135,12 @@ class MMI_APS_Affiliate {
 			return;
 		}
 
+		if ( $product->is_type( 'variable' ) && self::variable_has_variant_asins( $product ) ) {
+			self::render_variable_affiliate_placeholder();
+			self::$rendered_products[ $product_id ] = true;
+			return;
+		}
+
 		$button = self::get_button_html( $product_id, 'single' );
 		if ( '' === $button ) {
 			return;
@@ -152,6 +162,11 @@ class MMI_APS_Affiliate {
 
 		$post_id = get_queried_object_id();
 		if ( ! $post_id ) {
+			return;
+		}
+
+		$product = wc_get_product( $post_id );
+		if ( $product && $product->is_type( 'variable' ) && self::variable_has_variant_asins( $product ) ) {
 			return;
 		}
 
@@ -328,6 +343,32 @@ class MMI_APS_Affiliate {
 		self::enqueue_styles_force();
 
 		return self::get_button_html( $product_id, 'shortcode' );
+	}
+
+	/**
+	 * Hidden until customer picks a variant (variation-amazon.js updates href).
+	 */
+	private static function render_variable_affiliate_placeholder(): void {
+		self::enqueue_styles_force();
+		$label = __( 'Go To Store', 'mmi-amazon-price-sync' );
+		echo '<div class="mmi-aps-affiliate-wrap mmi-aps-affiliate-wrap--single mmi-aps-affiliate-wrap--variable" style="display:none;">';
+		echo '<a href="#" class="mmi-aps-affiliate-btn button alt">' . esc_html( $label ) . '</a>';
+		if ( MMI_APS_Settings::show_affiliate_disclosure() ) {
+			echo '<p class="mmi-aps-affiliate-note">' . esc_html__( 'As an Amazon Associate we earn from qualifying purchases.', 'mmi-amazon-price-sync' ) . '</p>';
+		}
+		echo '</div>';
+	}
+
+	/**
+	 * @param WC_Product $product Parent variable product.
+	 */
+	private static function variable_has_variant_asins( WC_Product $product ): bool {
+		foreach ( $product->get_children() as $variation_id ) {
+			if ( '' !== MMI_APS_Product_Meta::get_asin( (int) $variation_id ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private static function enqueue_styles_force(): void {

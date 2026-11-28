@@ -22,6 +22,8 @@ class MMI_APS_Frontend {
 		add_filter( 'woocommerce_variation_prices_price', array( __CLASS__, 'filter_variation_price' ), 20, 3 );
 		add_filter( 'woocommerce_variation_prices_regular_price', array( __CLASS__, 'filter_variation_regular_price' ), 20, 3 );
 		add_filter( 'woocommerce_variation_prices_sale_price', array( __CLASS__, 'filter_variation_sale_price' ), 20, 3 );
+		add_filter( 'woocommerce_get_variation_prices_hash', array( __CLASS__, 'variation_prices_hash' ), 20, 3 );
+		add_filter( 'woocommerce_available_variation', array( __CLASS__, 'append_variation_data' ), 20, 3 );
 
 		add_filter( 'body_class', array( __CLASS__, 'add_body_class' ) );
 
@@ -216,6 +218,21 @@ class MMI_APS_Frontend {
 			array(),
 			MMI_APS_VERSION
 		);
+
+		if ( ! is_singular( array( 'product', 'devices' ) ) ) {
+			return;
+		}
+
+		$product = wc_get_product( get_queried_object_id() );
+		if ( $product && $product->is_type( 'variable' ) ) {
+			wp_enqueue_script(
+				'mmi-aps-variation-amazon',
+				MMI_APS_URL . 'assets/js/variation-amazon.js',
+				array( 'jquery' ),
+				MMI_APS_VERSION,
+				true
+			);
+		}
 	}
 
 	/**
@@ -324,10 +341,11 @@ class MMI_APS_Frontend {
 	 * @param object $product    Parent product.
 	 */
 	public static function filter_variation_price( $price, $variation, $product ) {
-		$amazon_price = self::get_amazon_price_for_product( $variation );
-		if ( null === $amazon_price ) {
-			$amazon_price = self::get_amazon_price_for_product( $product );
+		if ( ! $variation instanceof WC_Product_Variation ) {
+			return $price;
 		}
+
+		$amazon_price = self::get_amazon_price_for_product( $variation );
 		return null !== $amazon_price ? $amazon_price : $price;
 	}
 
@@ -337,12 +355,10 @@ class MMI_APS_Frontend {
 	 * @param object $product    Parent product.
 	 */
 	public static function filter_variation_regular_price( $price, $variation, $product ) {
-		$target   = $variation ?: $product;
-		$filtered = self::filter_regular_price( $price, $target );
-		if ( (string) $filtered !== (string) $price ) {
-			return $filtered;
+		if ( $variation instanceof WC_Product_Variation ) {
+			return self::filter_regular_price( $price, $variation );
 		}
-		return self::filter_regular_price( $price, $product );
+		return $price;
 	}
 
 	/**
@@ -351,12 +367,68 @@ class MMI_APS_Frontend {
 	 * @param object $product    Parent product.
 	 */
 	public static function filter_variation_sale_price( $price, $variation, $product ) {
-		$target   = $variation ?: $product;
-		$filtered = self::filter_sale_price( $price, $target );
-		if ( '' !== $filtered || self::get_amazon_price_for_product( $target ) ) {
-			return $filtered;
+		if ( $variation instanceof WC_Product_Variation ) {
+			return self::filter_sale_price( $price, $variation );
 		}
-		return self::filter_sale_price( $price, $product );
+		return $price;
+	}
+
+	/**
+	 * Bust WooCommerce variation price cache when Amazon meta changes.
+	 *
+	 * @param string        $hash      Hash.
+	 * @param WC_Product    $product   Parent product.
+	 * @param bool          $for_display For display.
+	 */
+	public static function variation_prices_hash( $hash, $product, $for_display ): string {
+		if ( ! $product instanceof WC_Product || ! $product->is_type( 'variable' ) ) {
+			return (string) $hash;
+		}
+
+		$parts = array( (string) $hash );
+		foreach ( $product->get_children() as $variation_id ) {
+			$variation_id = (int) $variation_id;
+			$parts[]      = (string) get_post_meta( $variation_id, MMI_APS_Plugin::META_PRICE, true );
+			$parts[]      = (string) get_post_meta( $variation_id, MMI_APS_Plugin::META_LAST_UPDATED, true );
+			$parts[]      = MMI_APS_Product_Meta::get_availability_status( $variation_id );
+		}
+
+		return md5( implode( '|', $parts ) );
+	}
+
+	/**
+	 * Pass per-variant Amazon data to the variation dropdown (price + Go To Store URL).
+	 *
+	 * @param array<string,mixed>   $data      Variation data.
+	 * @param WC_Product            $product   Parent.
+	 * @param WC_Product_Variation  $variation Variation.
+	 * @return array<string,mixed>
+	 */
+	public static function append_variation_data( array $data, $product, $variation ): array {
+		if ( ! $variation instanceof WC_Product_Variation ) {
+			return $data;
+		}
+
+		$variation_id = $variation->get_id();
+		$asin         = MMI_APS_Product_Meta::get_asin( $variation_id );
+		$status       = MMI_APS_Product_Meta::get_availability_status( $variation_id );
+		$price        = MMI_APS_Product_Meta::get_stored_amazon_price( $variation_id );
+		$buy_url      = MMI_APS_Affiliate::get_affiliate_url( $variation_id );
+
+		$data['mmi_aps'] = array(
+			'configured'          => '' !== $asin,
+			'asin'                => $asin,
+			'availability'        => $status,
+			'availability_label'  => MMI_APS_Product_Meta::get_availability_label( $status ),
+			'in_stock'            => MMI_APS_Product_Meta::is_in_stock( $variation_id ),
+			'price'               => $price,
+			'price_html'          => null !== $price ? MMI_APS_Product_Meta::format_inr( $price ) : '',
+			'affiliate_url'       => $buy_url,
+			'buy_label'           => __( 'Go To Store', 'mmi-amazon-price-sync' ),
+			'variant_label'       => MMI_APS_Prices_Table::get_variation_label( $variation ),
+		);
+
+		return $data;
 	}
 
 	/**
@@ -386,12 +458,27 @@ class MMI_APS_Frontend {
 			return false;
 		}
 
-		if ( MMI_APS_Product_Meta::is_unavailable( $product_id ) && '' !== MMI_APS_Product_Meta::get_asin( $product_id ) ) {
-			return true;
-		}
-
 		if ( isset( self::$amazon_product_cache[ $product_id ] ) ) {
 			return self::$amazon_product_cache[ $product_id ];
+		}
+
+		$product = wc_get_product( $product_id );
+		if ( $product && $product->is_type( 'variable' ) ) {
+			foreach ( $product->get_children() as $variation_id ) {
+				$variation_id = (int) $variation_id;
+				if ( '' === MMI_APS_Product_Meta::get_asin( $variation_id ) ) {
+					continue;
+				}
+				if ( MMI_APS_Product_Meta::is_unavailable( $variation_id ) || null !== MMI_APS_Product_Meta::get_amazon_price( $variation_id ) ) {
+					self::$amazon_product_cache[ $product_id ] = true;
+					return true;
+				}
+			}
+		}
+
+		if ( MMI_APS_Product_Meta::is_unavailable( $product_id ) && '' !== MMI_APS_Product_Meta::get_asin( $product_id ) ) {
+			self::$amazon_product_cache[ $product_id ] = true;
+			return true;
 		}
 
 		$has_amazon = '' !== MMI_APS_Product_Meta::get_asin( $product_id )
