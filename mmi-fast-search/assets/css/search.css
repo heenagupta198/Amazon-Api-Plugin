@@ -1,0 +1,328 @@
+/**
+ * MMI Fast Search — responsive overlay (TagDiv header icon → full UI).
+ */
+
+:root {
+	--mmi-fs-backdrop: rgba(8, 12, 24, 0.58);
+	--mmi-fs-surface: #ffffff;
+	--mmi-fs-border: rgba(15, 23, 42, 0.1);
+	--mmi-fs-text: #0f172a;
+	--mmi-fs-muted: #64748b;
+	--mmi-fs-accent: #e11d48;
+	--mmi-fs-radius: 16px;
+	--mmi-fs-shadow: 0 24px 80px rgba(15, 23, 42, 0.22);
+}
+
+.mmi-fs-root {
+	position: fixed;
+	inset: 0;
+	z-index: 999999;
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+	padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+	transition: opacity 0.18s ease, visibility 0.18s ease;
+}
+
+.mmi-fs-root.is-open {
+	opacity: 1;
+	visibility: visible;
+	pointer-events: auto;
+}
+
+.mmi-fs-backdrop {
+	position: absolute;
+	inset: 0;
+	background: var(--mmi-fs-backdrop);
+	backdrop-filter: blur(6px);
+	-webkit-backdrop-filter: blur(6px);
+}
+
+.mmi-fs-dialog {
+	position: relative;
+	width: min(720px, 100%);
+	margin-top: clamp(32px, 10vh, 100px);
+	background: var(--mmi-fs-surface);
+	border-radius: var(--mmi-fs-radius);
+	box-shadow: var(--mmi-fs-shadow);
+	border: 1px solid var(--mmi-fs-border);
+	overflow: hidden;
+	transform: translateY(-8px) scale(0.98);
+	transition: transform 0.2s ease;
+	max-height: calc(100dvh - 32px);
+	display: flex;
+	flex-direction: column;
+}
+
+.mmi-fs-root.is-open .mmi-fs-dialog {
+	transform: translateY(0) scale(1);
+}
+
+.mmi-fs-form {
+	display: flex;
+	gap: 0;
+	border-bottom: 1px solid var(--mmi-fs-border);
+	align-items: stretch;
+	flex-shrink: 0;
+}
+
+.mmi-fs-input-wrap {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 14px 14px 14px 16px;
+	min-width: 0;
+}
+
+.mmi-fs-search-ico {
+	flex-shrink: 0;
+	width: 20px;
+	height: 20px;
+	display: block;
+	background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none'%3E%3Ccircle cx='10.5' cy='10.5' r='7.5' stroke='%2364748b' stroke-width='2'/%3E%3Cpath d='M16.5 16.5L21 21' stroke='%2364748b' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E")
+		center / contain no-repeat;
+}
+
+.mmi-fs-root:not(.is-open) {
+	display: none;
+}
+
+.mmi-fs-input {
+	flex: 1;
+	border: 0;
+	outline: none;
+	font-size: 17px;
+	line-height: 1.4;
+	color: var(--mmi-fs-text);
+	background: transparent;
+	min-width: 0;
+	-webkit-appearance: none;
+}
+
+.mmi-fs-input::placeholder {
+	color: #94a3b8;
+}
+
+.mmi-fs-submit {
+	border: 0;
+	background: var(--mmi-fs-text);
+	color: #fff;
+	font-weight: 600;
+	font-size: 14px;
+	padding: 0 20px;
+	cursor: pointer;
+	transition: background 0.15s ease;
+	flex-shrink: 0;
+}
+
+.mmi-fs-submit:hover {
+	background: #1e293b;
+}
+
+.mmi-fs-close {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	width: 40px;
+	height: 40px;
+	border: 0;
+	border-radius: 999px;
+	background: #f1f5f9;
+	color: var(--mmi-fs-text);
+	cursor: pointer;
+	font-size: 22px;
+	line-height: 1;
+	z-index: 2;
+}
+
+.mmi-fs-close:hover {
+	background: #e2e8f0;
+}
+
+.mmi-fs-body {
+	flex: 1;
+	min-height: 0;
+	overflow: auto;
+	-webkit-overflow-scrolling: touch;
+	max-height: min(58vh, 480px);
+}
+
+.mmi-fs-status {
+	padding: 28px 20px;
+	text-align: center;
+	color: var(--mmi-fs-muted);
+	font-size: 15px;
+	line-height: 1.45;
+}
+
+.mmi-fs-label {
+	padding: 12px 18px 6px;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--mmi-fs-muted);
+}
+
+.mmi-fs-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 6px;
+	padding: 0 8px 10px;
+}
+
+@media (min-width: 600px) {
+	.mmi-fs-grid {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+
+.mmi-fs-card {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 10px;
+	border-radius: 12px;
+	text-decoration: none;
+	color: inherit;
+	transition: background 0.12s ease;
+	min-height: 100%;
+}
+
+.mmi-fs-card:hover,
+.mmi-fs-card:focus-visible {
+	background: #f8fafc;
+	outline: none;
+}
+
+.mmi-fs-thumb {
+	aspect-ratio: 16 / 10;
+	border-radius: 8px;
+	background: linear-gradient(135deg, #e2e8f0, #f8fafc);
+	overflow: hidden;
+}
+
+.mmi-fs-thumb img {
+	width: 100%;
+	height: 100%;
+	max-width: 100%;
+	max-height: none;
+	object-fit: cover;
+	display: block;
+}
+
+.mmi-fs-title {
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.35;
+	color: var(--mmi-fs-text);
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+.mmi-fs-date {
+	font-size: 11px;
+	color: var(--mmi-fs-muted);
+}
+
+.mmi-fs-footer {
+	border-top: 1px solid var(--mmi-fs-border);
+	padding: 12px 16px 14px;
+	text-align: center;
+	flex-shrink: 0;
+}
+
+.mmi-fs-view-all {
+	font-size: 14px;
+	font-style: italic;
+	color: var(--mmi-fs-accent);
+	text-decoration: none;
+}
+
+.mmi-fs-view-all:hover {
+	text-decoration: underline;
+}
+
+body.mmi-fs-lock {
+	overflow: hidden;
+	touch-action: none;
+}
+
+/* —— Mobile: full-height sheet (TagDiv header icon stays as-is) —— */
+@media (max-width: 767px) {
+	.mmi-fs-root {
+		padding: 0;
+		align-items: stretch;
+	}
+
+	.mmi-fs-dialog {
+		margin-top: 0;
+		width: 100%;
+		max-width: none;
+		height: 100dvh;
+		max-height: 100dvh;
+		border-radius: 0;
+		border: 0;
+		box-shadow: none;
+	}
+
+	.mmi-fs-form {
+		flex-direction: column;
+		padding-top: env(safe-area-inset-top);
+	}
+
+	.mmi-fs-input-wrap {
+		padding: 16px;
+	}
+
+	.mmi-fs-input {
+		font-size: 16px; /* prevents iOS zoom on focus */
+	}
+
+	.mmi-fs-submit {
+		width: 100%;
+		padding: 14px 16px;
+		font-size: 16px;
+	}
+
+	.mmi-fs-close {
+		top: max(12px, env(safe-area-inset-top));
+		right: 12px;
+	}
+
+	.mmi-fs-body {
+		max-height: none;
+		flex: 1;
+	}
+
+	.mmi-fs-grid {
+		grid-template-columns: 1fr;
+		gap: 2px;
+		padding: 0 6px 12px;
+	}
+
+	.mmi-fs-card {
+		flex-direction: row;
+		align-items: center;
+		gap: 12px;
+		padding: 12px 10px;
+		border-radius: 10px;
+	}
+
+	.mmi-fs-thumb {
+		width: 88px;
+		flex: 0 0 88px;
+		aspect-ratio: 4 / 3;
+	}
+
+	.mmi-fs-title {
+		font-size: 15px;
+		-webkit-line-clamp: 2;
+	}
+}
