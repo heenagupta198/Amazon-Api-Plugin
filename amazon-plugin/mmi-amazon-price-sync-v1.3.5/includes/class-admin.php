@@ -504,7 +504,7 @@ class MMI_APS_Admin {
 							<input type="hidden" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_SHOW_SPECS_TAB ); ?>" value="no" />
 							<label style="display:block;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_SHOW_SPECS_TAB ); ?>" value="yes" <?php checked( MMI_APS_Settings::show_specs_tab() ); ?> /> <?php esc_html_e( 'Show SPECS tab', 'mmi-amazon-price-sync' ); ?></label>
 							<input type="hidden" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_SHOW_INFO_TAB ); ?>" value="no" />
-							<label><input type="checkbox" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_SHOW_INFO_TAB ); ?>" value="yes" <?php checked( MMI_APS_Settings::show_info_tab() ); ?> /> <?php esc_html_e( 'Show INFO tab', 'mmi-amazon-price-sync' ); ?></label>
+							<label><input type="checkbox" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_SHOW_INFO_TAB ); ?>" value="yes" <?php checked( MMI_APS_Settings::show_info_tab() ); ?> /> <?php esc_html_e( 'Show extra SPECS tab (attributes)', 'mmi-amazon-price-sync' ); ?></label>
 						</td>
 					</tr>
 					<tr>

@@ -13,7 +13,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'MMI_APS_VERSION', '2.3.2' );
+define( 'MMI_APS_VERSION', '2.3.3' );
 define( 'MMI_APS_FILE', __FILE__ );
 define( 'MMI_APS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'MMI_APS_URL', plugin_dir_url( __FILE__ ) );
