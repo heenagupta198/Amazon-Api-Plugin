@@ -13,6 +13,10 @@ class MMI_APS_Price_Teaser {
 	}
 
 	public static function render(): void {
+		if ( ! MMI_APS_Settings::show_see_prices_teaser() ) {
+			return;
+		}
+
 		if ( is_admin() || ! is_singular( array( 'product', 'devices' ) ) ) {
 			return;
 		}

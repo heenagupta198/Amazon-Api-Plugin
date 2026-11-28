@@ -190,6 +190,23 @@ class MMI_APS_Admin {
 				'sanitize_callback' => 'sanitize_text_field',
 			)
 		);
+		foreach (
+			array(
+				MMI_APS_Settings::OPTION_SHOW_PRICES_TAB,
+				MMI_APS_Settings::OPTION_SHOW_SPECS_TAB,
+				MMI_APS_Settings::OPTION_SHOW_INFO_TAB,
+				MMI_APS_Settings::OPTION_SHOW_SEE_PRICES,
+			) as $yes_no_key
+		) {
+			register_setting(
+				'mmi_aps_settings',
+				$yes_no_key,
+				array(
+					'type'              => 'string',
+					'sanitize_callback' => array( __CLASS__, 'sanitize_yes_no' ),
+				)
+			);
+		}
 		register_setting(
 			'mmi_aps_settings',
 			MMI_APS_Settings::OPTION_PRICE_MAX_AGE_HOURS,
@@ -473,7 +490,38 @@ class MMI_APS_Admin {
 				</table>
 
 				<h2><?php esc_html_e( 'Storefront (91mobiles)', 'mmi-amazon-price-sync' ); ?></h2>
-				<p><?php esc_html_e( 'The plugin adds a WooCommerce PRICES tab and a See Prices button. Flipkart will be added later.', 'mmi-amazon-price-sync' ); ?></p>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'PRICES tab', 'mmi-amazon-price-sync' ); ?></th>
+						<td>
+							<input type="hidden" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_SHOW_PRICES_TAB ); ?>" value="no" />
+							<label><input type="checkbox" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_SHOW_PRICES_TAB ); ?>" value="yes" <?php checked( MMI_APS_Settings::show_prices_tab() ); ?> /> <?php esc_html_e( 'Show variant-wise Amazon prices tab', 'mmi-amazon-price-sync' ); ?></label>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'SPECS / INFO tabs', 'mmi-amazon-price-sync' ); ?></th>
+						<td>
+							<input type="hidden" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_SHOW_SPECS_TAB ); ?>" value="no" />
+							<label style="display:block;margin-bottom:6px;"><input type="checkbox" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_SHOW_SPECS_TAB ); ?>" value="yes" <?php checked( MMI_APS_Settings::show_specs_tab() ); ?> /> <?php esc_html_e( 'Show SPECS tab', 'mmi-amazon-price-sync' ); ?></label>
+							<input type="hidden" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_SHOW_INFO_TAB ); ?>" value="no" />
+							<label><input type="checkbox" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_SHOW_INFO_TAB ); ?>" value="yes" <?php checked( MMI_APS_Settings::show_info_tab() ); ?> /> <?php esc_html_e( 'Show INFO tab', 'mmi-amazon-price-sync' ); ?></label>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'See Prices button', 'mmi-amazon-price-sync' ); ?></th>
+						<td>
+							<input type="hidden" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_SHOW_SEE_PRICES ); ?>" value="no" />
+							<label><input type="checkbox" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_SHOW_SEE_PRICES ); ?>" value="yes" <?php checked( MMI_APS_Settings::show_see_prices_teaser() ); ?> /> <?php esc_html_e( 'Show price summary + See Prices (opens PRICES tab)', 'mmi-amazon-price-sync' ); ?></label>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Cheapest store (future)', 'mmi-amazon-price-sync' ); ?></th>
+						<td>
+							<input type="hidden" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_AUTO_CHEAPEST_PLATFORM ); ?>" value="no" />
+							<label><input type="checkbox" name="<?php echo esc_attr( MMI_APS_Settings::OPTION_AUTO_CHEAPEST_PLATFORM ); ?>" value="yes" <?php checked( MMI_APS_Settings::auto_cheapest_platform_enabled() ); ?> disabled /> <?php esc_html_e( 'After Flipkart API: highlight cheaper Amazon vs Flipkart per variant (coming soon).', 'mmi-amazon-price-sync' ); ?></label>
+						</td>
+					</tr>
+				</table>
 
 				<?php if ( $affiliate_on && $affiliate_tag ) : ?>
 					<p class="description">

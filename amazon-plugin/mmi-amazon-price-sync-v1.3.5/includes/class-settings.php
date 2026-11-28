@@ -35,6 +35,11 @@ class MMI_APS_Settings {
 	public const OPTION_FLIPKART_BTN_TEXT        = 'mmi_aps_flipkart_button_text';
 	public const OPTION_PRICES_TABLE_ON_PRODUCT  = 'mmi_aps_prices_table_on_product';
 	public const OPTION_COMPACT_MARKETPLACE      = 'mmi_aps_compact_marketplace';
+	public const OPTION_SHOW_PRICES_TAB          = 'mmi_aps_show_prices_tab';
+	public const OPTION_SHOW_SPECS_TAB           = 'mmi_aps_show_specs_tab';
+	public const OPTION_SHOW_INFO_TAB            = 'mmi_aps_show_info_tab';
+	public const OPTION_SHOW_SEE_PRICES          = 'mmi_aps_show_see_prices';
+	public const OPTION_AUTO_CHEAPEST_PLATFORM     = 'mmi_aps_auto_cheapest_platform';
 
 	public const DEFAULT_HOST             = 'real-time-amazon-data.p.rapidapi.com';
 	public const DEFAULT_ENDPOINT         = '/product-details';
@@ -245,6 +250,29 @@ class MMI_APS_Settings {
 	 *
 	 * @param mixed $value Raw value.
 	 */
+	public static function show_prices_tab(): bool {
+		return 'yes' === get_option( self::OPTION_SHOW_PRICES_TAB, 'yes' );
+	}
+
+	public static function show_specs_tab(): bool {
+		return 'yes' === get_option( self::OPTION_SHOW_SPECS_TAB, 'yes' );
+	}
+
+	public static function show_info_tab(): bool {
+		return 'yes' === get_option( self::OPTION_SHOW_INFO_TAB, 'yes' );
+	}
+
+	public static function show_see_prices_teaser(): bool {
+		return 'yes' === get_option( self::OPTION_SHOW_SEE_PRICES, 'yes' );
+	}
+
+	/**
+	 * Future: highlight cheaper Amazon vs Flipkart after Flipkart API is on.
+	 */
+	public static function auto_cheapest_platform_enabled(): bool {
+		return 'yes' === get_option( self::OPTION_AUTO_CHEAPEST_PLATFORM, 'no' );
+	}
+
 	public static function sanitize_affiliate_tag( $value ): string {
 		$tag = strtolower( trim( sanitize_text_field( (string) $value ) ) );
 		if ( '' === $tag ) {

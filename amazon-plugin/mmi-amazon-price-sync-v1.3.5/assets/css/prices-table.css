@@ -129,6 +129,12 @@
 	text-decoration: underline;
 }
 
+.mmi-91-prices__oos {
+	font-weight: 600;
+	color: #888;
+	white-space: nowrap;
+}
+
 @media (max-width: 520px) {
 	.mmi-91-prices__row {
 		grid-template-columns: 1fr auto;

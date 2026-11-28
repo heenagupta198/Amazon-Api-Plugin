@@ -139,6 +139,46 @@ class MMI_APS_WC_Settings_Amazon_Price extends WC_Settings_Page {
 					'type' => 'sectionend',
 					'id'   => 'mmi_aps_creators_options',
 				),
+				array(
+					'title' => __( 'Storefront (91mobiles layout)', 'mmi-amazon-price-sync' ),
+					'type'  => 'title',
+					'id'    => 'mmi_aps_storefront_options',
+				),
+				array(
+					'title'   => __( 'Show PRICES tab', 'mmi-amazon-price-sync' ),
+					'id'      => MMI_APS_Settings::OPTION_SHOW_PRICES_TAB,
+					'type'    => 'checkbox',
+					'default' => 'yes',
+				),
+				array(
+					'title'   => __( 'Show SPECS tab', 'mmi-amazon-price-sync' ),
+					'id'      => MMI_APS_Settings::OPTION_SHOW_SPECS_TAB,
+					'type'    => 'checkbox',
+					'default' => 'yes',
+				),
+				array(
+					'title'   => __( 'Show INFO tab', 'mmi-amazon-price-sync' ),
+					'id'      => MMI_APS_Settings::OPTION_SHOW_INFO_TAB,
+					'type'    => 'checkbox',
+					'default' => 'yes',
+				),
+				array(
+					'title'   => __( 'Show See Prices button', 'mmi-amazon-price-sync' ),
+					'id'      => MMI_APS_Settings::OPTION_SHOW_SEE_PRICES,
+					'type'    => 'checkbox',
+					'default' => 'yes',
+				),
+				array(
+					'title'   => __( 'Auto-prefer cheapest store (Flipkart)', 'mmi-amazon-price-sync' ),
+					'desc'    => __( 'After Flipkart API is enabled: teaser and variant rows highlight Amazon vs Flipkart whichever is cheaper. Leave off until then.', 'mmi-amazon-price-sync' ),
+					'id'      => MMI_APS_Settings::OPTION_AUTO_CHEAPEST_PLATFORM,
+					'type'    => 'checkbox',
+					'default' => 'no',
+				),
+				array(
+					'type' => 'sectionend',
+					'id'   => 'mmi_aps_storefront_options',
+				),
 			)
 		);
 

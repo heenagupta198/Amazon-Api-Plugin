@@ -146,12 +146,23 @@ class MMI_APS_Prices_Table {
 		$items = array();
 
 		if ( $product->is_type( 'variable' ) ) {
+			$variations = array();
 			foreach ( $product->get_children() as $variation_id ) {
 				$variation = wc_get_product( $variation_id );
 				if ( ! $variation instanceof WC_Product_Variation ) {
 					continue;
 				}
 
+				if ( '' === MMI_APS_Product_Meta::get_asin( $variation->get_id() ) ) {
+					continue;
+				}
+
+				$variations[] = $variation;
+			}
+
+			usort( $variations, array( __CLASS__, 'sort_variations' ) );
+
+			foreach ( $variations as $variation ) {
 				$platforms = self::platform_rows_for_id( $variation->get_id() );
 				if ( empty( $platforms ) ) {
 					continue;
@@ -206,7 +217,7 @@ class MMI_APS_Prices_Table {
 			'buy_url'       => $buy_url,
 			'buy_label'     => MMI_APS_Settings::get_affiliate_button_text() ?: __( 'Go To Store', 'mmi-amazon-price-sync' ),
 			'availability'  => $status,
-			'show_price'    => null !== $price && 'unavailable' !== $status,
+			'show_price'    => null !== $price,
 			'status_label'  => MMI_APS_Product_Meta::get_availability_label( $status ),
 		);
 	}
@@ -235,7 +246,13 @@ class MMI_APS_Prices_Table {
 					<span class="mmi-91-prices__status"><?php esc_html_e( 'Price updating…', 'mmi-amazon-price-sync' ); ?></span>
 				<?php endif; ?>
 			</div>
-			<?php if ( ! empty( $row['buy_url'] ) ) : ?>
+			<?php if ( 'in_stock' === ( $row['availability'] ?? '' ) && ! empty( $row['buy_url'] ) ) : ?>
+				<a class="mmi-91-prices__go" href="<?php echo esc_url( (string) $row['buy_url'] ); ?>" target="_blank" rel="nofollow sponsored noopener">
+					<?php echo esc_html( (string) ( $row['buy_label'] ?? __( 'Go To Store', 'mmi-amazon-price-sync' ) ) ); ?>
+				</a>
+			<?php elseif ( 'out_of_stock' === ( $row['availability'] ?? '' ) ) : ?>
+				<span class="mmi-91-prices__oos"><?php esc_html_e( 'Out Of Stock', 'mmi-amazon-price-sync' ); ?></span>
+			<?php elseif ( ! empty( $row['buy_url'] ) && 'unavailable' !== ( $row['availability'] ?? '' ) ) : ?>
 				<a class="mmi-91-prices__go" href="<?php echo esc_url( (string) $row['buy_url'] ); ?>" target="_blank" rel="nofollow sponsored noopener">
 					<?php echo esc_html( (string) ( $row['buy_label'] ?? __( 'Go To Store', 'mmi-amazon-price-sync' ) ) ); ?>
 				</a>
@@ -249,26 +266,68 @@ class MMI_APS_Prices_Table {
 	 * @param WC_Product_Variation $variation Variation.
 	 */
 	public static function get_variation_label( WC_Product_Variation $variation ): string {
-		$ram = $variation->get_attribute( 'pa_ram' );
+		$ram = trim( (string) $variation->get_attribute( 'pa_ram' ) );
 		if ( '' === $ram ) {
-			$ram = $variation->get_attribute( 'ram' );
+			$ram = trim( (string) $variation->get_attribute( 'ram' ) );
 		}
 
-		$storage = $variation->get_attribute( 'pa_internal-memory' );
+		$storage = trim( (string) $variation->get_attribute( 'pa_internal-memory' ) );
 		if ( '' === $storage ) {
-			$storage = $variation->get_attribute( 'pa_storage' );
+			$storage = trim( (string) $variation->get_attribute( 'pa_storage' ) );
 		}
 		if ( '' === $storage ) {
-			$storage = $variation->get_attribute( 'storage' );
+			$storage = trim( (string) $variation->get_attribute( 'storage' ) );
 		}
 
-		$parts = array_filter( array( trim( (string) $ram ), trim( (string) $storage ) ) );
+		$parts = array();
+		if ( '' !== $ram ) {
+			$parts[] = self::format_ram_label( $ram );
+		}
+		if ( '' !== $storage ) {
+			$parts[] = self::format_storage_label( $storage );
+		}
+
 		if ( ! empty( $parts ) ) {
 			return implode( ' + ', $parts );
 		}
 
 		$formatted = wc_get_formatted_variation( $variation, true, false );
 		return is_string( $formatted ) ? wp_strip_all_tags( $formatted ) : '';
+	}
+
+	private static function format_ram_label( string $value ): string {
+		if ( preg_match( '/ram/i', $value ) ) {
+			return $value;
+		}
+
+		return $value . ' ' . __( 'RAM', 'mmi-amazon-price-sync' );
+	}
+
+	private static function format_storage_label( string $value ): string {
+		if ( preg_match( '/storage/i', $value ) ) {
+			return $value;
+		}
+
+		return $value . ' ' . __( 'Storage', 'mmi-amazon-price-sync' );
+	}
+
+	/**
+	 * Sort variations by RAM then storage (numeric when possible).
+	 *
+	 * @param WC_Product_Variation $a Variation A.
+	 * @param WC_Product_Variation $b Variation B.
+	 */
+	public static function sort_variations( WC_Product_Variation $a, WC_Product_Variation $b ): int {
+		$ram_a = (int) preg_replace( '/\D+/', '', $a->get_attribute( 'pa_ram' ) . $a->get_attribute( 'ram' ) );
+		$ram_b = (int) preg_replace( '/\D+/', '', $b->get_attribute( 'pa_ram' ) . $b->get_attribute( 'ram' ) );
+		if ( $ram_a !== $ram_b ) {
+			return $ram_a <=> $ram_b;
+		}
+
+		$sto_a = (int) preg_replace( '/\D+/', '', $a->get_attribute( 'pa_internal-memory' ) . $a->get_attribute( 'pa_storage' ) );
+		$sto_b = (int) preg_replace( '/\D+/', '', $b->get_attribute( 'pa_internal-memory' ) . $b->get_attribute( 'pa_storage' ) );
+
+		return $sto_a <=> $sto_b;
 	}
 
 	private static function is_eligible_page(): bool {

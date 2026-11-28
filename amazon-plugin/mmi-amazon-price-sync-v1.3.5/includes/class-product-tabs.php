@@ -18,6 +18,10 @@ class MMI_APS_Product_Tabs {
 	 * @return array<string,array<string,mixed>>
 	 */
 	public static function register_prices_tab( array $tabs ): array {
+		if ( ! MMI_APS_Settings::show_prices_tab() ) {
+			return $tabs;
+		}
+
 		if ( ! is_singular( array( 'product', 'devices' ) ) ) {
 			return $tabs;
 		}
@@ -43,15 +47,16 @@ class MMI_APS_Product_Tabs {
 	 * @return array<string,array<string,mixed>>
 	 */
 	public static function style_tab_labels( array $tabs ): array {
-		$map = array(
-			'description'  => __( 'SPECS', 'mmi-amazon-price-sync' ),
-			'additional_information' => __( 'INFO', 'mmi-amazon-price-sync' ),
-		);
+		if ( ! MMI_APS_Settings::show_specs_tab() ) {
+			unset( $tabs['description'] );
+		} elseif ( isset( $tabs['description']['title'] ) ) {
+			$tabs['description']['title'] = __( 'SPECS', 'mmi-amazon-price-sync' );
+		}
 
-		foreach ( $map as $key => $label ) {
-			if ( isset( $tabs[ $key ]['title'] ) ) {
-				$tabs[ $key ]['title'] = $label;
-			}
+		if ( ! MMI_APS_Settings::show_info_tab() ) {
+			unset( $tabs['additional_information'] );
+		} elseif ( isset( $tabs['additional_information']['title'] ) ) {
+			$tabs['additional_information']['title'] = __( 'INFO', 'mmi-amazon-price-sync' );
 		}
 
 		return apply_filters( 'mmi_aps_product_tabs', $tabs );
